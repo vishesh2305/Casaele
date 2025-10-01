@@ -1,4 +1,22 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import AdminLayout from "./components/Admin/AdminLayout";
+import RequireAuth from "./components/Admin/RequireAuth";
+import AdminLogin from "./pages/admin/Login";
+import Dashboard from "./pages/admin/Dashboard";
+import UsersPage from "./pages/admin/Users";
+import ContentUpload from "./pages/admin/ContentUpload";
+import Products from "./pages/admin/Products";
+import Orders from "./pages/admin/Orders";
+import Settings from "./pages/admin/Settings";
+import Materials from "./pages/admin/Materials";
+import Courses from "./pages/admin/Courses";
+import Categories from "./pages/admin/Categories";
+import Banners from "./pages/admin/Banners";
+import PagesCMS from "./pages/admin/PagesCMS";
+import Coupons from "./pages/admin/Coupons";
+import Subscribers from "./pages/admin/Subscribers";
+import Messages from "./pages/admin/Messages";
+import Translations from "./pages/admin/Translations";
 import Header from "./components/CommonPage/Header";
 import Home from "./pages/Home";
 import About from "./pages/About";
@@ -17,11 +35,12 @@ import ScrollToTop from "./pages/ScrollToTop";
 
 function AppWrapper() {
   const location = useLocation();
+  const isAdmin = location.pathname.startsWith('/admin');
 
   return (
     <>
       <ScrollToTop />
-      <Header />
+      {!isAdmin && <Header />}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/material" element={<MaterialPage />} />
@@ -33,12 +52,35 @@ function AppWrapper() {
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/garden-of-ideas" element={<Garden />} />
+
+        {/* Admin routes */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin" element={<RequireAuth />}>
+          <Route element={<AdminLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="users" element={<UsersPage />} />
+          <Route path="content-upload" element={<ContentUpload />} />
+          <Route path="products" element={<Products />} />
+          <Route path="orders" element={<Orders />} />
+          <Route path="materials" element={<Materials />} />
+          <Route path="courses" element={<Courses />} />
+          <Route path="categories" element={<Categories />} />
+          <Route path="banners" element={<Banners />} />
+          <Route path="pages" element={<PagesCMS />} />
+          <Route path="coupons" element={<Coupons />} />
+          <Route path="subscribers" element={<Subscribers />} />
+          <Route path="messages" element={<Messages />} />
+          <Route path="translations" element={<Translations />} />
+          <Route path="settings" element={<Settings />} />
+          </Route>
+        </Route>
       </Routes>
 
       {/* The Translate component has been removed from here */}
 
-      <Newsletter />
-      <Footer />
+      {!isAdmin && <Newsletter />}
+      {!isAdmin && <Footer />}
     </>
   );
 }

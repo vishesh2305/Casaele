@@ -6,6 +6,7 @@ import connectDB from './config/db.js'
 import healthRoutes from './routes/healthRoutes.js'
 import userRoutes from './routes/userRoutes.js'
 import { notFound, errorHandler } from './middleware/errorMiddleware.js'
+import dummyApi from './routes/dummyApi.js'
 
 dotenv.config()
 
@@ -47,6 +48,7 @@ app.use(express.json())
 
 app.use('/', healthRoutes)
 app.use('/api/users', userRoutes)
+app.use('/api', dummyApi)
 
 // 404 + Error handlers
 app.use(notFound)
