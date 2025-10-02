@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { auth } from '../../firebase'
+import { signOut } from 'firebase/auth'
 
 export default function AdminTopbar({ onMenuClick }) {
   const [open, setOpen] = useState(false)
@@ -30,7 +32,7 @@ export default function AdminTopbar({ onMenuClick }) {
         {open && (
           <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 shadow-lg rounded-md py-1 text-sm">
             <button className="w-full text-left px-3 py-2 hover:bg-gray-50">Settings</button>
-            <button className="w-full text-left px-3 py-2 hover:bg-gray-50">Logout</button>
+            <button className="w-full text-left px-3 py-2 hover:bg-gray-50" onClick={async () => { try { await signOut(auth) } catch(_) {} localStorage.removeItem('authToken'); window.location.href='/admin/login' }}>Logout</button>
           </div>
         )}
       </div>

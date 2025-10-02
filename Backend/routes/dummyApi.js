@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { verifyFirebaseToken } from '../middleware/auth.js'
 
 const router = Router()
 
@@ -10,13 +11,7 @@ router.get('/users', (req, res) => {
   ])
 })
 
-router.get('/products', (req, res) => {
-  res.json([
-    { name: 'Learning Kit', price: 49, stock: 120, category: 'Education' },
-    { name: 'ELE Hoodie', price: 29, stock: 42, category: 'Merch' },
-    { name: 'Sticker Pack', price: 5, stock: 300, category: 'Accessories' },
-  ])
-})
+// products moved to /api/products CRUD routes
 
 router.get('/orders', (req, res) => {
   res.json([

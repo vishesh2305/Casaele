@@ -1,8 +1,18 @@
-import { Navigate, Outlet } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 
 export default function RequireAuth() {
-  const isLoggedIn = typeof window !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true'
-  if (!isLoggedIn) return <Navigate to="/admin/login" replace />
+  const location = useLocation()
+  const [ready, setReady] = useState(false)
+  const [hasToken, setHasToken] = useState(false)
+
+  useEffect(() => {
+    setHasToken(!!localStorage.getItem('authToken'))
+    setReady(true)
+  }, [location.pathname])
+
+  if (!ready) return null
+  if (!hasToken) return <Navigate to="/admin/login" replace />
   return <Outlet />
 }
 

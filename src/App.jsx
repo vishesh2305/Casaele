@@ -17,6 +17,7 @@ import Coupons from "./pages/admin/Coupons";
 import Subscribers from "./pages/admin/Subscribers";
 import Messages from "./pages/admin/Messages";
 import Translations from "./pages/admin/Translations";
+import AdminNotFound from "./pages/admin/NotFound";
 import Header from "./components/CommonPage/Header";
 import Home from "./pages/Home";
 import About from "./pages/About";
@@ -73,6 +74,7 @@ function AppWrapper() {
           <Route path="messages" element={<Messages />} />
           <Route path="translations" element={<Translations />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="*" element={<AdminNotFound />} />
           </Route>
         </Route>
       </Routes>

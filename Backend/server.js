@@ -7,6 +7,10 @@ import healthRoutes from './routes/healthRoutes.js'
 import userRoutes from './routes/userRoutes.js'
 import { notFound, errorHandler } from './middleware/errorMiddleware.js'
 import dummyApi from './routes/dummyApi.js'
+import productRoutes from './routes/productRoutes.js'
+import materialCrudRoutes from './routes/materialRoutes.js'
+import materialsRoutes from './routes/materials.js'
+import debugRoutes from './routes/debug.js'
 
 dotenv.config()
 
@@ -45,10 +49,18 @@ mongoose.connection.on('error', (err) => {
 
 app.use(cors())
 app.use(express.json())
+// Disable caching for API responses (useful for admin)
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store')
+  next()
+})
 
 app.use('/', healthRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api', dummyApi)
+app.use('/api/products', productRoutes)
+app.use('/api/materials', materialCrudRoutes)
+app.use('/api/debug', debugRoutes)
 
 // 404 + Error handlers
 app.use(notFound)
