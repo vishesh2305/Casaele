@@ -11,6 +11,8 @@ import productRoutes from './routes/productRoutes.js'
 import materialCrudRoutes from './routes/materialRoutes.js'
 import materialsRoutes from './routes/materials.js'
 import debugRoutes from './routes/debug.js'
+import cmsRoutes from './routes/cmsRoutes.js'
+import formRoutes from './routes/formRoutes.js'
 import Razorpay from 'razorpay'
 import Stripe from 'stripe'
 
@@ -140,6 +142,8 @@ app.use('/api', dummyApi)
 app.use('/api/products', productRoutes)
 app.use('/api/materials', materialCrudRoutes)
 app.use('/api/debug', debugRoutes)
+app.use('/api/cms', cmsRoutes)
+app.use('/api/forms', formRoutes)
 
 // 404 + Error handlers
 app.use(notFound)

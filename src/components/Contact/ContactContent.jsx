@@ -12,7 +12,7 @@ const ContactContent = () => {
   const [selectedUser, setSelectedUser] = useState(null);
 
   // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault(); // Prevents the page from reloading
 
     // Check if all fields are filled
@@ -21,21 +21,26 @@ const ContactContent = () => {
       return;
     }
 
-    // You can optionally check if a user type is selected here
-    // if (!selectedUser) {
-    //   alert("Please select a user type (Teacher, Student, or Collaborator).");
-    //   return;
-    // }
-
-    // Show success message and clear the form
-    alert("¡Gracias! Your message has been received. We'll respond within 2-3 business days. In the meantime, feel free to explore Ele’s house and the magic in each room!");
-
-    // Clear the form fields after successful submission
-    setName('');
-    setEmail('');
-    setCountry('');
-    setReason('');
-    setSelectedUser(null); // Clear selected user as well
+    try {
+      const res = await fetch('/api/forms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          email,
+          message: `${country}${selectedUser ? ` (${selectedUser})` : ''} - ${reason}`
+        })
+      })
+      if (!res.ok) throw new Error('Failed to submit')
+      alert("¡Gracias! Your message has been received. We'll respond within 2-3 business days. In the meantime, feel free to explore Ele’s house and the magic in each room!");
+      setName('');
+      setEmail('');
+      setCountry('');
+      setReason('');
+      setSelectedUser(null); // Clear selected user as well
+    } catch (err) {
+      alert('Submission failed. Please try again later.')
+    }
   };
 
   // Function to handle button click

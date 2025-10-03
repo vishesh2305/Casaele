@@ -12,7 +12,9 @@ import Materials from "./pages/admin/Materials";
 import Courses from "./pages/admin/Courses";
 import Categories from "./pages/admin/Categories";
 import Banners from "./pages/admin/Banners";
-import PagesCMS from "./pages/admin/PagesCMS";
+import CMSList from "./pages/admin/CMSList";
+import CMSEdit from "./pages/admin/CMSEdit";
+import Forms from "./pages/admin/Forms";
 import Coupons from "./pages/admin/Coupons";
 import Subscribers from "./pages/admin/Subscribers";
 import Messages from "./pages/admin/Messages";
@@ -73,7 +75,10 @@ function AppWrapper() {
           <Route path="courses" element={<Courses />} />
           <Route path="categories" element={<Categories />} />
           <Route path="banners" element={<Banners />} />
-          <Route path="pages" element={<PagesCMS />} />
+          <Route path="cms" element={<CMSList />} />
+          <Route path="cms/new" element={<CMSEdit />} />
+          <Route path="cms/edit/:id" element={<CMSEdit />} />
+          <Route path="forms" element={<Forms />} />
           <Route path="coupons" element={<Coupons />} />
           <Route path="subscribers" element={<Subscribers />} />
           <Route path="messages" element={<Messages />} />
