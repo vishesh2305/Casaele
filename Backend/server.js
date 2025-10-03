@@ -58,47 +58,71 @@ mongoose.connection.on('error', (err) => {
 
 
 
-// Payment Gateway 
+// Payment Gateway
 
+// Razorpay (optional)
+const hasRazorpayKeys =
+  !!process.env.RAZORPAY_KEY_ID && !!(process.env.RAZORPAYSECRETKEY || process.env.RAZORPAY_KEY_SECRET)
 
-// Razorpay
-const instance = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAYSECRETKEY,
-});
+let razorpayInstance = null
+if (hasRazorpayKeys) {
+  try {
+    razorpayInstance = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAYSECRETKEY || process.env.RAZORPAY_KEY_SECRET,
+    })
+    console.log('Razorpay initialized')
+  } catch (err) {
+    console.warn('Failed to initialize Razorpay:', err?.message || err)
+  }
+} else {
+  console.warn('Razorpay keys missing - Razorpay routes will be disabled')
+}
+
 app.post('/create-razorpay-order', async (req, res) => {
-    const { amount, currency } = req.body;
-    const options = {
-        amount: amount,
-        currency: currency,
-        receipt: 'receipt_order_74394',
-    };
-    try {
-        const order = await instance.orders.create(options);
-        res.json(order);
-    } catch (error) {
-        res.status(500).send(error);
-    }
-});
+  if (!razorpayInstance) {
+    return res.status(503).json({ message: 'Razorpay not configured' })
+  }
+  const { amount, currency } = req.body
+  const options = {
+    amount: amount,
+    currency: currency,
+    receipt: 'receipt_order_74394',
+  }
+  try {
+    const order = await razorpayInstance.orders.create(options)
+    res.json(order)
+  } catch (error) {
+    res.status(500).send(error)
+  }
+})
 
-// Stripe
-const stripe = new Stripe(process.env.STRIPESECRETKEY);
+// Stripe (optional)
+const stripeSecret = process.env.STRIPESECRETKEY || process.env.STRIPE_SECRET_KEY
+let stripe = null
+if (stripeSecret) {
+  try {
+    stripe = new Stripe(stripeSecret)
+    console.log('Stripe initialized')
+  } catch (err) {
+    console.warn('Failed to initialize Stripe:', err?.message || err)
+  }
+} else {
+  console.warn('Stripe key missing - Stripe routes will be disabled')
+}
 
 app.post('/create-payment-intent', async (req, res) => {
-    const { amount, currency } = req.body;
-
-    try {
-        const paymentIntent = await stripe.paymentIntents.create({
-            amount: amount,
-            currency: currency,
-        });
-        res.send({
-            clientSecret: paymentIntent.client_secret,
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+  if (!stripe) {
+    return res.status(503).json({ message: 'Stripe not configured' })
+  }
+  const { amount, currency } = req.body
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({ amount, currency })
+    res.send({ clientSecret: paymentIntent.client_secret })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
 
 
 
