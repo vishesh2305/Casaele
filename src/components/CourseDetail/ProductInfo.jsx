@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import QuantitySelector from "./QuantitySelector";
 
 function ProductInfo({ item, quantity, setQuantity, added, handleAddToCart, goToCheckout }) {
@@ -6,6 +6,11 @@ function ProductInfo({ item, quantity, setQuantity, added, handleAddToCart, goTo
   const [selectedFormat, setSelectedFormat] = useState(null);
 
   const levels = ["A1", "A2", "B1", "B2", "C1", "C2"];
+
+  useEffect(() => {
+    setSelectedLevel(null);
+    setSelectedFormat(null);
+  }, [item.id]);
 
   const handleAdd = () => {
     if (!selectedLevel || !selectedFormat) {

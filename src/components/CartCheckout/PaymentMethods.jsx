@@ -1,6 +1,6 @@
 import React from 'react';
 
-function PaymentMethods() {
+function PaymentMethods({ selectedPayment, setSelectedPayment }) {
   return (
     <div className="mt-8 space-y-4 w-full">
       {/* Bank */}
@@ -10,14 +10,15 @@ function PaymentMethods() {
             type="radio"
             id="bank"
             name="payment"
-            defaultChecked
+            value="bank"
+            checked={selectedPayment === 'bank'}
+            onChange={() => setSelectedPayment('bank')}
             className="w-5 h-5 accent-black"
           />
           <label htmlFor="bank" className="font-normal text-base cursor-pointer">
             Bank
           </label>
         </div>
-        {/* Added flex-wrap here */}
         <div className="flex items-center gap-2 flex-wrap justify-end">
           <img src="/Cart/image 32.svg" alt="bank" className="h-6" />
           <img src="/Cart/visa.svg" alt="visa" className="h-6" />
@@ -33,6 +34,9 @@ function PaymentMethods() {
             type="radio"
             id="paypal"
             name="payment"
+            value="paypal"
+            checked={selectedPayment === 'paypal'}
+            onChange={() => setSelectedPayment('paypal')}
             className="w-5 h-5 accent-black"
           />
           <label htmlFor="paypal" className="font-normal text-base cursor-pointer">
@@ -48,6 +52,9 @@ function PaymentMethods() {
           type="radio"
           id="cod"
           name="payment"
+          value="cod"
+          checked={selectedPayment === 'cod'}
+          onChange={() => setSelectedPayment('cod')}
           className="w-5 h-5 accent-black"
         />
         <label htmlFor="cod" className="font-normal text-base cursor-pointer">

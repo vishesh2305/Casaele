@@ -2,13 +2,54 @@ import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import BillingDetails from '../components/CartCheckout/BillingDetails';
 import CartSection from '../components/CartCheckout/CartSection';
-import PaymentMethods from '../components/CartCheckout/PaymentMethods';
+
 
 function CartCheckout() {
   const location = useLocation();
   const { item: initialItem, quantity: initialQty } = location.state || {};
   const [cartItem, setCartItem] = useState(initialItem);
   const [quantity, setQuantity] = useState(initialQty || 1);
+
+
+  const totalPrice = cartItem ? cartItem.price * quantity : 0;
+
+  const handlePlaceOrderRazorpay = async () => {
+    const response = await fetch('http://localhost:5000/create-razorpay-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: totalPrice * 100,
+        currency: 'INR',
+      }),
+    });
+    const order = await response.json();
+
+    const options = {
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+      amount: order.amount,
+      currency: order.currency,
+      name: 'CasaDeEle',
+      description: 'Course Purchase',
+      order_id: order.id,
+      handler: function (response) {
+        alert('Payment successful! Payment ID: ' + response.razorpay_payment_id);
+      },
+      prefill: {
+        name: 'Your Name',
+        email: 'your.email@example.com',
+      },
+      theme: { color: '#AD1518' },
+    };
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+  };
+
+
+
+  const handleRemove = () => {
+    setCartItem(null);
+    setQuantity(0);
+  };
 
   if (!cartItem) {
     return (
@@ -17,13 +58,6 @@ function CartCheckout() {
       </div>
     );
   }
-
-  const totalPrice = cartItem.price * quantity;
-
-  const handleRemove = () => {
-    setCartItem(null);
-    setQuantity(0);
-  };
 
   return (
     <div className="flex flex-col lg:flex-row lg:justify-between px-4 sm:px-6 md:px-10 lg:px-12 xl:px-20 my-16">
@@ -40,9 +74,11 @@ function CartCheckout() {
           quantity={quantity}
           totalPrice={totalPrice}
         />
-        <PaymentMethods />
+
+
         <button
-          className="bg-[rgba(173,21,24,1)] text-white py-3 px-6 rounded-full w-full mt-10"
+          onClick={handlePlaceOrderRazorpay}
+          className="bg-[rgba(173,21,24,1)] text-white py-3 px-6 rounded-full w-full mt-10 hover:bg-red-800 transition-colors"
           disabled={!cartItem}
         >
           Place Order
