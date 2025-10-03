@@ -32,11 +32,16 @@ import CourseDetail from "./pages/CourseDetail";
 import CartCheckout from "./pages/CartCheckout";
 import Garden from "./pages/GardenOfIdeas";
 import ScrollToTop from "./pages/ScrollToTop";
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+
 // The Translate import has been removed
 
+const stripePromise = loadStripe(import.meta.env.STRIPEPUBLISHABLEKEY);
 function AppWrapper() {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
+
 
   return (
     <>
@@ -89,9 +94,11 @@ function AppWrapper() {
 
 function App() {
   return (
-    <Router>
-      <AppWrapper />
-    </Router>
+    <Elements stripe={stripePromise}>
+      <Router>
+        <AppWrapper />
+      </Router>
+    </Elements>
   );
 }
 
