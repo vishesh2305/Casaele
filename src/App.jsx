@@ -21,6 +21,7 @@ import Coupons from "./pages/admin/Coupons";
 import Subscribers from "./pages/admin/Subscribers";
 import Messages from "./pages/admin/Messages";
 import Translations from "./pages/admin/Translations";
+import Embeds from "./pages/admin/Embeds";
 import AdminNotFound from "./pages/admin/NotFound";
 import Header from "./components/CommonPage/Header";
 import Home from "./pages/Home";
@@ -35,6 +36,8 @@ import Footer from "./components/CommonPage/Footer";
 import CourseDetail from "./pages/CourseDetail";
 import CartCheckout from "./pages/CartCheckout";
 import Garden from "./pages/GardenOfIdeas";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsAndConditions from "./pages/TermsAndConditions";
 import ScrollToTop from "./pages/ScrollToTop";
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
@@ -75,6 +78,8 @@ function AppWrapper() {
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/garden-of-ideas" element={<Garden />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
 
         {/* Admin routes */}
         <Route path="/admin/login" element={<AdminLogin />} />
@@ -98,6 +103,7 @@ function AppWrapper() {
           <Route path="subscribers" element={<Subscribers />} />
           <Route path="messages" element={<Messages />} />
           <Route path="translations" element={<Translations />} />
+          <Route path="embeds" element={<Embeds />} />
           <Route path="settings" element={<Settings />} />
           <Route path="*" element={<AdminNotFound />} />
           </Route>

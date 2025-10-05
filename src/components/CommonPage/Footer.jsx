@@ -84,9 +84,9 @@ const Footer = () => {
             <h3 className="font-bold mb-3">Support</h3>
             <ul className="space-y-2">
               <li><a href="/contact">Contact Us</a></li>
-              <li>Privacy Policy</li>
+              <li><a href="/privacy-policy">Privacy Policy</a></li>
               <li>How to use</li>
-              <li>Terms of Services</li>
+              <li><a href="/terms-and-conditions">Terms &amp; Conditions</a></li>
             </ul>
           </div>
         </div>

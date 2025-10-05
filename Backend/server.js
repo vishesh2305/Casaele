@@ -13,6 +13,7 @@ import materialsRoutes from './routes/materials.js'
 import debugRoutes from './routes/debug.js'
 import cmsRoutes from './routes/cmsRoutes.js'
 import formRoutes from './routes/formRoutes.js'
+import embedRoutes from './routes/embedRoutes.js'
 import Razorpay from 'razorpay'
 import Stripe from 'stripe'
 import { v2 as cloudinary } from 'cloudinary';
@@ -171,6 +172,7 @@ app.use('/api/materials', materialCrudRoutes)
 app.use('/api/debug', debugRoutes)
 app.use('/api/cms', cmsRoutes)
 app.use('/api/forms', formRoutes)
+app.use('/api/embeds', embedRoutes)
 
 // 404 + Error handlers
 app.use(notFound)
