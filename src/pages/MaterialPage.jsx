@@ -2,63 +2,73 @@ import React, { useState, useRef, useMemo, useEffect } from "react";
 import ToggleButtons from "../components/Material/MaterialPage/ToggleButtons";
 import SectionHeader from "../components/Material/MaterialPage/SectionHeader";
 import CardSlider from "../components/Material/MaterialPage/CardSlider";
-import cardData from "../components/Material/MaterialPage/cardData";
-import mostlyliked from "../components/Material/MaterialPage/mostlyliked";
 import SearchBar from "../components/Searchbar/Searchbar";
 import { useLocation } from "react-router-dom";
+import { apiGet } from "../utils/api"; // ✅ Import the apiGet utility
 
 function MaterialPage() {
-
   const location = useLocation();
   const [activeButton, setActiveButton] = useState("Explore");
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
+  
+  // ✅ State to hold materials fetched from the backend
+  const [materials, setMaterials] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const cardRef = useRef(null);
-  const mostlyRef = useRef(null);
+  const mostlyRef = useRef(null); // Keep this ref if you plan to have a second slider
 
-  // Filter data based on search query
+  // ✅ Fetch materials from the backend when the component loads
+  useEffect(() => {
+    setLoading(true);
+    apiGet('/api/materials')
+      .then(data => {
+        if (Array.isArray(data)) {
+          setMaterials(data);
+        } else {
+          setMaterials([]); // Ensure materials is always an array
+        }
+      })
+      .catch(() => setMaterials([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Filter data based on the dynamic search query
   const searchResults = useMemo(() => {
     if (!searchQuery) return [];
-
     const query = searchQuery.toLowerCase();
-    const allData = [...cardData, ...mostlyliked];
-
-    return allData.filter(item =>
+    // Search through the dynamically fetched materials
+    return materials.filter(item =>
       item.title.toLowerCase().includes(query) ||
-      item.description.toLowerCase().includes(query) ||
-      item.tags.some(tag => tag.toLowerCase().includes(query))
+      (item.description && item.description.toLowerCase().includes(query)) ||
+      (item.category && item.category.toLowerCase().includes(query))
     );
-  }, [searchQuery]);
+  }, [searchQuery, materials]);
 
-  // Handle scroll functionality
   const handleScroll = (ref, direction) => {
     const container = ref.current;
-    const cardWidth = 260; // card width
-
     if (container) {
-      container.scrollBy({
-        left: direction === "left" ? -cardWidth : cardWidth,
-        behavior: "smooth",
-      });
+      const cardWidth = 260;
+      container.scrollBy({ left: direction === "left" ? -cardWidth : cardWidth, behavior: "smooth" });
     }
   };
 
-  // Handle search from SearchBar component
   const handleSearch = (query) => {
     setSearchQuery(query);
     setShowSearchResults(query.length > 0);
   };
 
-
   useEffect(() => {
-    // अगर URL state में keyword मिलता है...
     if (location.state?.keyword) {
-      // ... तो सिर्फ activeButton को 'Keyword' पर सेट करें
       setActiveButton("Keyword");
-      // setSearchQuery को यहाँ से हटा दें, ताकि सर्चबार खाली रहे
     }
   }, [location.state]);
+
+  if (loading) {
+    return <div className="text-center p-20 font-semibold">Loading Materials...</div>;
+  }
+
 
 
   return (
@@ -135,7 +145,7 @@ function MaterialPage() {
             onScrollLeft={() => handleScroll(cardRef, "left")}
             onScrollRight={() => handleScroll(cardRef, "right")}
           />
-          <CardSlider ref={cardRef} data={cardData} />
+          <CardSlider ref={cardRef} data={materials} />
         </div>
       )}
 
@@ -147,7 +157,7 @@ function MaterialPage() {
             onScrollLeft={() => handleScroll(mostlyRef, "left")}
             onScrollRight={() => handleScroll(mostlyRef, "right")}
           />
-          <CardSlider ref={mostlyRef} data={mostlyliked} />
+          <CardSlider ref={mostlyRef} data={[...materials].reverse()} />
         </div>
       )}
     </div>

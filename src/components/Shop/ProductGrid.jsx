@@ -12,14 +12,13 @@ function ProductGrid({
   currentPage,
   setCurrentPage,
   totalPages,
-  pageNumbers,
 }) {
   return (
     <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8 flex flex-col min-h-[80vh]"> 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6 mt-2 text-center sm:text-left">
         <h2 className="text-xl sm:text-2xl font-semibold text-black">
-          {selectedCategory}
+          {selectedCategory || "All Products"}
         </h2>
         <p className="text-sm text-gray-500">
           Showing {indexOfFirstItem + 1}–
@@ -30,16 +29,16 @@ function ProductGrid({
 
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-grow lg:min-h-[760px]">
-        {currentItems.map((item, index) => (
+        {currentItems.map((item) => (
           <Link
-            to={`/course-detail/${item.id}`}
-            state={item}
-            key={index}
+            to={`/course-detail/${item._id}`}
+            state={{item: item}}
+            key={item._id}
             className="w-full"
           >
             <Card
               image={item.image}
-              title={item.title}
+              title={item.name}
               description={item.description}
               price={item.price}
             />
@@ -55,7 +54,7 @@ function ProductGrid({
             currentPage={currentPage}
             setCurrentPage={setCurrentPage}
             totalPages={totalPages}
-            pageNumbers={pageNumbers}
+            // pageNumbers={pageNumbers}
           />
         )}
       </div>

@@ -1,25 +1,32 @@
 import React, { useRef, useState, useEffect } from "react";
-import courses from '../components/Shop/courses';
-import ebooks from "../components/Shop/Ebooks";
-import Freebies from "../components/Shop/Freebies";
-import games from "../components/Shop/games";
-import pdf from "../components/Shop/pdf";
-import subscription from "../components/Shop/Subscription";
-
+import { apiGet } from "../utils/api";
 import Banner from "../components/Shop/Banner";
 import Filters from "../components/Shop/Filters";
 import ProductGrid from "../components/Shop/ProductGrid";
 
 function Shop() {
-  const courseref = useRef(null);
-  const [selectedCategory, setSelectedCategory] = useState("Courses");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [maxPrice, setMaxPrice] = useState(200);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filteredItems, setFilteredItems] = useState([]);
-
-  // ✅ Responsive items per page
+  const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(6);
 
+
+    useEffect(() => {
+    setLoading(true);
+    apiGet('/api/products')
+      .then(data => {
+        if (Array.isArray(data)) {
+          setProducts(data);
+          setFilteredItems(data);
+        }
+      })
+      .catch(() => setProducts([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  
+// Responsive items per page logic
   useEffect(() => {
     function handleResize() {
       if (window.innerWidth < 640) {
@@ -36,49 +43,35 @@ function Shop() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const categoryData = {
-    Courses: courses,
-    "E-books": ebooks,
-    "Games & Flashcards": games,
-    "Worksheets (PDFs)": pdf,
-    Subscriptions: subscription,
-    Freebies: Freebies,
-  };
-
-  const allItems = categoryData[selectedCategory] || [];
-
-  // ✅ load initial category items
-  useEffect(() => {
-    setFilteredItems(allItems);
-    setCurrentPage(1);
-  }, [selectedCategory, allItems]);
-
-  const selectedItems = filteredItems;
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = selectedItems.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = filteredItems.slice(indexOfFirstItem, indexOfLastItem);
 
-  const totalPages = Math.ceil(selectedItems.length / itemsPerPage);
-  const pageNumbers = [...Array(totalPages).keys()].map(num => num + 1);
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+
+
+
+  if (loading) {
+    return (
+      <>
+        <Banner />
+        <div className="text-center p-20 font-semibold">Loading Products...</div>
+      </>
+    );
+  }
+
 
   return (
     <>
       <Banner />
 
-      {/* Filters + Products */}
       <div className="flex flex-col lg:flex-row gap-6 px-4 sm:px-6 lg:px-20 mt-5">
-        {/* Filters Sidebar */}
         <div className="w-full lg:w-1/4 lg:sticky lg:top-24">
           <Filters
-            categoryData={categoryData}
-            selectedCategory={selectedCategory}
-            setSelectedCategory={setSelectedCategory}
             setFilteredItems={setFilteredItems}
             setCurrentPage={setCurrentPage}
-            maxPrice={maxPrice}
-            setMaxPrice={setMaxPrice}
-            allItems={allItems}
+            allItems={products}
           />
         </div>
 
@@ -86,14 +79,12 @@ function Shop() {
         <div className="w-full lg:w-3/4">
           <ProductGrid
             currentItems={currentItems}
-            selectedCategory={selectedCategory}
             indexOfFirstItem={indexOfFirstItem}
             indexOfLastItem={indexOfLastItem}
-            selectedItems={selectedItems}
+            selectedItems={filteredItems}
             currentPage={currentPage}
             setCurrentPage={setCurrentPage}
             totalPages={totalPages}
-            pageNumbers={pageNumbers}
           />
         </div>
       </div>

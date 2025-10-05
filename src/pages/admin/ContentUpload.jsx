@@ -1,3 +1,5 @@
+import React from "react"
+
 export default function ContentUpload() {
   const [msg, setMsg] = React.useState('')
   const [err, setErr] = React.useState('')

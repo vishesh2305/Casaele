@@ -1,51 +1,91 @@
-import { useEffect, useMemo, useState } from 'react'
-import { apiGet, apiSend } from '../../utils/api'
+import { useEffect, useMemo, useState } from 'react';
+import { apiGet, apiSend } from '../../utils/api';
 
 export default function Products() {
-  const [rows, setRows] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [sortBy, setSortBy] = useState({ key: 'name', dir: 'asc' })
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState({ key: 'name', dir: 'asc' });
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState({ name: '', price: '', description: '', image: '', stock: '' });
+  const [uploading, setUploading] = useState(false); // ✅ State for upload progress
+
   useEffect(() => {
     apiGet('/api/products')
       .then(data => setRows(data))
       .catch(() => setRows([]))
-      .finally(()=>setLoading(false))
-  }, [])
+      .finally(() => setLoading(false));
+  }, []);
+
+  // ✅ COPIED & ADAPTED: Cloudinary upload logic from Materials.jsx
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const { timestamp, signature } = await apiGet('/api/cloudinary-signature');
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('api_key', import.meta.env.VITE_CLOUDINARY_API_KEY);
+      formData.append('timestamp', timestamp);
+      formData.append('signature', signature);
+      formData.append('upload_preset', 'casadeele_materials'); // Use the same preset for consistency
+
+      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error.message || 'Cloudinary upload failed');
+      }
+
+      const data = await response.json();
+      setForm({ ...form, image: data.secure_url }); // Update the 'image' field with the Cloudinary URL
+
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert(`File upload failed: ${error.message}`);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const sorted = useMemo(() => {
-    const list = [...rows]
+    const list = [...rows];
     list.sort((a, b) => {
-      const va = (a[sortBy.key] || '').toString().toLowerCase()
-      const vb = (b[sortBy.key] || '').toString().toLowerCase()
-      if (va < vb) return sortBy.dir === 'asc' ? -1 : 1
-      if (va > vb) return sortBy.dir === 'asc' ? 1 : -1
-      return 0
-    })
-    return list
-  }, [rows, sortBy])
+      const va = (a[sortBy.key] || '').toString().toLowerCase();
+      const vb = (b[sortBy.key] || '').toString().toLowerCase();
+      if (va < vb) return sortBy.dir === 'asc' ? -1 : 1;
+      if (va > vb) return sortBy.dir === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return list;
+  }, [rows, sortBy]);
 
-  function setSort(key){
-    setSortBy(prev => prev.key === key ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' })
+  function setSort(key) {
+    setSortBy(prev => prev.key === key ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' });
   }
 
-  const [modalOpen, setModalOpen] = useState(false)
-  const [editing, setEditing] = useState(null)
-  const [form, setForm] = useState({ name: '', price: '', description: '', image: '', stock: '' })
-
-  function openCreate(){ setEditing(null); setForm({ name:'', price:'', description:'', image:'', stock:'' }); setModalOpen(true) }
-  function openEdit(item){ setEditing(item); setForm({ name:item.name, price:item.price, description:item.description||'', image:item.image||'', stock:item.stock||0 }); setModalOpen(true) }
-  async function saveItem(){
-    const payload = { ...form, price: Number(form.price), stock: Number(form.stock||0) }
+  function openCreate() { setEditing(null); setForm({ name: '', price: '', description: '', image: '', stock: '' }); setModalOpen(true); }
+  function openEdit(item) { setEditing(item); setForm({ name: item.name, price: item.price, description: item.description || '', image: item.image || '', stock: item.stock || 0 }); setModalOpen(true); }
+  
+  async function saveItem() {
+    const payload = { ...form, price: Number(form.price), stock: Number(form.stock || 0) };
     const saved = editing
       ? await apiSend(`/api/products/${editing._id}`, 'PUT', payload)
-      : await apiSend('/api/products', 'POST', payload)
-    if (editing) setRows(rows.map(r => r._id === saved._id ? saved : r))
-    else setRows([saved, ...rows])
-    setModalOpen(false)
+      : await apiSend('/api/products', 'POST', payload);
+    if (editing) setRows(rows.map(r => r._id === saved._id ? saved : r));
+    else setRows([saved, ...rows]);
+    setModalOpen(false);
   }
-  async function removeItem(id){
-    await apiSend(`/api/products/${id}`, 'DELETE')
-    setRows(rows.filter(r => r._id !== id))
+  
+  async function removeItem(id) {
+    await apiSend(`/api/products/${id}`, 'DELETE');
+    setRows(rows.filter(r => r._id !== id));
   }
 
   return (
@@ -56,6 +96,7 @@ export default function Products() {
           <div className="text-sm text-gray-600">Manage your products</div>
           <button onClick={openCreate} className="px-3 py-1.5 rounded-md bg-red-700 text-white hover:bg-red-800">Add Product</button>
         </div>
+        {/* Table remains the same */}
         <div className="overflow-x-auto max-w-full">
         <table className="min-w-full text-left">
           <thead className="bg-gray-50 text-gray-600 text-sm sticky top-0 z-10">
@@ -98,37 +139,30 @@ export default function Products() {
           <div className="w-full max-w-lg bg-white rounded-xl shadow p-6 space-y-4">
             <div className="text-lg font-semibold">{editing ? 'Edit product' : 'Add product'}</div>
             <div className="grid grid-cols-1 gap-3">
-              <label className="block">
-                <span className="text-sm text-gray-700">Name</span>
-                <input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" />
+              <label className="block"><span className="text-sm text-gray-700">Name</span><input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" /></label>
+              <label className="block"><span className="text-sm text-gray-700">Price</span><input type="number" value={form.price} onChange={e=>setForm({...form,price:e.target.value})} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" /></label>
+              <label className="block"><span className="text-sm text-gray-700">Description</span><textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" /></label>
+              
+              {/* ✅ NEW: File upload input */}
+              <label className="block"><span className="text-sm text-gray-700">Upload Image</span>
+                <input type="file" onChange={handleFileChange} className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"/>
+                {uploading && <div className="text-sm text-gray-500 mt-1">Uploading...</div>}
               </label>
-              <label className="block">
-                <span className="text-sm text-gray-700">Price</span>
-                <input type="number" value={form.price} onChange={e=>setForm({...form,price:e.target.value})} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" />
+
+              {/* ✅ MODIFIED: Image URL input now shows the result of the upload */}
+              <label className="block"><span className="text-sm text-gray-700">Or paste Image URL</span>
+                <input value={form.image} onChange={e=>setForm({...form,image:e.target.value})} disabled={uploading} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" />
               </label>
-              <label className="block">
-                <span className="text-sm text-gray-700">Description</span>
-                <textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" />
-              </label>
-              <label className="block">
-                <span className="text-sm text-gray-700">Image URL</span>
-                <input value={form.image} onChange={e=>setForm({...form,image:e.target.value})} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" />
-              </label>
-              <label className="block">
-                <span className="text-sm text-gray-700">Stock</span>
-                <input type="number" value={form.stock} onChange={e=>setForm({...form,stock:e.target.value})} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" />
-              </label>
+
+              <label className="block"><span className="text-sm text-gray-700">Stock</span><input type="number" value={form.stock} onChange={e=>setForm({...form,stock:e.target.value})} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" /></label>
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={()=>setModalOpen(false)} className="px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200">Cancel</button>
-              <button onClick={saveItem} className="px-3 py-1.5 rounded-md bg-red-700 text-white hover:bg-red-800">Save</button>
+              <button onClick={saveItem} disabled={uploading} className="px-3 py-1.5 rounded-md bg-red-700 text-white hover:bg-red-800 disabled:opacity-60">{uploading ? "Uploading..." : "Save"}</button>
             </div>
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }
-
-
-

@@ -15,8 +15,19 @@ import cmsRoutes from './routes/cmsRoutes.js'
 import formRoutes from './routes/formRoutes.js'
 import Razorpay from 'razorpay'
 import Stripe from 'stripe'
+import { v2 as cloudinary } from 'cloudinary';
 
 dotenv.config()
+
+// Connect to Cloudinary
+cloudinary.config(
+  {
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
+  }
+)
 
 
 // Connect to MongoDB
@@ -125,6 +136,22 @@ app.post('/create-payment-intent', async (req, res) => {
     res.status(500).json({ error: error.message })
   }
 })
+
+
+
+app.get('/api/cloudinary-signature', (req, res) => {
+  const timestamp = Math.round(new Date().getTime() / 1000);
+  const signature = cloudinary.utils.api_sign_request(
+    {
+      timestamp: timestamp,
+      upload_preset: 'casadeele_materials'
+    },
+    process.env.CLOUDINARY_API_SECRET
+  );
+  res.json({ timestamp, signature });
+});
+
+
 
 
 

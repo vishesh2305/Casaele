@@ -1,5 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import AdminLayout from "./components/Admin/AdminLayout";
+import React, { useEffect } from 'react'; 
+import { auth } from './firebase';
 import RequireAuth from "./components/Admin/RequireAuth";
 import AdminLogin from "./pages/admin/Login";
 import Dashboard from "./pages/admin/Dashboard";
@@ -36,6 +38,7 @@ import Garden from "./pages/GardenOfIdeas";
 import ScrollToTop from "./pages/ScrollToTop";
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
+import DisableContextMenu from "./components/Common/DisableContextMenu";
 
 // The Translate import has been removed
 
@@ -44,6 +47,18 @@ function AppWrapper() {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
 
+  useEffect(() => {
+    const unsubscribe = auth.onIdTokenChanged(async (user) => {
+      if (user) {
+        const token = await user.getIdToken(true);
+        localStorage.setItem('authToken', token);
+      } else {
+        localStorage.removeItem('authToken');
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   return (
     <>
@@ -101,6 +116,7 @@ function App() {
   return (
     <Elements stripe={stripePromise}>
       <Router>
+        <DisableContextMenu />
         <AppWrapper />
       </Router>
     </Elements>

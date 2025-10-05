@@ -1,12 +1,18 @@
 import React from "react";
 
 function MaterialHeader({ material }) {
+  // ✅ FIXED: Use material.fileUrl as the primary source for the image
+  const displayImage = material.fileUrl || material.image;
+
   return (
     <div className="w-full pt-12 sm:pt-16">
       {/* Image */}
       <div className="w-full mb-12 sm:mb-16">
         <img
-          src={material.image}
+          src={
+            displayImage ||
+            "https://placehold.co/1200x800/e5e7eb/4b5563?text=Image"
+          } // Fallback placeholder
           alt={material.title}
           className="w-full h-auto rounded-2xl object-cover"
         />
@@ -20,15 +26,18 @@ function MaterialHeader({ material }) {
             {material.title}
           </h2>
           <p className="text-gray-500 text-sm">
-            29 abril 2025. Última Actualización: 12 junio 2025
+            {/* ✅ Dynamically show the creation date */}
+            Created on:{" "}
+            {material.createdAt
+              ? new Date(material.createdAt).toLocaleDateString()
+              : "N/A"}
           </p>
           <p className="text-gray-800 text-lg font-semibold">
             {material.description}
           </p>
           <p className="text-gray-700 text-base leading-relaxed">
-            Cortometraje animado sobre la migración, construido a partir de
-            testimonios reales de personas migrantes hispanoamericanas, para
-            trabajar la expresión y el léxico relacionado.
+            {material.content ||
+              "Cortometraje animado sobre la migración, construido a partir de testimonios reales de personas migrantes hispanoamericanas, para trabajar la expresión y el léxico relacionado."}
           </p>
         </div>
 
@@ -37,16 +46,10 @@ function MaterialHeader({ material }) {
           <h3 className="text-xl font-bold text-gray-800 mb-3">
             Ideas y sugerencias para la clase
           </h3>
-          <p className="text-gray-700 text-base leading-relaxed space-y-4">
-            <span>
-              Etiam condimentum duis molestie malesuada volutpat pellentesque sed.
-              Ornare suspendisse ut ac neque lobortis sed tincidunt. Mi tempus
-              quis massa tellus imperdiet aenean nulla id.
-            </span>
-            <span>
-              Etiam condimentum duis molestie malesuada volutpat pellentesque sed.
-              Ornare suspendisse ut ac neque lobortis sed tincidunt.
-            </span>
+          <p className="text-gray-700 text-base leading-relaxed">
+            Additional notes or suggestions related to this material can be
+            displayed here. This section can also be powered by a field from
+            your admin panel in the future.
           </p>
         </div>
       </div>

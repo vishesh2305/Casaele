@@ -15,25 +15,14 @@ const CardSlider = forwardRef(({ data }, ref) => {
           no-scrollbar
         "
       >
-        {data.map((material, index) => (
+        {data.map((material) => (
           <Link
-            to={`/material-detail/${material.id}`}
-            state={material}
-            key={index}
-            className="
-              snap-start flex-shrink-0
-              w-[200px]       /* Mobile smaller width */
-              sm:w-[220px]    /* Tablet width */
-              md:w-[250px]    /* Small desktop */
-              lg:w-[300px]    /* Large desktop */
-            "
+            to={`/material-detail/${material._id}`}
+            state={{ material: material }} 
+            key={material._id}
+            className="snap-start flex-shrink-0 w-[200px] sm:w-[220px] md:w-[250px] lg:w-[300px]"
           >
-            <Card
-              image={material.image}
-              title={material.title}
-              description={material.description}
-              tags={material.tags}
-            />
+            <Card {...material} />
           </Link>
         ))}
       </div>

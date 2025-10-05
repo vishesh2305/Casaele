@@ -25,7 +25,7 @@ function Filters({
         {/* Categories */}
         <div>
           <ul className="space-y-2">
-            {Object.keys(categoryData).map((category) => (
+            {Object.keys(categoryData || {}).map((category) => (
               <li
                 key={category}
                 onClick={() => {

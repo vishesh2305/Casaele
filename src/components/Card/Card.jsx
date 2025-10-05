@@ -1,13 +1,16 @@
 import React from 'react';
 
-export default function Card({ image, title, description, tags, price, onClick }) {
+export default function Card({fileUrl, image, title, description, tags, price, onClick }) {
+
+  const displayImage = fileUrl || image
+
   return (
     <div
       onClick={onClick}
       className="bg-white rounded-lg shadow-md w-full overflow-hidden"
     >
       <img
-        src={image}
+        src={displayImage || "https://placehold.co/400x300/e5e7eb/4b5563?text=Image"}
         alt={title}
         // className="w-full h-48 object-cover rounded-t-lg"
         className="w-full h-48 sm:h-52 md:h-56 lg:h-60 object-cover rounded-t-lg"
