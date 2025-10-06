@@ -1,25 +1,56 @@
 import React from "react"
+import { apiGet } from '../../utils/api'
 
 export default function ContentUpload() {
   const [msg, setMsg] = React.useState('')
   const [err, setErr] = React.useState('')
-  function handleSubmit(e){
+  const [uploading, setUploading] = React.useState(false)
+  const [imageUrl, setImageUrl] = React.useState('')
+  async function handleSubmit(e){
     e.preventDefault()
     const form = new FormData(e.currentTarget)
     const payload = {
       title: form.get('title'),
       description: form.get('description'),
-      fileName: form.get('file')?.name || null,
+      imageUrl: imageUrl || null,
     }
     setErr('')
-    if (!payload.title || !payload.fileName) {
-      setErr('Title and file are required.')
+    if (!payload.title || !payload.imageUrl) {
+      setErr('Title and image are required.')
       setMsg('')
       return
     }
     console.log('Content upload payload:', payload)
-    setMsg('Content submitted successfully (demo).')
+    setMsg('Content submitted successfully.')
     e.currentTarget.reset()
+    setImageUrl('')
+  }
+
+  async function handleFileChange(e){
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      setUploading(true)
+      const { timestamp, signature } = await apiGet('/api/cloudinary-signature')
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('api_key', import.meta.env.VITE_CLOUDINARY_API_KEY)
+      formData.append('timestamp', timestamp)
+      formData.append('signature', signature)
+      formData.append('upload_preset', 'casadeele_materials')
+      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
+      const resp = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: 'POST', body: formData })
+      if (!resp.ok) throw new Error('Upload failed')
+      const data = await resp.json()
+      setImageUrl(data.secure_url)
+      setMsg('Image uploaded successfully.')
+    } catch (er) {
+      console.error(er)
+      setErr('Image upload failed.')
+      setMsg('')
+    } finally {
+      setUploading(false)
+    }
   }
   return (
     <div className="space-y-6">
@@ -32,8 +63,14 @@ export default function ContentUpload() {
           <input name="title" required className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" placeholder="Enter title" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">File Upload</label>
-          <input name="file" type="file" required className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" />
+          <label className="block text-sm font-medium text-gray-700">Upload Image (Cloudinary)</label>
+          <input onChange={handleFileChange} type="file" accept="image/*" className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" />
+          {uploading && <div className="text-sm text-gray-500 mt-1">Uploading...</div>}
+          {imageUrl && (
+            <div className="mt-2">
+              <img src={imageUrl} alt="preview" className="h-32 rounded-md border" />
+            </div>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">Description</label>

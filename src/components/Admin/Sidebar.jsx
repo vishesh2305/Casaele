@@ -25,8 +25,8 @@ const links = [
 export default function AdminSidebar({ open, onClose }) {
   return (
     <aside className={`fixed z-40 inset-y-0 left-0 w-64 bg-white border-r border-gray-200 shadow-sm transform transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
-      <div className="h-16 flex items-center px-4 font-semibold text-gray-800 border-b">Casa De ELE | Admin Panel</div>
-      <nav className="px-2 py-3 space-y-1">
+      <div className="h-16 flex items-center px-4 font-semibold text-gray-800 border-b sticky top-0 bg-white z-10">Casa De ELE | Admin Panel</div>
+      <nav className="px-2 py-3 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent max-h-[calc(100vh-4rem)]">
         {links.map(link => {
           const Icon = link.icon
           return (
