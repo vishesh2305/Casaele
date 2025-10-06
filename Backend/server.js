@@ -14,6 +14,13 @@ import debugRoutes from './routes/debug.js'
 import cmsRoutes from './routes/cmsRoutes.js'
 import formRoutes from './routes/formRoutes.js'
 import embedRoutes from './routes/embedRoutes.js'
+import pinterestRoutes from './routes/pinterestRoutes.js'
+import orderRoutes from './routes/orderRoutes.js'
+import courseRoutes from './routes/courseRoutes.js'
+import categoryRoutes from './routes/categoryRoutes.js'
+import bannerRoutes from './routes/bannerRoutes.js'
+import couponRoutes from './routes/couponRoutes.js'
+import subscriberRoutes from './routes/subscriberRoutes.js'
 import Razorpay from 'razorpay'
 import Stripe from 'stripe'
 import { v2 as cloudinary } from 'cloudinary';
@@ -173,6 +180,13 @@ app.use('/api/debug', debugRoutes)
 app.use('/api/cms', cmsRoutes)
 app.use('/api/forms', formRoutes)
 app.use('/api/embeds', embedRoutes)
+app.use('/api/pinterest', pinterestRoutes)
+app.use('/api/orders', orderRoutes)
+app.use('/api/courses', courseRoutes)
+app.use('/api/categories', categoryRoutes)
+app.use('/api/banners', bannerRoutes)
+app.use('/api/coupons', couponRoutes)
+app.use('/api/subscribers', subscriberRoutes)
 
 // 404 + Error handlers
 app.use(notFound)
