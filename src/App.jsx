@@ -122,12 +122,14 @@ function AppWrapper() {
 
 function App() {
   return (
-    <Elements stripe={stripePromise}>
-      <Router>
-        <DisableContextMenu />
-        <AppWrapper />
-      </Router>
-    </Elements>
+    <div className="content-protected"> 
+      <Elements stripe={stripePromise}>
+        <Router>
+          <DisableContextMenu />
+          <AppWrapper />
+        </Router>
+      </Elements>
+    </div>
   );
 }
 
