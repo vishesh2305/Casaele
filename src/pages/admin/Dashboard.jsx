@@ -40,6 +40,8 @@ function useDashboardData() {
 
   useEffect(() => {
     fetchDashboardData();
+    const id = setInterval(fetchDashboardData, 15000); // poll every 15s
+    return () => clearInterval(id);
   }, []);
 
   const fetchDashboardData = async () => {
@@ -47,8 +49,9 @@ function useDashboardData() {
       setData(prev => ({ ...prev, loading: true, error: null }));
 
       // Fetch all dashboard data in parallel
-      const [statsRes, ordersRes, productsRes, usersRes] = await Promise.all([
+      const [statsRes, salesRes, ordersRes, productsRes, usersRes] = await Promise.all([
         fetch('/api/dashboard/stats', { headers }).catch(() => ({ ok: false })),
+        fetch('/api/dashboard/sales?months=7', { headers }).catch(() => ({ ok: false })),
         fetch('/api/orders?limit=5', { headers }).catch(() => ({ ok: false })),
         fetch('/api/products?limit=5&sort=sales', { headers }).catch(() => ({ ok: false })),
         fetch('/api/users?limit=5&sort=createdAt', { headers }).catch(() => ({ ok: false }))
@@ -109,16 +112,13 @@ function useDashboardData() {
         ];
       }
 
-      // Mock sales data for charts
-      const salesData = [
-        { name: 'Jan', sales: 12000, orders: 45 },
-        { name: 'Feb', sales: 15000, orders: 52 },
-        { name: 'Mar', sales: 18000, orders: 68 },
-        { name: 'Apr', sales: 14000, orders: 55 },
-        { name: 'May', sales: 22000, orders: 78 },
-        { name: 'Jun', sales: 19000, orders: 65 },
-        { name: 'Jul', sales: 25000, orders: 89 }
-      ];
+      // Sales data
+      let salesData = [];
+      if (salesRes.ok) {
+        salesData = await salesRes.json();
+      } else {
+        salesData = [];
+      }
 
       setData({
         stats,

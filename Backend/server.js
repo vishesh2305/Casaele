@@ -15,6 +15,7 @@ import cmsRoutes from './routes/cmsRoutes.js'
 import formRoutes from './routes/formRoutes.js'
 import embedRoutes from './routes/embedRoutes.js'
 import pinterestRoutes from './routes/pinterestRoutes.js'
+import dashboardRoutes from './routes/dashboardRoutes.js'
 import orderRoutes from './routes/orderRoutes.js'
 import courseRoutes from './routes/courseRoutes.js'
 import categoryRoutes from './routes/categoryRoutes.js'
@@ -181,6 +182,7 @@ app.use('/api/cms', cmsRoutes)
 app.use('/api/forms', formRoutes)
 app.use('/api/embeds', embedRoutes)
 app.use('/api/pinterest', pinterestRoutes)
+app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/courses', courseRoutes)
 app.use('/api/categories', categoryRoutes)
