@@ -47,15 +47,11 @@ function CourseDetail() {
   
 
   const handleAddToCart = (productDataWithSelections) => {
-    // It updates the main 'item' state with the selections
-    setItem(productDataWithSelections);
-    setAdded(true);
+    navigate('/cart-checkout', { state: { item: productDataWithSelections, quantity } });
   };
 
-  const goToCheckout = () => {
-    // Now, when we navigate, the 'item' object correctly contains the selected level and format
-    navigate('/cart-checkout', { state: { item, quantity } });
-  };
+
+
 
   const handleLikeCardClick = (card) => {
     setItem(card);
@@ -84,7 +80,6 @@ function CourseDetail() {
               setQuantity={setQuantity}
               added={added}
               handleAddToCart={handleAddToCart}
-              goToCheckout={goToCheckout}
             />
           </div>
         </section>

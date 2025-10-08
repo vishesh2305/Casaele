@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import QuantitySelector from "./QuantitySelector";
 
-function ProductInfo({ item, quantity, setQuantity, added, handleAddToCart, goToCheckout }) {
+function ProductInfo({ item, quantity, setQuantity, added, handleAddToCart }) {
   const [selectedLevel, setSelectedLevel] = useState(null);
   const [selectedFormat, setSelectedFormat] = useState(null);
 
@@ -93,7 +93,6 @@ function ProductInfo({ item, quantity, setQuantity, added, handleAddToCart, goTo
           decreaseQty={() => setQuantity((q) => (q > 1 ? q - 1 : 1))}
           added={added}
           handleAddToCart={handleAdd}
-          goToCheckout={goToCheckout}
         />
       </div>
     </div>

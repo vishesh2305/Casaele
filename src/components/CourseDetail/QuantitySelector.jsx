@@ -1,7 +1,7 @@
 import React from "react";
 import { FaMinus, FaPlus } from "react-icons/fa";
 
-function QuantitySelector({ quantity, increaseQty, decreaseQty, added, handleAddToCart, goToCheckout }) {
+function QuantitySelector({ quantity, increaseQty, decreaseQty, added, handleAddToCart }) {
   return (
     // Responsive gap: smaller on mobile, larger on desktop
     <div className="flex flex-col md:flex-row items-center gap-3 md:gap-4 w-full">
