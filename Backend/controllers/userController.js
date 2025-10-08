@@ -65,3 +65,30 @@ export async function getFirebaseUsers(req, res) {
 }
 
 
+
+
+
+export async function setFirebaseUserRole(req, res) {
+  try {
+    const { uid, role } = req.body;
+    if (!uid || !role) {
+      return res.status(400).json({ message: 'UID and role are required' });
+    }
+
+    const validRoles = ['admin', 'editor', 'user'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ message: 'Invalid role specified' });
+    }
+
+    initFirebaseAdmin();
+    const auth = getAuth();
+    
+    await auth.setCustomUserClaims(uid, { role: role });
+    
+    return res.json({ message: `Successfully set role of ${role} for user ${uid}` });
+
+  } catch (err) {
+    console.error('setFirebaseUserRole error:', err?.message || err);
+    return res.status(500).json({ message: 'Failed to set user role' });
+  }
+}

@@ -20,7 +20,6 @@ import Forms from "./pages/admin/Forms";
 import Coupons from "./pages/admin/Coupons";
 import Subscribers from "./pages/admin/Subscribers";
 import Messages from "./pages/admin/Messages";
-import Translations from "./pages/admin/Translations";
 import Embeds from "./pages/admin/Embeds";
 import PinterestManager from "./pages/admin/PinterestManager";
 import AdminNotFound from "./pages/admin/NotFound";
@@ -103,7 +102,6 @@ function AppWrapper() {
           <Route path="coupons" element={<Coupons />} />
           <Route path="subscribers" element={<Subscribers />} />
           <Route path="messages" element={<Messages />} />
-          <Route path="translations" element={<Translations />} />
           <Route path="embeds" element={<Embeds />} />
           <Route path="pinterest" element={<PinterestManager />} />
           <Route path="settings" element={<Settings />} />
