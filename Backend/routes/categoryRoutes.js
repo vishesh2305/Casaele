@@ -5,11 +5,11 @@ import { getCategories, getCategoryById, createCategory, updateCategory, deleteC
 const router = express.Router();
 
 router.route('/')
-  .get(verifyFirebaseToken, getCategories)
+  .get(getCategories) // public list
   .post(verifyFirebaseToken, createCategory);
 
 router.route('/:id')
-  .get(verifyFirebaseToken, getCategoryById)
+  .get(getCategoryById) // public detail
   .put(verifyFirebaseToken, updateCategory)
   .delete(verifyFirebaseToken, deleteCategory);
 

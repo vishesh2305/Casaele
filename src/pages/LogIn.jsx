@@ -1,9 +1,78 @@
 import React, { useState } from "react";
 import { FaEye, FaEyeSlash, FaTimes } from "react-icons/fa";
+import { auth, googleProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "../firebase";
+import { db } from "../firebase";
+import { doc, serverTimestamp, setDoc, getDoc } from "firebase/firestore";
 
 function AuthForm({ onClose }) {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
+  const isAdminEmail = (e) => !!e && ADMIN_EMAILS.includes(e.toLowerCase());
+
+  async function ensureUserDoc(user, extra = {}) {
+    const ref = doc(db, "Users", user.uid);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      await setDoc(ref, {
+        uid: user.uid,
+        name: user.displayName || name || "",
+        email: user.email || email,
+        role: "user",
+        createdAt: serverTimestamp(),
+        ...extra,
+      });
+    }
+  }
+
+  async function handleGoogle() {
+    try {
+      setError(""); setLoading(true);
+      const res = await signInWithPopup(auth, googleProvider);
+      try { await ensureUserDoc(res.user, { provider: "google" }); } catch (e) { console.warn('Firestore write skipped:', e?.message || e); }
+      const token = await res.user.getIdToken(); localStorage.setItem('authToken', token);
+      if (isAdminEmail(res.user.email)) {
+        window.location.href = '/admin/dashboard';
+      } else {
+        onClose?.();
+      }
+    } catch (e) {
+      setError(e?.message || "Google sign-in failed");
+    } finally { setLoading(false); }
+  }
+
+  async function handleEmail(e) {
+    e.preventDefault();
+    try {
+      setError(""); setLoading(true);
+      if (isLogin) {
+        const res = await signInWithEmailAndPassword(auth, email, password);
+        const token = await res.user.getIdToken(); localStorage.setItem('authToken', token);
+        try { await ensureUserDoc(res.user, { provider: "password" }); } catch (err) { console.warn('Firestore write skipped:', err?.message || err); }
+        if (isAdminEmail(res.user.email)) {
+          window.location.href = '/admin/dashboard';
+          return;
+        }
+      } else {
+        if (isAdminEmail(email)) {
+          setError('Admins cannot sign up. Please log in via Admin Login.');
+          return;
+        }
+        const res = await createUserWithEmailAndPassword(auth, email, password);
+        if (name) await updateProfile(res.user, { displayName: name });
+        try { await ensureUserDoc(res.user, { provider: "password" }); } catch (err) { console.warn('Firestore write skipped:', err?.message || err); }
+        const token = await res.user.getIdToken(); localStorage.setItem('authToken', token);
+      }
+      onClose?.();
+    } catch (e) {
+      setError(e?.message || 'Authentication failed');
+    } finally { setLoading(false); }
+  }
 
   return (
     <div
@@ -28,7 +97,7 @@ function AuthForm({ onClose }) {
         </h2>
 
         {/* Google Auth */}
-        <button className="w-full flex items-center justify-center gap-2 border border-gray-300 rounded-md py-2 hover:bg-gray-100 transition mb-6 text-sm sm:text-base">
+        <button onClick={handleGoogle} disabled={loading} className="w-full flex items-center justify-center gap-2 border border-gray-300 rounded-md py-2 hover:bg-gray-100 transition mb-6 text-sm sm:text-base disabled:opacity-60">
           <img src="/LogIn/Google__G__logo 1.svg" alt="" />
           <span>{isLogin ? "Login" : "Signup"} with Google</span>
         </button>
@@ -46,6 +115,8 @@ function AuthForm({ onClose }) {
             <input
               type="text"
               placeholder="Name"
+              value={name}
+              onChange={(e)=>setName(e.target.value)}
               className="w-full border-b border-gray-400 focus:outline-none focus:border-red-500 py-2 placeholder-black placeholder:font-normal text-sm sm:text-base"
             />
           </div>
@@ -56,6 +127,8 @@ function AuthForm({ onClose }) {
           <input
             type="email"
             placeholder="Email Address"
+            value={email}
+            onChange={(e)=>setEmail(e.target.value)}
             className="w-full border-b border-gray-400 focus:outline-none focus:border-red-500 py-2 placeholder-black text-sm sm:text-base"
           />
         </div>
@@ -65,6 +138,8 @@ function AuthForm({ onClose }) {
           <input
             type={showPassword ? "text" : "password"}
             placeholder={isLogin ? "Password" : "Create Password"}
+            value={password}
+            onChange={(e)=>setPassword(e.target.value)}
             className="w-full border-b border-gray-400 focus:outline-none focus:border-red-500 py-2 placeholder-black text-sm sm:text-base"
           />
           <div
@@ -76,8 +151,9 @@ function AuthForm({ onClose }) {
         </div>
 
         {/* Submit */}
-        <button className="w-full bg-red-700 text-white py-2 rounded-md font-semibold hover:bg-red-800 transition text-sm sm:text-base mb-4">
-          {isLogin ? "Login" : "Signup"}
+        {error ? <div className="text-sm text-red-600 mb-2">{String(error)}</div> : null}
+        <button onClick={handleEmail} disabled={loading} className="w-full bg-red-700 text-white py-2 rounded-md font-semibold hover:bg-red-800 transition text-sm sm:text-base mb-4 disabled:opacity-60">
+          {loading ? 'Please wait…' : (isLogin ? "Login" : "Signup")}
         </button>
 
         {/* Toggle */}

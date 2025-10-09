@@ -25,6 +25,8 @@ const Courses = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -94,6 +96,7 @@ const Courses = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      setIsSaving(true);
       const token = localStorage.getItem('authToken');
       const url = editingCourse ? `/api/courses/${editingCourse._id}` : '/api/courses';
       const method = editingCourse ? 'PUT' : 'POST';
@@ -108,6 +111,23 @@ const Courses = () => {
       });
 
       if (response.ok) {
+        const data = await response.json().catch(() => ({}));
+        const saved = data.course || data; // controller returns { message, course }
+
+        if (editingCourse) {
+          setCourses(prev => prev.map(c => (c._id === (saved?._id || editingCourse._id) ? { ...c, ...saved } : c)));
+          setSuccessMsg('Course updated successfully');
+        } else {
+          // Prepend new course to feel instant
+          if (saved && saved._id) {
+            setCourses(prev => [saved, ...prev]);
+          } else {
+            // fallback if server didn't echo course
+            fetchCourses();
+          }
+          setSuccessMsg('Course created and launched');
+        }
+
         setShowModal(false);
         setEditingCourse(null);
         setFormData({
@@ -121,10 +141,14 @@ const Courses = () => {
           instructor: 'CasaDeELE Team',
           modules: []
         });
-        fetchCourses();
+
+        // Auto-hide success message
+        setTimeout(() => setSuccessMsg(''), 2500);
       }
     } catch (error) {
       console.error('Error saving course:', error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -156,7 +180,9 @@ const Courses = () => {
         });
 
         if (response.ok) {
-          fetchCourses();
+          setCourses(prev => prev.filter(c => c._id !== courseId));
+          setSuccessMsg('Course deleted');
+          setTimeout(() => setSuccessMsg(''), 2000);
         }
       } catch (error) {
         console.error('Error deleting course:', error);
@@ -185,6 +211,11 @@ const Courses = () => {
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
+        {successMsg ? (
+          <div className="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-800">
+            {successMsg}
+          </div>
+        ) : null}
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
@@ -494,11 +525,11 @@ const Courses = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Thumbnail URL</label>
                   <input
-                    type="url"
+                    type="text"
                     value={formData.thumbnail}
                     onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                    placeholder="https://example.com/image.jpg"
+                    placeholder="https://example.com/image.jpg or data:image/jpeg;base64,..."
                   />
                 </div>
 
@@ -591,10 +622,11 @@ const Courses = () => {
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2"
+                    disabled={isSaving}
+                    className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 disabled:opacity-60"
                   >
-                    <FiSave className="w-4 h-4" />
-                    {editingCourse ? 'Update Course' : 'Create Course'}
+                    <FiSave className={`w-4 h-4 ${isSaving ? 'animate-pulse' : ''}`} />
+                    {isSaving ? 'Saving…' : (editingCourse ? 'Update Course' : 'Create Course')}
                   </button>
                 </div>
               </form>

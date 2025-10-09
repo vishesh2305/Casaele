@@ -14,6 +14,15 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+    provider: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    lastLoginAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

@@ -9,6 +9,8 @@ export default function Products() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ name: '', price: '', description: '', image: '', stock: '' });
   const [uploading, setUploading] = useState(false); // ✅ State for upload progress
+  const [saving, setSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
     apiGet('/api/products')
@@ -74,13 +76,23 @@ export default function Products() {
   function openEdit(item) { setEditing(item); setForm({ name: item.name, price: item.price, description: item.description || '', image: item.image || '', stock: item.stock || 0 }); setModalOpen(true); }
   
   async function saveItem() {
-    const payload = { ...form, price: Number(form.price), stock: Number(form.stock || 0) };
-    const saved = editing
-      ? await apiSend(`/api/products/${editing._id}`, 'PUT', payload)
-      : await apiSend('/api/products', 'POST', payload);
-    if (editing) setRows(rows.map(r => r._id === saved._id ? saved : r));
-    else setRows([saved, ...rows]);
-    setModalOpen(false);
+    try {
+      setErrorMsg('');
+      setSaving(true);
+      const payload = { ...form, price: Number(form.price), stock: Number(form.stock || 0) };
+      const saved = editing
+        ? await apiSend(`/api/products/${editing._id}`, 'PUT', payload)
+        : await apiSend('/api/products', 'POST', payload);
+      if (editing) setRows(rows.map(r => r._id === saved._id ? saved : r));
+      else setRows([saved, ...rows]);
+      setModalOpen(false);
+    } catch (err) {
+      const msg = err?.message || 'Failed to save product';
+      setErrorMsg(msg);
+      alert(msg);
+    } finally {
+      setSaving(false);
+    }
   }
   
   async function removeItem(id) {
@@ -138,6 +150,7 @@ export default function Products() {
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="w-full max-w-lg bg-white rounded-xl shadow p-6 space-y-4">
             <div className="text-lg font-semibold">{editing ? 'Edit product' : 'Add product'}</div>
+            {errorMsg ? <div className="text-sm text-red-600">{errorMsg}</div> : null}
             <div className="grid grid-cols-1 gap-3">
               <label className="block"><span className="text-sm text-gray-700">Name</span><input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" /></label>
               <label className="block"><span className="text-sm text-gray-700">Price</span><input type="number" value={form.price} onChange={e=>setForm({...form,price:e.target.value})} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" /></label>
@@ -158,7 +171,7 @@ export default function Products() {
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={()=>setModalOpen(false)} className="px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200">Cancel</button>
-              <button onClick={saveItem} disabled={uploading} className="px-3 py-1.5 rounded-md bg-red-700 text-white hover:bg-red-800 disabled:opacity-60">{uploading ? "Uploading..." : "Save"}</button>
+              <button onClick={saveItem} disabled={uploading || saving} className="px-3 py-1.5 rounded-md bg-red-700 text-white hover:bg-red-800 disabled:opacity-60">{saving ? 'Saving…' : (uploading ? "Uploading..." : "Save")}</button>
             </div>
           </div>
         </div>

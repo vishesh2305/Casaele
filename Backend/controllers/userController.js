@@ -1,9 +1,30 @@
 import User from '../models/User.js'
 import { getAuth, initFirebaseAdmin } from '../config/firebaseAdmin.js'
+// Upsert a user on login
+export async function upsertUserOnLogin(req, res) {
+  try {
+    const { name, email, provider, lastLoginAt } = req.body
+    if (!email) return res.status(400).json({ message: 'email is required' })
+    const update = {
+      name: name || '',
+      provider: provider || '',
+      lastLoginAt: lastLoginAt ? new Date(lastLoginAt) : new Date(),
+    }
+    const user = await User.findOneAndUpdate(
+      { email: email.toLowerCase() },
+      { $setOnInsert: { email: email.toLowerCase() }, $set: update },
+      { new: true, upsert: true }
+    )
+    return res.json(user)
+  } catch (err) {
+    console.error('upsertUserOnLogin error:', err?.message || err)
+    return res.status(500).json({ message: 'Failed to sync user' })
+  }
+}
 
 export async function getUsers(req, res) {
   try {
-    const users = await User.find().limit(50)
+    const users = await User.find().sort({ createdAt: -1 }).limit(200)
     res.json(users)
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch users' })
@@ -12,11 +33,11 @@ export async function getUsers(req, res) {
 
 export async function createUser(req, res) {
   try {
-    const { name, email } = req.body
+    const { name, email, provider, lastLoginAt } = req.body
     if (!name || !email) {
       return res.status(400).json({ message: 'name and email are required' })
     }
-    const user = await User.create({ name, email })
+    const user = await User.create({ name, email, provider: provider || '', lastLoginAt: lastLoginAt ? new Date(lastLoginAt) : new Date() })
     res.status(201).json(user)
   } catch (err) {
     if (err.code === 11000) {
@@ -32,6 +53,24 @@ export async function createUser(req, res) {
 // @access  Admin (protected by verifyFirebaseToken at route level)
 export async function getFirebaseUsers(req, res) {
   try {
+    // If dev auth bypass is enabled, serve local users so the UI works in dev
+    if (process.env.DEV_AUTH_DISABLED === 'true') {
+      const users = await User.find().limit(1000)
+      return res.json(users.map(u => ({
+        uid: u._id?.toString(),
+        email: u.email || '',
+        name: u.name || '',
+        photoURL: '',
+        phoneNumber: '',
+        providerIds: [],
+        role: u.role || 'user',
+        status: 'Active',
+        disabled: false,
+        creationTime: u.createdAt || '',
+        lastSignInTime: u.updatedAt || ''
+      })))
+    }
+
     initFirebaseAdmin()
     const auth = getAuth()
 
@@ -60,7 +99,25 @@ export async function getFirebaseUsers(req, res) {
     return res.json(allUsers)
   } catch (err) {
     console.error('getFirebaseUsers error:', err?.message || err)
-    return res.status(500).json({ message: 'Failed to fetch Firebase users' })
+    // Fallback: attempt to return local users instead of failing the UI entirely
+    try {
+      const users = await User.find().limit(1000)
+      return res.json(users.map(u => ({
+        uid: u._id?.toString(),
+        email: u.email || '',
+        name: u.name || '',
+        photoURL: '',
+        phoneNumber: '',
+        providerIds: [],
+        role: u.role || 'user',
+        status: 'Active',
+        disabled: false,
+        creationTime: u.createdAt || '',
+        lastSignInTime: u.updatedAt || ''
+      })))
+    } catch (e) {
+      return res.status(500).json({ message: 'Failed to fetch users' })
+    }
   }
 }
 

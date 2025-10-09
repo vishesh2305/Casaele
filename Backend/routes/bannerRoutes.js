@@ -5,11 +5,11 @@ import { getBanners, getBannerById, createBanner, updateBanner, deleteBanner, to
 const router = express.Router();
 
 router.route('/')
-  .get(verifyFirebaseToken, getBanners)
+  .get(getBanners) // public banners
   .post(verifyFirebaseToken, createBanner);
 
 router.route('/:id')
-  .get(verifyFirebaseToken, getBannerById)
+  .get(getBannerById) // public banner by id
   .put(verifyFirebaseToken, updateBanner)
   .delete(verifyFirebaseToken, deleteBanner);
 

@@ -45,7 +45,9 @@ import DisableContextMenu from "./components/Common/DisableContextMenu";
 
 // The Translate import has been removed
 
-const stripePromise = loadStripe(import.meta.env.STRIPEPUBLISHABLEKEY);
+// Guard Stripe initialization: require Vite-prefixed key and avoid crashing if missing
+const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = publishableKey ? loadStripe(publishableKey) : null;
 function AppWrapper() {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
@@ -121,12 +123,19 @@ function AppWrapper() {
 function App() {
   return (
     <div className="content-protected"> 
-      <Elements stripe={stripePromise}>
+      {stripePromise ? (
+        <Elements stripe={stripePromise}>
+          <Router>
+            <DisableContextMenu />
+            <AppWrapper />
+          </Router>
+        </Elements>
+      ) : (
         <Router>
           <DisableContextMenu />
           <AppWrapper />
         </Router>
-      </Elements>
+      )}
     </div>
   );
 }

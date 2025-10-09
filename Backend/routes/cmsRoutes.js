@@ -5,8 +5,8 @@ import { createCmsPage, getCmsPages, getCmsPageById, getCmsPageBySlug, updateCms
 const router = Router()
 
 router.post('/', verifyFirebaseToken, createCmsPage)
-router.get('/', verifyFirebaseToken, getCmsPages)
-router.get('/:id', verifyFirebaseToken, getCmsPageById)
+router.get('/', getCmsPages) // public cms list
+router.get('/:id', getCmsPageById) // public cms by id
 router.put('/:id', verifyFirebaseToken, updateCmsPage)
 router.delete('/:id', verifyFirebaseToken, deleteCmsPage)
 

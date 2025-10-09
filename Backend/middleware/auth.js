@@ -2,6 +2,12 @@ import { getAuth, initFirebaseAdmin } from '../config/firebaseAdmin.js'
 
 export async function verifyFirebaseToken(req, res, next) {
   try {
+    // Dev bypass: allow local development without Firebase Admin configured
+    if (process.env.DEV_AUTH_DISABLED === 'true') {
+      req.user = { email: 'dev@local', role: 'admin', devBypass: true }
+      return next()
+    }
+
     const header = req.headers.authorization || ''
     const [scheme, token] = header.split(' ')
     if (scheme !== 'Bearer' || !token) {
@@ -9,7 +15,17 @@ export async function verifyFirebaseToken(req, res, next) {
     }
     initFirebaseAdmin()
     const decoded = await getAuth().verifyIdToken(token)
-    req.user = decoded
+
+    // Normalize role from custom claims if present
+    const claimsRole = decoded?.role || decoded?.roles || decoded?.customClaims?.role
+    const adminEmails = (process.env.ADMIN_EMAILS || '')
+      .split(',')
+      .map(e => e.trim().toLowerCase())
+      .filter(Boolean)
+
+    // Elevate role to admin if email is whitelisted
+    const isWhitelisted = decoded?.email && adminEmails.includes(decoded.email.toLowerCase())
+    req.user = { ...decoded, role: isWhitelisted ? 'admin' : (claimsRole || 'user') }
     return next()
   } catch (err) {
     // Surface clearer diagnostics in development

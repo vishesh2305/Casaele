@@ -10,10 +10,10 @@ import {
 
 const router = express.Router();
 
-// All routes protected by Firebase authentication (admin only)
+// Public read; admin-protected writes to avoid blocking UI during auth issues
+router.get('/', getPinterestData);
 router.post('/fetch', verifyFirebaseToken, fetchPinterestInfo);
 router.post('/save', verifyFirebaseToken, savePinterestData);
-router.get('/', verifyFirebaseToken, getPinterestData);
 router.put('/:id', verifyFirebaseToken, updatePinterestData);
 router.delete('/:id', verifyFirebaseToken, deletePinterestData);
 

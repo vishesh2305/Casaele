@@ -1,6 +1,9 @@
 import mongoose from 'mongoose'
 import Order from '../models/Order.js'
 import Product from '../models/Product.js'
+import Material from '../models/Material.js'
+import Course from '../models/Course.js'
+import User from '../models/User.js'
 import { getAuth, initFirebaseAdmin } from '../config/firebaseAdmin.js'
 
 // GET /api/dashboard/stats
@@ -20,8 +23,12 @@ export async function getDashboardStats(req, res) {
         nextPageToken = result.pageToken
       } while (nextPageToken)
     } catch (e) {
-      // Fallback gracefully if Firebase not configured
-      totalUsers = 0
+      // Fallback gracefully if Firebase Admin is not configured: use local User collection
+      try {
+        totalUsers = await User.countDocuments({})
+      } catch {
+        totalUsers = 0
+      }
     }
 
     // Orders count and revenue
@@ -33,14 +40,20 @@ export async function getDashboardStats(req, res) {
     ])
     const totalRevenue = revenueAgg?.[0]?.total || 0
 
-    // Products count
-    const productsCount = await Product.countDocuments({})
+    // Counts for collections
+    const [productsCount, materialsCount, coursesCount] = await Promise.all([
+      Product.countDocuments({}),
+      Material.countDocuments({}),
+      Course.countDocuments({}),
+    ])
 
     return res.json({
       users: totalUsers,
       orders: ordersCount,
       revenue: totalRevenue,
       products: productsCount,
+      materials: materialsCount,
+      courses: coursesCount,
     })
   } catch (error) {
     console.error('Dashboard stats error:', error)
@@ -89,6 +102,44 @@ export async function getSalesOverview(req, res) {
   } catch (error) {
     console.error('Dashboard sales error:', error)
     return res.status(500).json({ message: 'Failed to fetch sales overview' })
+  }
+}
+
+// GET /api/dashboard/recent
+// Returns latest 5 activities across key collections
+export async function getRecentActivity(req, res) {
+  try {
+    const [recentOrders, recentProducts, recentMaterials, recentCourses, recentUsers] = await Promise.all([
+      Order.find({}).sort({ createdAt: -1 }).limit(5).lean(),
+      Product.find({}).sort({ createdAt: -1 }).limit(5).lean(),
+      Material.find({}).sort({ createdAt: -1 }).limit(5).lean(),
+      Course.find({}).sort({ createdAt: -1 }).limit(5).lean(),
+      User.find({}).sort({ createdAt: -1 }).limit(5).lean(),
+    ])
+
+    const normalize = (items, type, titleKey = 'title', amountKey) =>
+      items.map(i => ({
+        id: i._id?.toString(),
+        type,
+        title: i[titleKey] || i.name || i.email || type,
+        amount: amountKey ? i[amountKey] : undefined,
+        createdAt: i.createdAt || new Date(),
+      }))
+
+    const combined = [
+      ...normalize(recentCourses, 'course', 'title'),
+      ...normalize(recentMaterials, 'material', 'title'),
+      ...normalize(recentProducts, 'product', 'name'),
+      ...normalize(recentOrders, 'order', 'id', 'amount'),
+      ...normalize(recentUsers, 'user', 'name'),
+    ]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 5)
+
+    return res.json(combined)
+  } catch (error) {
+    console.error('Dashboard recent error:', error)
+    return res.status(500).json({ message: 'Failed to fetch recent activity' })
   }
 }
 

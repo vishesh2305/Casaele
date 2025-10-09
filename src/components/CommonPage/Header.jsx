@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { FaBars, FaTimes } from "react-icons/fa";
 import { IoIosArrowDown } from "react-icons/io"; // Using a common down arrow icon
+import AuthForm from "../../pages/LogIn";
+import { auth, onAuthStateChanged, signOut } from "../../firebase";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -9,6 +11,8 @@ const Header = () => {
   const [selectedLang, setSelectedLang] = useState("Spanish"); // Default to Spanish
   const langDropdownRef = useRef(null);
   const { pathname } = useLocation();
+  const [showAuth, setShowAuth] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   const links = [
     { name: "Material", path: "/material" },
@@ -16,6 +20,7 @@ const Header = () => {
     { name: "Shop", path: "/shop" },
     { name: "About Ele", path: "/about" },
     { name: "Contact Us", path: "/contact" },
+    { name: "Admin Login", path: "/admin/login" },
   ];
 
   // Effect to handle clicks outside the language dropdown
@@ -30,6 +35,14 @@ const Header = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [langDropdownRef]);
+
+  // Track auth state for navbar button
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setCurrentUser(u || null);
+    });
+    return () => unsub();
+  }, []);
 
   const handleLangSelect = (lang) => {
     setSelectedLang(lang);
@@ -97,6 +110,18 @@ const Header = () => {
         ))}
       </nav>
 
+      {/* Auth button / user dropdown */}
+      <div className="hidden md:flex items-center">
+        {!currentUser ? (
+          <button onClick={() => setShowAuth(true)} className="px-3 py-1.5 rounded-md bg-red-700 text-white hover:bg-red-800 text-sm">Login / Signup</button>
+        ) : (
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-700">{currentUser.displayName || currentUser.email}</span>
+            <button onClick={() => signOut(auth)} className="px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 text-sm">Logout</button>
+          </div>
+        )}
+      </div>
+
       {/* Hamburger Button (only for mobile) */}
       <button
         className="md:hidden text-gray-600 text-2xl z-50"
@@ -124,6 +149,8 @@ const Header = () => {
           ))}
         </div>
       )}
+
+      {showAuth && <AuthForm onClose={() => setShowAuth(false)} />}
     </header>
   );
 };

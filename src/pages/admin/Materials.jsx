@@ -8,6 +8,8 @@ export default function Materials() {
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState({ title: '', description: '', content: '', category: '', fileUrl: '', tags: '' })
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
     apiGet('/api/materials')
@@ -58,18 +60,28 @@ export default function Materials() {
   };
 
   const handleSave = async () => {
-    const payload = {
-      ...form,
-      tags: form.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
-    };
-    const saved = editing
-      ? await apiSend(`/api/materials/${editing._id}`, 'PUT', payload)
-      : await apiSend('/api/materials', 'POST', payload);
+    try {
+      setErrorMsg('');
+      setSaving(true);
+      const payload = {
+        ...form,
+        tags: form.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+      };
+      const saved = editing
+        ? await apiSend(`/api/materials/${editing._id}`, 'PUT', payload)
+        : await apiSend('/api/materials', 'POST', payload);
 
-    if (editing) setItems(items.map(x => x._id === saved._id ? saved : x));
-    else setItems([saved, ...items]);
+      if (editing) setItems(items.map(x => x._id === saved._id ? saved : x));
+      else setItems([saved, ...items]);
 
-    setModalOpen(false);
+      setModalOpen(false);
+    } catch (err) {
+      const msg = err?.message || 'Failed to save material';
+      setErrorMsg(msg);
+      alert(msg);
+    } finally {
+      setSaving(false);
+    }
   };
 
 
@@ -129,6 +141,7 @@ export default function Materials() {
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="w-full max-w-lg bg-white rounded-xl shadow p-6 space-y-4">
             <div className="text-lg font-semibold">{editing ? 'Edit material' : 'Add material'}</div>
+            {errorMsg ? <div className="text-sm text-red-600">{errorMsg}</div> : null}
             <div className="grid grid-cols-1 gap-3">
               <label className="block"><span className="text-sm text-gray-700">Title</span><input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" /></label>
               <label className="block"><span className="text-sm text-gray-700">Short Description (for cards)</span><input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" /></label>
@@ -144,7 +157,7 @@ export default function Materials() {
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={() => setModalOpen(false)} className="px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200">Cancel</button>
-              <button onClick={handleSave} disabled={uploading} className="px-3 py-1.5 rounded-md bg-red-700 text-white hover:bg-red-800 disabled:opacity-60">{uploading ? 'Uploading...' : 'Save'}</button>
+              <button onClick={handleSave} disabled={uploading || saving} className="px-3 py-1.5 rounded-md bg-red-700 text-white hover:bg-red-800 disabled:opacity-60">{saving ? 'Saving…' : (uploading ? 'Uploading...' : 'Save')}</button>
             </div>
           </div>
         </div>

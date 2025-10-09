@@ -4,7 +4,7 @@ import { verifyFirebaseToken } from '../middleware/auth.js'
 
 const router = Router()
 
-// Create
+// Create (admin)
 router.post('/', verifyFirebaseToken, async (req, res) => {
   try {
     const { title, content, category, fileUrl } = req.body
@@ -16,20 +16,20 @@ router.post('/', verifyFirebaseToken, async (req, res) => {
   }
 })
 
-// Read all
-router.get('/', verifyFirebaseToken, async (req, res) => {
+// Read all (public)
+router.get('/', async (req, res) => {
   const items = await Material.find().sort({ createdAt: -1 })
   res.json(items)
 })
 
-// Read one
-router.get('/:id', verifyFirebaseToken, async (req, res) => {
+// Read one (public)
+router.get('/:id', async (req, res) => {
   const item = await Material.findById(req.params.id)
   if (!item) return res.status(404).json({ message: 'Not found' })
   res.json(item)
 })
 
-// Update
+// Update (admin)
 router.put('/:id', verifyFirebaseToken, async (req, res) => {
   try {
     const { title, content, category, fileUrl } = req.body
@@ -45,7 +45,7 @@ router.put('/:id', verifyFirebaseToken, async (req, res) => {
   }
 })
 
-// Delete
+// Delete (admin)
 router.delete('/:id', verifyFirebaseToken, async (req, res) => {
   const deleted = await Material.findByIdAndDelete(req.params.id)
   if (!deleted) return res.status(404).json({ message: 'Not found' })

@@ -5,11 +5,11 @@ import { getCoupons, getCouponById, createCoupon, updateCoupon, deleteCoupon, to
 const router = express.Router();
 
 router.route('/')
-  .get(verifyFirebaseToken, getCoupons)
+  .get(getCoupons) // public list (or keep protected if required)
   .post(verifyFirebaseToken, createCoupon);
 
 router.route('/:id')
-  .get(verifyFirebaseToken, getCouponById)
+  .get(getCouponById)
   .put(verifyFirebaseToken, updateCoupon)
   .delete(verifyFirebaseToken, deleteCoupon);
 

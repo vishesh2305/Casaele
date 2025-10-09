@@ -4,6 +4,7 @@ import { getOrders, getOrderById, updateOrder, deleteOrder } from '../controller
 
 const router = express.Router();
 
+// Orders are sensitive; keep protected
 router.route('/')
   .get(verifyFirebaseToken, getOrders);
 

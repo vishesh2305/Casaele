@@ -49,67 +49,39 @@ function useDashboardData() {
       setData(prev => ({ ...prev, loading: true, error: null }));
 
       // Fetch all dashboard data in parallel
-      const [statsRes, salesRes, ordersRes, productsRes, usersRes] = await Promise.all([
+      const [statsRes, salesRes, recentRes, productsRes] = await Promise.all([
         fetch('/api/dashboard/stats', { headers }).catch(() => ({ ok: false })),
         fetch('/api/dashboard/sales?months=7', { headers }).catch(() => ({ ok: false })),
-        fetch('/api/orders?limit=5', { headers }).catch(() => ({ ok: false })),
-        fetch('/api/products?limit=5&sort=sales', { headers }).catch(() => ({ ok: false })),
-        fetch('/api/users?limit=5&sort=createdAt', { headers }).catch(() => ({ ok: false }))
+        fetch('/api/dashboard/recent', { headers }).catch(() => ({ ok: false })),
+        fetch('/api/products?limit=50&sort=createdAt', { headers }).catch(() => ({ ok: false })),
       ]);
 
       // Process stats
-      let stats = { users: 1248, orders: 312, revenue: 12450, products: 87 };
+      let stats = { users: 0, orders: 0, revenue: 0, products: 0, materials: 0, courses: 0 };
       if (statsRes.ok) {
         const statsData = await statsRes.json();
         stats = statsData;
       }
 
-      // Process recent orders
-      let recentOrders = [];
-      if (ordersRes.ok) {
-        const ordersData = await ordersRes.json();
-        recentOrders = ordersData.slice(0, 5);
-      } else {
-        // Mock data for demo
-        recentOrders = [
-          { id: 1, userName: 'Sarah Johnson', amount: 89.99, date: '2024-01-15', status: 'completed' },
-          { id: 2, userName: 'Mike Chen', amount: 45.50, date: '2024-01-14', status: 'pending' },
-          { id: 3, userName: 'Emma Davis', amount: 120.00, date: '2024-01-14', status: 'completed' },
-          { id: 4, userName: 'Alex Rodriguez', amount: 67.25, date: '2024-01-13', status: 'shipped' },
-          { id: 5, userName: 'Lisa Wang', amount: 199.99, date: '2024-01-13', status: 'completed' }
-        ];
+      // Recent activity and projections
+      let recent = [];
+      if (recentRes.ok) {
+        recent = await recentRes.json();
       }
 
-      // Process top products
+      // Top products from real API
       let topProducts = [];
       if (productsRes.ok) {
         const productsData = await productsRes.json();
-        topProducts = productsData.slice(0, 5);
-      } else {
-        // Mock data for demo
-        topProducts = [
-          { id: 1, name: 'Spanish Beginner Course', sales: 45, revenue: 2250 },
-          { id: 2, name: 'Grammar Workbook', sales: 32, revenue: 960 },
-          { id: 3, name: 'Conversation Practice', sales: 28, revenue: 1400 },
-          { id: 4, name: 'Vocabulary Cards', sales: 25, revenue: 500 },
-          { id: 5, name: 'Pronunciation Guide', sales: 20, revenue: 800 }
-        ];
-      }
-
-      // Process recent users
-      let recentUsers = [];
-      if (usersRes.ok) {
-        const usersData = await usersRes.json();
-        recentUsers = usersData.slice(0, 5);
-      } else {
-        // Mock data for demo
-        recentUsers = [
-          { id: 1, name: 'John Smith', email: 'john@example.com', joinDate: '2024-01-15' },
-          { id: 2, name: 'Maria Garcia', email: 'maria@example.com', joinDate: '2024-01-14' },
-          { id: 3, name: 'David Lee', email: 'david@example.com', joinDate: '2024-01-14' },
-          { id: 4, name: 'Anna Brown', email: 'anna@example.com', joinDate: '2024-01-13' },
-          { id: 5, name: 'Tom Wilson', email: 'tom@example.com', joinDate: '2024-01-13' }
-        ];
+        const list = Array.isArray(productsData) ? productsData : (productsData?.products || []);
+        // Sort newest first; map to expected structure for UI
+        const sorted = [...list].sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+        topProducts = sorted.slice(0, 5).map((p, idx) => ({
+          id: p._id || idx,
+          name: p.name || 'Untitled',
+          sales: typeof p.stock === 'number' ? p.stock : 0,
+          revenue: typeof p.price === 'number' ? p.price : 0,
+        }));
       }
 
       // Sales data
@@ -122,9 +94,14 @@ function useDashboardData() {
 
       setData({
         stats,
-        recentOrders,
+        recentOrders: recent.filter(r => r.type === 'order'),
         topProducts,
-        recentUsers,
+        recentUsers: recent.filter(r => r.type === 'user').map(u => ({
+          id: u.id,
+          name: u.title,
+          email: '',
+          joinDate: u.createdAt,
+        })),
         salesData,
         loading: false,
         error: null
