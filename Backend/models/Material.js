@@ -7,6 +7,7 @@ const materialSchema = new mongoose.Schema({
   tags: [{type: String}],
   category: { type: String, default: '' },
   fileUrl: { type: String, default: '' },
+  imageSource: { type: String, enum: ['local', 'pinterest', ''], default: '' },
 }, { timestamps: { createdAt: true, updatedAt: true } })
 
 export default mongoose.models.Material || mongoose.model('Material', materialSchema)

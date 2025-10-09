@@ -1,6 +1,29 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import CouponSection from "./CouponSection";
 
-function CartSection({ cartItem, onRemove, quantity, totalPrice }) {
+function CartSection({ cartItem, onRemove, quantity, totalPrice, onTotalUpdate }) {
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
+
+  const handleCouponApplied = (coupon, discount) => {
+    setAppliedCoupon(coupon);
+    setDiscountAmount(discount);
+    const newTotal = totalPrice - discount;
+    onTotalUpdate?.(newTotal);
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setDiscountAmount(0);
+    onTotalUpdate?.(totalPrice);
+  };
+
+  const finalTotal = totalPrice - discountAmount;
+
+  // Update parent component when total changes
+  useEffect(() => {
+    onTotalUpdate?.(finalTotal);
+  }, [finalTotal, onTotalUpdate]);
   // Note: The 'quantity' prop is available but not used in the target design.
   return (
     <>
@@ -59,19 +82,35 @@ function CartSection({ cartItem, onRemove, quantity, totalPrice }) {
             </div>
           </div>
 
+          {/* Coupon Section */}
+          <CouponSection
+            totalPrice={totalPrice}
+            onCouponApplied={handleCouponApplied}
+            appliedCoupon={appliedCoupon}
+            onRemoveCoupon={handleRemoveCoupon}
+          />
+
           {/* Totals Section - Cleanly styled to follow the card */}
           <div className="space-y-3 text-base mt-8">
             <div className="flex justify-between text-gray-600">
               <span>Subtotal:</span>
               <span>${totalPrice.toFixed(2)}</span>
             </div>
+            
+            {discountAmount > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>Discount ({appliedCoupon?.code}):</span>
+                <span>-${discountAmount.toFixed(2)}</span>
+              </div>
+            )}
+            
             <div className="flex justify-between text-gray-600 border-t border-gray-200 pt-3">
               <span>Shipping:</span>
               <span>Free</span>
             </div>
             <div className="flex justify-between font-semibold text-gray-900 border-t border-gray-200 pt-3">
               <span>Total:</span>
-              <span>${totalPrice.toFixed(2)}</span>
+              <span>${finalTotal.toFixed(2)}</span>
             </div>
           </div>
         </div>

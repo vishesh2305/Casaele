@@ -6,8 +6,11 @@ export default function Materials() {
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
-  const [form, setForm] = useState({ title: '', description: '', content: '', category: '', fileUrl: '', tags: '' })
+  const [form, setForm] = useState({ title: '', description: '', content: '', category: '', fileUrl: '', tags: '', imageSource: '' })
   const [uploading, setUploading] = useState(false);
+  const [imgMode, setImgMode] = useState('local');
+  const [pinUrl, setPinUrl] = useState('');
+  const [pinPreview, setPinPreview] = useState(null);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -50,7 +53,7 @@ export default function Materials() {
 
       const data = await response.json();
 
-      setForm({ ...form, fileUrl: data.secure_url });
+      setForm({ ...form, fileUrl: data.secure_url, imageSource: 'local' });
     } catch (error) {
       console.error('Upload failed', error);
       alert('File upload failed. Please try again.');
@@ -63,6 +66,7 @@ export default function Materials() {
     try {
       setErrorMsg('');
       setSaving(true);
+      if (!form.fileUrl) { setErrorMsg('Please select an image (local or Pinterest).'); setSaving(false); return; }
       const payload = {
         ...form,
         tags: form.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
@@ -149,11 +153,48 @@ export default function Materials() {
               <label className="block"><span className="text-sm text-gray-700">Category</span><input value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" /></label>
               <label className="block"><span className="text-sm text-gray-700">Tags (comma-separated)</span><input value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })} placeholder="e.g., A2, Listening, Culture" className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" /></label>
 
-              <label className="block"><span className="text-sm text-gray-700">File Upload</span>
-                <input type="file" onChange={handleFileChange} className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
-                {uploading && <div className="text-sm text-gray-500 mt-1">Uploading...</div>}
-                {form.fileUrl && !uploading && (<div className="text-sm text-green-600 mt-1">Upload complete. URL saved.</div>)}
-              </label>
+              <div className="block">
+                <span className="text-sm text-gray-700">Image Source</span>
+                <div className="mt-1 flex items-center gap-4 text-sm">
+                  <label className="inline-flex items-center gap-2">
+                    <input type="radio" name="imgMode" checked={imgMode==='local'} onChange={()=>setImgMode('local')} /> Local Upload
+                  </label>
+                  <label className="inline-flex items-center gap-2">
+                    <input type="radio" name="imgMode" checked={imgMode==='pinterest'} onChange={()=>setImgMode('pinterest')} /> Pinterest URL
+                  </label>
+                </div>
+              </div>
+
+              {imgMode==='local' ? (
+                <label className="block"><span className="text-sm text-gray-700">File Upload</span>
+                  <input type="file" onChange={handleFileChange} className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
+                  {uploading && <div className="text-sm text-gray-500 mt-1">Uploading...</div>}
+                  {form.fileUrl && !uploading && (<div className="text-sm text-green-600 mt-1">Upload complete. URL saved.</div>)}
+                </label>
+              ) : (
+                <div className="grid gap-2">
+                  <label className="block"><span className="text-sm text-gray-700">Pinterest Link</span>
+                    <input value={pinUrl} onChange={e=>setPinUrl(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" placeholder="https://www.pinterest..." />
+                  </label>
+                  <div>
+                    <button type="button" onClick={async ()=>{
+                      try {
+                        setUploading(true);
+                        const data = await apiSend('/api/pinterest/fetch','POST',{ url: pinUrl });
+                        setPinPreview(data);
+                        setForm({ ...form, fileUrl: data.image || data.imageUrl || '', imageSource: 'pinterest' });
+                      } catch(e) { alert(e?.message || 'Failed to fetch Pinterest data'); } finally { setUploading(false); }
+                    }} disabled={uploading || !pinUrl} className="px-3 py-1.5 rounded-md bg-gray-900 text-white hover:bg-black disabled:opacity-60">Fetch</button>
+                  </div>
+                </div>
+              )}
+
+              {(form.fileUrl || pinPreview) && (
+                <div className="mt-2 border rounded-lg p-2">
+                  <div className="text-xs text-gray-500 mb-1">Preview</div>
+                  <img src={form.fileUrl || pinPreview?.image} alt="preview" className="max-h-40 object-contain" />
+                </div>
+              )}
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={() => setModalOpen(false)} className="px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200">Cancel</button>

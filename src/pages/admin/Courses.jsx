@@ -32,12 +32,16 @@ const Courses = () => {
     description: '',
     category: '',
     thumbnail: '',
+    imageSource: '',
     price: 0,
     level: 'beginner',
     language: 'Spanish',
     instructor: 'CasaDeELE Team',
     modules: []
   });
+  const [imgMode, setImgMode] = useState('local');
+  const [pinUrl, setPinUrl] = useState('');
+  const [pinPreview, setPinPreview] = useState(null);
 
   const fetchCourses = async () => {
     setLoading(true);
@@ -101,13 +105,14 @@ const Courses = () => {
       const url = editingCourse ? `/api/courses/${editingCourse._id}` : '/api/courses';
       const method = editingCourse ? 'PUT' : 'POST';
 
+      if (!formData.thumbnail) { alert('Please select an image (local or Pinterest).'); setIsSaving(false); return; }
       const response = await fetch(url, {
         method,
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({ ...formData, imageSource: formData.imageSource || (imgMode==='pinterest' ? 'pinterest' : 'local') })
       });
 
       if (response.ok) {
@@ -532,6 +537,42 @@ const Courses = () => {
                     placeholder="https://example.com/image.jpg or data:image/jpeg;base64,..."
                   />
                 </div>
+                <div>
+                  <span className="block text-sm font-medium text-gray-700 mb-2">Image Source</span>
+                  <div className="flex items-center gap-4 text-sm">
+                    <label className="inline-flex items-center gap-2">
+                      <input type="radio" name="imgMode" checked={imgMode==='local'} onChange={()=>setImgMode('local')} /> Local Upload
+                    </label>
+                    <label className="inline-flex items-center gap-2">
+                      <input type="radio" name="imgMode" checked={imgMode==='pinterest'} onChange={()=>setImgMode('pinterest')} /> Pinterest URL
+                    </label>
+                  </div>
+                </div>
+                {imgMode==='pinterest' ? (
+                  <div className="grid gap-2">
+                    <label className="block"><span className="text-sm text-gray-700">Pinterest Link</span>
+                      <input value={pinUrl} onChange={(e)=>setPinUrl(e.target.value)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" placeholder="https://www.pinterest..." />
+                    </label>
+                    <div>
+                      <button type="button" onClick={async ()=>{
+                        try {
+                          const token = localStorage.getItem('authToken');
+                          const res = await fetch('/api/pinterest/fetch', { method:'POST', headers:{ 'Authorization':`Bearer ${token}`, 'Content-Type':'application/json' }, body: JSON.stringify({ url: pinUrl }) });
+                          if (!res.ok) throw new Error(await res.text());
+                          const data = await res.json();
+                          setPinPreview(data);
+                          setFormData(prev => ({ ...prev, thumbnail: data.image || data.imageUrl || '', imageSource: 'pinterest' }));
+                        } catch(e) { alert(e?.message || 'Failed to fetch Pinterest data'); }
+                      }} disabled={!pinUrl} className="px-3 py-1.5 rounded-md bg-gray-900 text-white hover:bg-black disabled:opacity-60">Fetch</button>
+                    </div>
+                  </div>
+                ) : null}
+                {formData.thumbnail && (
+                  <div className="mt-2 border rounded-lg p-2">
+                    <div className="text-xs text-gray-500 mb-1">Preview</div>
+                    <img src={formData.thumbnail} alt="preview" className="max-h-40 object-contain" />
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Instructor</label>

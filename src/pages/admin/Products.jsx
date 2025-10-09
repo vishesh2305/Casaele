@@ -7,7 +7,10 @@ export default function Products() {
   const [sortBy, setSortBy] = useState({ key: 'name', dir: 'asc' });
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ name: '', price: '', description: '', image: '', stock: '' });
+  const [form, setForm] = useState({ name: '', price: '', description: '', image: '', stock: '', imageSource: '' });
+  const [imgMode, setImgMode] = useState('local'); // 'local' | 'pinterest'
+  const [pinUrl, setPinUrl] = useState('');
+  const [pinPreview, setPinPreview] = useState(null);
   const [uploading, setUploading] = useState(false); // ✅ State for upload progress
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -46,7 +49,7 @@ export default function Products() {
       }
 
       const data = await response.json();
-      setForm({ ...form, image: data.secure_url }); // Update the 'image' field with the Cloudinary URL
+      setForm({ ...form, image: data.secure_url, imageSource: 'local' });
 
     } catch (error) {
       console.error('Upload failed:', error);
@@ -55,6 +58,20 @@ export default function Products() {
       setUploading(false);
     }
   };
+
+  async function fetchPinterest() {
+    try {
+      setUploading(true);
+      const res = await apiSend('/api/pinterest/fetch', 'POST', { url: pinUrl });
+      // expect res to include title and image url
+      setPinPreview(res);
+      setForm({ ...form, image: res.image || res.imageUrl || '', imageSource: 'pinterest' });
+    } catch (e) {
+      alert(e?.message || 'Failed to fetch Pinterest data');
+    } finally {
+      setUploading(false);
+    }
+  }
 
   const sorted = useMemo(() => {
     const list = [...rows];
@@ -79,7 +96,8 @@ export default function Products() {
     try {
       setErrorMsg('');
       setSaving(true);
-      const payload = { ...form, price: Number(form.price), stock: Number(form.stock || 0) };
+      if (!form.image) { setErrorMsg('Please select an image (local or Pinterest).'); setSaving(false); return; }
+      const payload = { ...form, price: Number(form.price), stock: Number(form.stock || 0), imageSource: form.imageSource || (imgMode === 'pinterest' ? 'pinterest' : 'local') };
       const saved = editing
         ? await apiSend(`/api/products/${editing._id}`, 'PUT', payload)
         : await apiSend('/api/products', 'POST', payload);
@@ -156,16 +174,42 @@ export default function Products() {
               <label className="block"><span className="text-sm text-gray-700">Price</span><input type="number" value={form.price} onChange={e=>setForm({...form,price:e.target.value})} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" /></label>
               <label className="block"><span className="text-sm text-gray-700">Description</span><textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" /></label>
               
-              {/* ✅ NEW: File upload input */}
-              <label className="block"><span className="text-sm text-gray-700">Upload Image</span>
-                <input type="file" onChange={handleFileChange} className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"/>
-                {uploading && <div className="text-sm text-gray-500 mt-1">Uploading...</div>}
-              </label>
+              {/* Image source toggle */}
+              <div className="block">
+                <span className="text-sm text-gray-700">Image Source</span>
+                <div className="mt-1 flex items-center gap-4 text-sm">
+                  <label className="inline-flex items-center gap-2">
+                    <input type="radio" name="imgMode" checked={imgMode==='local'} onChange={()=>setImgMode('local')} /> Local Upload
+                  </label>
+                  <label className="inline-flex items-center gap-2">
+                    <input type="radio" name="imgMode" checked={imgMode==='pinterest'} onChange={()=>setImgMode('pinterest')} /> Pinterest URL
+                  </label>
+                </div>
+              </div>
 
-              {/* ✅ MODIFIED: Image URL input now shows the result of the upload */}
-              <label className="block"><span className="text-sm text-gray-700">Or paste Image URL</span>
-                <input value={form.image} onChange={e=>setForm({...form,image:e.target.value})} disabled={uploading} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" />
-              </label>
+              {imgMode==='local' ? (
+                <label className="block"><span className="text-sm text-gray-700">Upload Image</span>
+                  <input type="file" onChange={handleFileChange} className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"/>
+                  {uploading && <div className="text-sm text-gray-500 mt-1">Uploading...</div>}
+                </label>
+              ) : (
+                <div className="grid gap-2">
+                  <label className="block"><span className="text-sm text-gray-700">Pinterest Link</span>
+                    <input value={pinUrl} onChange={e=>setPinUrl(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" placeholder="https://www.pinterest..." />
+                  </label>
+                  <div>
+                    <button type="button" onClick={fetchPinterest} disabled={uploading || !pinUrl} className="px-3 py-1.5 rounded-md bg-gray-900 text-white hover:bg-black disabled:opacity-60">Fetch</button>
+                  </div>
+                </div>
+              )}
+
+              {/* Preview */}
+              {(form.image || pinPreview) && (
+                <div className="mt-2 border rounded-lg p-2">
+                  <div className="text-xs text-gray-500 mb-1">Preview</div>
+                  <img src={form.image || pinPreview?.image} alt="preview" className="max-h-40 object-contain" />
+                </div>
+              )}
 
               <label className="block"><span className="text-sm text-gray-700">Stock</span><input type="number" value={form.stock} onChange={e=>setForm({...form,stock:e.target.value})} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" /></label>
             </div>

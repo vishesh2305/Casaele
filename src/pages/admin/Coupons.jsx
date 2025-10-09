@@ -27,12 +27,10 @@ const Coupons = () => {
   const [editingCoupon, setEditingCoupon] = useState(null);
   const [formData, setFormData] = useState({
     code: '',
-    discountPercentage: 0,
-    discountAmount: 0,
-    minOrderAmount: 0,
-    maxDiscountAmount: 0,
-    validFrom: '',
-    validTo: '',
+    discountType: 'percentage',
+    discountValue: 0,
+    minPurchase: 0,
+    expiryDate: '',
     usageLimit: 1,
     description: ''
   });
@@ -92,12 +90,10 @@ const Coupons = () => {
         setEditingCoupon(null);
         setFormData({
           code: '',
-          discountPercentage: 0,
-          discountAmount: 0,
-          minOrderAmount: 0,
-          maxDiscountAmount: 0,
-          validFrom: '',
-          validTo: '',
+          discountType: 'percentage',
+          discountValue: 0,
+          minPurchase: 0,
+          expiryDate: '',
           usageLimit: 1,
           description: ''
         });
@@ -116,12 +112,10 @@ const Coupons = () => {
     setEditingCoupon(coupon);
     setFormData({
       code: coupon.code,
-      discountPercentage: coupon.discountPercentage || 0,
-      discountAmount: coupon.discountAmount || 0,
-      minOrderAmount: coupon.minOrderAmount || 0,
-      maxDiscountAmount: coupon.maxDiscountAmount || 0,
-      validFrom: coupon.validFrom ? new Date(coupon.validFrom).toISOString().split('T')[0] : '',
-      validTo: coupon.validTo ? new Date(coupon.validTo).toISOString().split('T')[0] : '',
+      discountType: coupon.discountType || 'percentage',
+      discountValue: coupon.discountValue || 0,
+      minPurchase: coupon.minPurchase || 0,
+      expiryDate: coupon.expiryDate ? new Date(coupon.expiryDate).toISOString().split('T')[0] : '',
       usageLimit: coupon.usageLimit || 1,
       description: coupon.description || ''
     });
@@ -170,20 +164,19 @@ const Coupons = () => {
     }
   };
 
-  const isExpired = (validTo) => {
-    return new Date() > new Date(validTo);
+  const isExpired = (expiryDate) => {
+    return new Date() > new Date(expiryDate);
   };
 
   const isActive = (coupon) => {
     const now = new Date();
     return coupon.isActive && 
-           now >= new Date(coupon.validFrom) && 
-           now <= new Date(coupon.validTo) && 
+           now <= new Date(coupon.expiryDate) && 
            coupon.usedCount < coupon.usageLimit;
   };
 
   const getStatusIcon = (coupon) => {
-    if (isExpired(coupon.validTo)) {
+    if (isExpired(coupon.expiryDate)) {
       return <FiXCircle className="w-4 h-4 text-red-500" />;
     }
     if (isActive(coupon)) {
@@ -193,13 +186,13 @@ const Coupons = () => {
   };
 
   const getStatusText = (coupon) => {
-    if (isExpired(coupon.validTo)) return 'Expired';
+    if (isExpired(coupon.expiryDate)) return 'Expired';
     if (isActive(coupon)) return 'Active';
     return 'Inactive';
   };
 
   const getStatusColor = (coupon) => {
-    if (isExpired(coupon.validTo)) return 'bg-red-100 text-red-800';
+    if (isExpired(coupon.expiryDate)) return 'bg-red-100 text-red-800';
     if (isActive(coupon)) return 'bg-green-100 text-green-800';
     return 'bg-yellow-100 text-yellow-800';
   };
@@ -219,12 +212,10 @@ const Coupons = () => {
                 setEditingCoupon(null);
                 setFormData({
                   code: '',
-                  discountPercentage: 0,
-                  discountAmount: 0,
-                  minOrderAmount: 0,
-                  maxDiscountAmount: 0,
-                  validFrom: '',
-                  validTo: '',
+                  discountType: 'percentage',
+                  discountValue: 0,
+                  minPurchase: 0,
+                  expiryDate: '',
                   usageLimit: 1,
                   description: ''
                 });
@@ -269,7 +260,7 @@ const Coupons = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">Expired Coupons</p>
                 <p className="text-2xl font-bold text-red-600">
-                  {coupons.filter(c => isExpired(c.validTo)).length}
+                  {coupons.filter(c => isExpired(c.expiryDate)).length}
                 </p>
               </div>
               <div className="p-3 bg-red-100 rounded-lg">
@@ -367,29 +358,31 @@ const Coupons = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
-                            {coupon.discountPercentage > 0 ? (
+                            {coupon.discountType === 'percentage' ? (
                               <span className="flex items-center gap-1">
                                 <FiPercent className="w-4 h-4" />
-                                {coupon.discountPercentage}%
+                                {coupon.discountValue}%
                               </span>
                             ) : (
                               <span className="flex items-center gap-1">
                                 <FiDollarSign className="w-4 h-4" />
-                                ₹{coupon.discountAmount}
+                                ₹{coupon.discountValue}
                               </span>
                             )}
                           </div>
-                          {coupon.minOrderAmount > 0 && (
-                            <div className="text-xs text-gray-500">Min: ₹{coupon.minOrderAmount}</div>
+                          {coupon.minPurchase > 0 && (
+                            <div className="text-xs text-gray-500">Min: ₹{coupon.minPurchase}</div>
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
                             <div className="flex items-center gap-1">
                               <FiClock className="w-4 h-4" />
-                              {new Date(coupon.validFrom).toLocaleDateString()}
+                              {new Date(coupon.expiryDate).toLocaleDateString()}
                             </div>
-                            <div className="text-xs text-gray-500">to {new Date(coupon.validTo).toLocaleDateString()}</div>
+                            <div className="text-xs text-gray-500">
+                              {isExpired(coupon.expiryDate) ? 'Expired' : 'Valid'}
+                            </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -552,72 +545,54 @@ const Coupons = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Discount Percentage (%)</label>
-                    <input
-                      type="number"
-                      value={formData.discountPercentage}
-                      onChange={(e) => setFormData({ ...formData, discountPercentage: parseFloat(e.target.value) || 0 })}
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Discount Type *</label>
+                    <select
+                      value={formData.discountType}
+                      onChange={(e) => setFormData({ ...formData, discountType: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                      min="0"
-                      max="100"
-                    />
+                      required
+                    >
+                      <option value="percentage">Percentage (%)</option>
+                      <option value="flat">Fixed Amount (₹)</option>
+                    </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Fixed Discount Amount (₹)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {formData.discountType === 'percentage' ? 'Discount Percentage (%)' : 'Discount Amount (₹)'} *
+                    </label>
                     <input
                       type="number"
-                      value={formData.discountAmount}
-                      onChange={(e) => setFormData({ ...formData, discountAmount: parseFloat(e.target.value) || 0 })}
+                      value={formData.discountValue}
+                      onChange={(e) => setFormData({ ...formData, discountValue: parseFloat(e.target.value) || 0 })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                       min="0"
+                      max={formData.discountType === 'percentage' ? 100 : undefined}
+                      required
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Order Amount (₹)</label>
-                    <input
-                      type="number"
-                      value={formData.minOrderAmount}
-                      onChange={(e) => setFormData({ ...formData, minOrderAmount: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                      min="0"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Maximum Discount Amount (₹)</label>
-                    <input
-                      type="number"
-                      value={formData.maxDiscountAmount}
-                      onChange={(e) => setFormData({ ...formData, maxDiscountAmount: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                      min="0"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Purchase Amount (₹)</label>
+                  <input
+                    type="number"
+                    value={formData.minPurchase}
+                    onChange={(e) => setFormData({ ...formData, minPurchase: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    min="0"
+                    placeholder="0 for no minimum"
+                  />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Valid From *</label>
-                    <input
-                      type="date"
-                      value={formData.validFrom}
-                      onChange={(e) => setFormData({ ...formData, validFrom: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Valid To *</label>
-                    <input
-                      type="date"
-                      value={formData.validTo}
-                      onChange={(e) => setFormData({ ...formData, validTo: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Expiry Date *</label>
+                  <input
+                    type="date"
+                    value={formData.expiryDate}
+                    onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    required
+                  />
                 </div>
 
                 <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">

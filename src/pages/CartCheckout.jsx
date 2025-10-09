@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import BillingDetails from '../components/CartCheckout/BillingDetails';
 import CartSection from '../components/CartCheckout/CartSection';
@@ -9,16 +9,21 @@ function CartCheckout() {
   const { item: initialItem, quantity: initialQty } = location.state || {};
   const [cartItem, setCartItem] = useState(initialItem);
   const [quantity, setQuantity] = useState(initialQty || 1);
-
+  const [finalTotal, setFinalTotal] = useState(0);
 
   const totalPrice = cartItem ? cartItem.price * quantity : 0;
+
+  // Update final total when cart item or quantity changes
+  useEffect(() => {
+    setFinalTotal(totalPrice);
+  }, [totalPrice]);
 
   const handlePlaceOrderRazorpay = async () => {
     const response = await fetch('http://localhost:5000/create-razorpay-order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        amount: totalPrice * 100,
+        amount: finalTotal * 100,
         currency: 'INR',
       }),
     });
@@ -73,6 +78,7 @@ function CartCheckout() {
           onRemove={handleRemove}
           quantity={quantity}
           totalPrice={totalPrice}
+          onTotalUpdate={setFinalTotal}
         />
 
 
