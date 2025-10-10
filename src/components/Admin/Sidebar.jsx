@@ -14,6 +14,7 @@ const links = [
   { to: '/admin/cms', label: 'CMS Pages', icon: FiFileText },
   { to: '/admin/forms', label: 'Forms', icon: FiMail },
   { to: '/admin/coupons', label: 'Coupons', icon: FiTag },
+  { to: '/admin/manage-admins', label: 'Manage Admins', icon: FiUsers },
   { to: '/admin/subscribers', label: 'Subscribers', icon: FiMail },
   { to: '/admin/messages', label: 'Messages', icon: FiMail },
   { to: '/admin/embeds', label: 'AI / H5P Manager', icon: FiCpu },

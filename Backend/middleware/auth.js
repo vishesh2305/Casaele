@@ -44,3 +44,42 @@ export function verifyAdmin(req, res, next) {
   }
   return res.status(403).json({ message: 'Forbidden: requires admin privileges' });
 }
+
+// Middleware to check if user is verified admin (for admin panel access)
+export async function verifyVerifiedAdmin(req, res, next) {
+  try {
+    // First verify Firebase token
+    await verifyFirebaseToken(req, res, () => {});
+
+    // Check if user is super admin (bypass verification check)
+    const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
+    if (req.user.email === superAdminEmail) {
+      req.user.isSuperAdmin = true;
+      return next();
+    }
+
+    // For regular admins, check if they exist and are verified
+    const Admin = (await import('../models/Admin.js')).default;
+    const admin = await Admin.findOne({ 
+      email: req.user.email, 
+      verified: true 
+    });
+
+    if (!admin) {
+      return res.status(403).json({ 
+        success: false,
+        message: 'Access denied. Admin verification required. Please contact the main administrator.' 
+      });
+    }
+
+    req.user.adminRole = admin.role;
+    next();
+
+  } catch (error) {
+    console.error('Verified admin verification error:', error);
+    res.status(401).json({ 
+      success: false,
+      message: 'Authentication failed' 
+    });
+  }
+}

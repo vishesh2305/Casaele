@@ -22,6 +22,7 @@ import categoryRoutes from './routes/categoryRoutes.js'
 import bannerRoutes from './routes/bannerRoutes.js'
 import couponRoutes from './routes/couponRoutes.js'
 import subscriberRoutes from './routes/subscriberRoutes.js'
+import adminRoutes from './routes/adminRoutes.js'
 import Razorpay from 'razorpay'
 import Stripe from 'stripe'
 import { v2 as cloudinary } from 'cloudinary';
@@ -189,6 +190,7 @@ app.use('/api/categories', categoryRoutes)
 app.use('/api/banners', bannerRoutes)
 app.use('/api/coupons', couponRoutes)
 app.use('/api/subscribers', subscriberRoutes)
+app.use('/api/admins', adminRoutes)
 
 // 404 + Error handlers
 app.use(notFound)
