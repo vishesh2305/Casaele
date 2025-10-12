@@ -10,6 +10,7 @@ dist-ssr
 .env
 Backend/.env
 
+
 # Logs
 logs
 *.log
@@ -27,3 +28,6 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+Backend/config/serviceAccountKey.json:1
+Backend/creds/casadeele-f2308-firebase-adminsdk-fbsvc-90554f2f1b.json
