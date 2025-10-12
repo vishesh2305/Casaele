@@ -1,19 +1,60 @@
-import { Navigate, Outlet, useLocation } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import Spinner from '../Common/Spinner'; // We'll show a spinner during verification
 
 export default function RequireAuth() {
-  const location = useLocation()
-  const [ready, setReady] = useState(false)
-  const [hasToken, setHasToken] = useState(false)
+  const location = useLocation();
+  const [authStatus, setAuthStatus] = useState('loading'); // 'loading', 'authorized', 'unauthorized'
 
   useEffect(() => {
-    setHasToken(!!localStorage.getItem('authToken'))
-    setReady(true)
-  }, [location.pathname])
+    const verifyUser = async () => {
+      const token = localStorage.getItem('authToken');
 
-  if (!ready) return null
-  if (!hasToken) return <Navigate to="/admin/login" replace />
-  return <Outlet />
+      // If no token, they are unauthorized.
+      if (!token) {
+        setAuthStatus('unauthorized');
+        return;
+      }
+
+      // If there's a token, verify it with the backend.
+      try {
+        const response = await fetch('/api/admins/check-status', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          setAuthStatus('authorized'); // Backend confirms they are a verified admin
+        } else {
+          // Token is invalid or user is not an admin
+          localStorage.removeItem('authToken'); // Clean up bad token
+          setAuthStatus('unauthorized');
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error);
+        localStorage.removeItem('authToken');
+        setAuthStatus('unauthorized');
+      }
+    };
+
+    verifyUser();
+  }, [location.pathname]); // Re-verify on route change
+
+  // Show a loading state while we check the user's status
+  if (authStatus === 'loading') {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Spinner className="text-red-700" />
+      </div>
+    );
+  }
+
+  // If authorized, show the admin content.
+  if (authStatus === 'authorized') {
+    return <Outlet />;
+  }
+
+  // If unauthorized, redirect to the admin login page.
+  return <Navigate to="/admin/login" replace />;
 }
-
-

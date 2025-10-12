@@ -9,7 +9,6 @@ import UsersPage from "./pages/admin/Users";
 import ContentUpload from "./pages/admin/ContentUpload";
 import Products from "./pages/admin/Products";
 import Orders from "./pages/admin/Orders";
-import Settings from "./pages/admin/Settings";
 import Materials from "./pages/admin/Materials";
 import Courses from "./pages/admin/Courses";
 import Categories from "./pages/admin/Categories";
@@ -108,7 +107,6 @@ function AppWrapper() {
           <Route path="messages" element={<Messages />} />
           <Route path="embeds" element={<Embeds />} />
           <Route path="pinterest" element={<PinterestManager />} />
-          <Route path="settings" element={<Settings />} />
           <Route path="*" element={<AdminNotFound />} />
           </Route>
         </Route>

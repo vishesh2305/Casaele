@@ -158,3 +158,36 @@ export async function deleteAdmin(req, res) {
     });
   }
 }
+
+
+export async function promoteToAdmin(req, res) {
+  try {
+    const { email } = req.body;
+    const createdBy = req.user.uid;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required.' });
+    }
+
+    // Check if they are already an admin
+    const existingAdmin = await Admin.findOne({ email: email.toLowerCase() });
+    if (existingAdmin) {
+      return res.status(400).json({ success: false, message: 'This user is already an admin.' });
+    }
+
+    // Create the new admin record
+    const newAdmin = new Admin({
+      email: email.toLowerCase(),
+      createdBy: createdBy,
+      role: 'admin',
+      verified: true // Automatically verified by super admin
+    });
+    await newAdmin.save();
+
+    res.status(201).json({ success: true, message: `User ${email} has been promoted to admin.` });
+
+  } catch (error) {
+    console.error('Error promoting admin:', error);
+    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+  }
+}

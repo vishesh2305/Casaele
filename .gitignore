@@ -31,3 +31,4 @@ pnpm-debug.log*
 
 Backend/config/serviceAccountKey.json
 Backend/creds/casadeele-f2308-firebase-adminsdk-fbsvc-90554f2f1b.json
+.vercel

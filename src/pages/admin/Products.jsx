@@ -8,10 +8,10 @@ export default function Products() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ name: '', price: '', description: '', image: '', stock: '', imageSource: '' });
-  const [imgMode, setImgMode] = useState('local'); // 'local' | 'pinterest'
+  const [imgMode, setImgMode] = useState('local'); 
   const [pinUrl, setPinUrl] = useState('');
   const [pinPreview, setPinPreview] = useState(null);
-  const [uploading, setUploading] = useState(false); // ✅ State for upload progress
+  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -22,7 +22,6 @@ export default function Products() {
       .finally(() => setLoading(false));
   }, []);
 
-  // ✅ COPIED & ADAPTED: Cloudinary upload logic from Materials.jsx
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -35,7 +34,7 @@ export default function Products() {
       formData.append('api_key', import.meta.env.VITE_CLOUDINARY_API_KEY);
       formData.append('timestamp', timestamp);
       formData.append('signature', signature);
-      formData.append('upload_preset', 'casadeele_materials'); // Use the same preset for consistency
+      formData.append('upload_preset', 'casadeele_materials');
 
       const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
       const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
@@ -63,7 +62,6 @@ export default function Products() {
     try {
       setUploading(true);
       const res = await apiSend('/api/pinterest/fetch', 'POST', { url: pinUrl });
-      // expect res to include title and image url
       setPinPreview(res);
       setForm({ ...form, image: res.image || res.imageUrl || '', imageSource: 'pinterest' });
     } catch (e) {
@@ -126,54 +124,80 @@ export default function Products() {
           <div className="text-sm text-gray-600">Manage your products</div>
           <button onClick={openCreate} className="px-3 py-1.5 rounded-md bg-red-700 text-white hover:bg-red-800">Add Product</button>
         </div>
-        {/* Table remains the same */}
+
         <div className="overflow-x-auto max-w-full">
-        <table className="min-w-full text-left">
-          <thead className="bg-gray-50 text-gray-600 text-sm sticky top-0 z-10">
-            <tr>
-              <th className="px-4 py-3 cursor-pointer" onClick={()=>setSort('name')}>Product Name</th>
-              <th className="px-4 py-3 cursor-pointer" onClick={()=>setSort('price')}>Price</th>
-              <th className="px-4 py-3 cursor-pointer" onClick={()=>setSort('stock')}>Stock</th>
-              <th className="px-4 py-3 cursor-pointer" onClick={()=>setSort('category')}>Category</th>
-              <th className="px-4 py-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {loading ? Array.from({length:5}).map((_,i)=>(
-              <tr key={i}>
-                <td className="px-4 py-3"><div className="h-4 w-40 bg-gray-100 animate-pulse rounded" /></td>
-                <td className="px-4 py-3"><div className="h-4 w-20 bg-gray-100 animate-pulse rounded" /></td>
-                <td className="px-4 py-3"><div className="h-4 w-16 bg-gray-100 animate-pulse rounded" /></td>
-                <td className="px-4 py-3"><div className="h-4 w-24 bg-gray-100 animate-pulse rounded" /></td>
-                <td className="px-4 py-3"><div className="h-8 w-24 bg-gray-100 animate-pulse rounded" /></td>
+          <table className="min-w-full text-left">
+            <thead className="bg-gray-50 text-gray-600 text-sm sticky top-0 z-10">
+              <tr>
+                <th className="px-4 py-3 cursor-pointer" onClick={()=>setSort('name')}>Product Name</th>
+                <th className="px-4 py-3 cursor-pointer" onClick={()=>setSort('price')}>Price</th>
+                <th className="px-4 py-3 cursor-pointer" onClick={()=>setSort('stock')}>Stock</th>
+                <th className="px-4 py-3 cursor-pointer" onClick={()=>setSort('category')}>Category</th>
+                <th className="px-4 py-3">Actions</th>
               </tr>
-            )) : sorted.map((r, i) => (
-              <tr key={i} className="hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium text-gray-800">{r.name}</td>
-                <td className="px-4 py-3 text-gray-700">{typeof r.price === 'number' ? `$${r.price.toFixed(2)}` : r.price}</td>
-                <td className="px-4 py-3 text-gray-700">{r.stock}</td>
-                <td className="px-4 py-3 text-gray-700">{r.category}</td>
-                <td className="px-4 py-3 space-x-2">
-                  <button onClick={()=>openEdit(r)} className="px-3 py-1 rounded bg-red-50 text-red-700 hover:bg-red-100 transition">Edit</button>
-                  <button onClick={()=>removeItem(r._id)} className="px-3 py-1 rounded bg-gray-100 text-gray-800 hover:bg-gray-200 transition">Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {loading ? Array.from({length:5}).map((_,i)=>( /* shimmer loading */
+                <tr key={i}>
+                  <td className="px-4 py-3"><div className="h-4 w-40 bg-gray-100 animate-pulse rounded" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-20 bg-gray-100 animate-pulse rounded" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-16 bg-gray-100 animate-pulse rounded" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-24 bg-gray-100 animate-pulse rounded" /></td>
+                  <td className="px-4 py-3"><div className="h-8 w-24 bg-gray-100 animate-pulse rounded" /></td>
+                </tr>
+              )) : sorted.map((r, i) => (
+                <tr key={i} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium text-gray-800">{r.name}</td>
+                  <td className="px-4 py-3 text-gray-700">{typeof r.price === 'number' ? `$${r.price.toFixed(2)}` : r.price}</td>
+                  <td className="px-4 py-3 text-gray-700">{r.stock}</td>
+                  <td className="px-4 py-3 text-gray-700">{r.category}</td>
+                  <td className="px-4 py-3 space-x-2">
+                    <button onClick={()=>openEdit(r)} className="px-3 py-1 rounded bg-red-50 text-red-700 hover:bg-red-100 transition">Edit</button>
+                    <button onClick={()=>removeItem(r._id)} className="px-3 py-1 rounded bg-gray-100 text-gray-800 hover:bg-gray-200 transition">Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
       {modalOpen && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-white rounded-xl shadow p-6 space-y-4">
+          <div className="w-full max-w-lg bg-white rounded-xl shadow-lg border border-gray-100 p-6 space-y-4">
             <div className="text-lg font-semibold">{editing ? 'Edit product' : 'Add product'}</div>
             {errorMsg ? <div className="text-sm text-red-600">{errorMsg}</div> : null}
+
             <div className="grid grid-cols-1 gap-3">
-              <label className="block"><span className="text-sm text-gray-700">Name</span><input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" /></label>
-              <label className="block"><span className="text-sm text-gray-700">Price</span><input type="number" value={form.price} onChange={e=>setForm({...form,price:e.target.value})} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" /></label>
-              <label className="block"><span className="text-sm text-gray-700">Description</span><textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" /></label>
-              
+              <label className="block">
+                <span className="text-sm text-gray-700">Name</span>
+                <input 
+                  value={form.name} 
+                  onChange={e=>setForm({...form,name:e.target.value})}
+                  className="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 focus:bg-white focus:border-red-600 focus:ring-2 focus:ring-red-100 shadow-sm transition" 
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-sm text-gray-700">Price</span>
+                <input 
+                  type="number" 
+                  value={form.price} 
+                  onChange={e=>setForm({...form,price:e.target.value})}
+                  className="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 focus:bg-white focus:border-red-600 focus:ring-2 focus:ring-red-100 shadow-sm transition" 
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-sm text-gray-700">Description</span>
+                <textarea 
+                  value={form.description} 
+                  onChange={e=>setForm({...form,description:e.target.value})}
+                  rows="3"
+                  className="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 focus:bg-white focus:border-red-600 focus:ring-2 focus:ring-red-100 shadow-sm transition" 
+                />
+              </label>
+
               {/* Image source toggle */}
               <div className="block">
                 <span className="text-sm text-gray-700">Image Source</span>
@@ -188,34 +212,62 @@ export default function Products() {
               </div>
 
               {imgMode==='local' ? (
-                <label className="block"><span className="text-sm text-gray-700">Upload Image</span>
-                  <input type="file" onChange={handleFileChange} className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"/>
+                <label className="block">
+                  <span className="text-sm text-gray-700">Upload Image</span>
+                  <input 
+                    type="file" 
+                    onChange={handleFileChange}
+                    className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 focus:outline-none"
+                  />
                   {uploading && <div className="text-sm text-gray-500 mt-1">Uploading...</div>}
                 </label>
               ) : (
                 <div className="grid gap-2">
-                  <label className="block"><span className="text-sm text-gray-700">Pinterest Link</span>
-                    <input value={pinUrl} onChange={e=>setPinUrl(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" placeholder="https://www.pinterest..." />
+                  <label className="block">
+                    <span className="text-sm text-gray-700">Pinterest Link</span>
+                    <input 
+                      value={pinUrl} 
+                      onChange={e=>setPinUrl(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 focus:bg-white focus:border-red-600 focus:ring-2 focus:ring-red-100 shadow-sm transition"
+                      placeholder="https://www.pinterest..."
+                    />
                   </label>
                   <div>
-                    <button type="button" onClick={fetchPinterest} disabled={uploading || !pinUrl} className="px-3 py-1.5 rounded-md bg-gray-900 text-white hover:bg-black disabled:opacity-60">Fetch</button>
+                    <button 
+                      type="button" 
+                      onClick={fetchPinterest} 
+                      disabled={uploading || !pinUrl} 
+                      className="px-3 py-1.5 rounded-md bg-gray-900 text-white hover:bg-black disabled:opacity-60 transition"
+                    >
+                      Fetch
+                    </button>
                   </div>
                 </div>
               )}
 
-              {/* Preview */}
               {(form.image || pinPreview) && (
-                <div className="mt-2 border rounded-lg p-2">
+                <div className="mt-2 border rounded-lg p-2 bg-gray-50">
                   <div className="text-xs text-gray-500 mb-1">Preview</div>
-                  <img src={form.image || pinPreview?.image} alt="preview" className="max-h-40 object-contain" />
+                  <img src={form.image || pinPreview?.image} alt="preview" className="max-h-40 object-contain mx-auto" />
                 </div>
               )}
 
-              <label className="block"><span className="text-sm text-gray-700">Stock</span><input type="number" value={form.stock} onChange={e=>setForm({...form,stock:e.target.value})} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" /></label>
+              <label className="block">
+                <span className="text-sm text-gray-700">Stock</span>
+                <input 
+                  type="number" 
+                  value={form.stock} 
+                  onChange={e=>setForm({...form,stock:e.target.value})}
+                  className="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 focus:bg-white focus:border-red-600 focus:ring-2 focus:ring-red-100 shadow-sm transition" 
+                />
+              </label>
             </div>
+
             <div className="flex justify-end gap-2 pt-2">
-              <button onClick={()=>setModalOpen(false)} className="px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200">Cancel</button>
-              <button onClick={saveItem} disabled={uploading || saving} className="px-3 py-1.5 rounded-md bg-red-700 text-white hover:bg-red-800 disabled:opacity-60">{saving ? 'Saving…' : (uploading ? "Uploading..." : "Save")}</button>
+              <button onClick={()=>setModalOpen(false)} className="px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 transition">Cancel</button>
+              <button onClick={saveItem} disabled={uploading || saving} className="px-3 py-1.5 rounded-md bg-red-700 text-white hover:bg-red-800 disabled:opacity-60 transition">
+                {saving ? 'Saving…' : (uploading ? "Uploading..." : "Save")}
+              </button>
             </div>
           </div>
         </div>

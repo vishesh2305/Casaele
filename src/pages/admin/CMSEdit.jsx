@@ -32,18 +32,38 @@ export default function CMSEdit() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">{isNew ? 'Add Page' : 'Edit Page'}</h1>
-      <div className="rounded-xl bg-white shadow-sm border border-gray-200 p-6 space-y-4 max-w-3xl">
+      <div className="rounded-xl bg-white shadow-sm border border-gray-200 p-6 space-y-5 max-w-3xl">
+        
+        {/* Title */}
         <label className="block">
-          <span className="text-sm text-gray-700">Title</span>
-          <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" />
+          <span className="text-sm font-medium text-gray-700">Title</span>
+          <input
+            value={form.title}
+            onChange={e => setForm({ ...form, title: e.target.value })}
+            placeholder="Enter page title..."
+            className="mt-2 w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 
+                       text-gray-800 focus:outline-none focus:border-red-600 focus:ring-2 
+                       focus:ring-red-100 transition-all duration-200"
+          />
         </label>
+
+        {/* Slug */}
         <label className="block">
-          <span className="text-sm text-gray-700">Slug (optional)</span>
-          <input value={form.slug || ''} onChange={e => setForm({ ...form, slug: e.target.value })} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" />
+          <span className="text-sm font-medium text-gray-700">Slug (optional)</span>
+          <input
+            value={form.slug || ''}
+            onChange={e => setForm({ ...form, slug: e.target.value })}
+            placeholder="e.g. about-us"
+            className="mt-2 w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 
+                       text-gray-800 focus:outline-none focus:border-red-600 focus:ring-2 
+                       focus:ring-red-100 transition-all duration-200"
+          />
         </label>
+
+        {/* Content Editor */}
         <label className="block">
-          <span className="text-sm text-gray-700">Content</span>
-          <div className="mt-2">
+          <span className="text-sm font-medium text-gray-700">Content</span>
+          <div className="mt-3 rounded-lg overflow-hidden border border-gray-200 focus-within:border-red-600 focus-within:ring-2 focus-within:ring-red-100 transition-all duration-200">
             <Editor
               apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
               value={form.content}
@@ -54,18 +74,31 @@ export default function CMSEdit() {
                 plugins: 'link lists table code fullscreen image media',
                 toolbar:
                   'undo redo | formatselect | bold italic underline | alignleft aligncenter alignright | bullist numlist | link image media | table | code fullscreen',
-                content_style: 'body { font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; font-size:14px }'
+                content_style:
+                  'body { font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; font-size:14px; color:#111827; background-color:#fff }'
               }}
             />
           </div>
         </label>
-        <div className="flex justify-end gap-2">
-          <button onClick={() => navigate('/admin/cms')} className="px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200">Cancel</button>
-          <button onClick={save} disabled={saving} className="px-3 py-1.5 rounded-md bg-red-700 text-white hover:bg-red-800 disabled:opacity-60">{saving ? 'Saving...' : 'Save'}</button>
+
+        {/* Action Buttons */}
+        <div className="flex justify-end gap-3 pt-4">
+          <button
+            onClick={() => navigate('/admin/cms')}
+            className="px-4 py-2 rounded-md bg-gray-100 text-gray-800 hover:bg-gray-200 transition"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={save}
+            disabled={saving}
+            className="px-4 py-2 rounded-md bg-red-700 text-white hover:bg-red-800 
+                       disabled:opacity-60 transition"
+          >
+            {saving ? 'Saving...' : 'Save'}
+          </button>
         </div>
       </div>
     </div>
   )
 }
-
-

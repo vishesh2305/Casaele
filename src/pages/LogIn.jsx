@@ -12,8 +12,6 @@ function AuthForm({ onClose }) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
-  const isAdminEmail = (e) => !!e && ADMIN_EMAILS.includes(e.toLowerCase());
 
   async function ensureUserDoc(user, extra = {}) {
     const ref = doc(db, "Users", user.uid);
@@ -34,16 +32,15 @@ function AuthForm({ onClose }) {
     try {
       setError(""); setLoading(true);
       const res = await signInWithPopup(auth, googleProvider);
-      try { await ensureUserDoc(res.user, { provider: "google" }); } catch (e) { console.warn('Firestore write skipped:', e?.message || e); }
-      const token = await res.user.getIdToken(); localStorage.setItem('authToken', token);
-      if (isAdminEmail(res.user.email)) {
-        window.location.href = '/admin/dashboard';
-      } else {
-        onClose?.();
-      }
+      await ensureUserDoc(res.user, { provider: "google" });
+      const token = await res.user.getIdToken();
+      localStorage.setItem('authToken', token);
+      onClose?.(); // Close the modal on successful login
     } catch (e) {
       setError(e?.message || "Google sign-in failed");
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleEmail(e) {
@@ -52,39 +49,33 @@ function AuthForm({ onClose }) {
       setError(""); setLoading(true);
       if (isLogin) {
         const res = await signInWithEmailAndPassword(auth, email, password);
-        const token = await res.user.getIdToken(); localStorage.setItem('authToken', token);
-        try { await ensureUserDoc(res.user, { provider: "password" }); } catch (err) { console.warn('Firestore write skipped:', err?.message || err); }
-        if (isAdminEmail(res.user.email)) {
-          window.location.href = '/admin/dashboard';
-          return;
-        }
+        await ensureUserDoc(res.user, { provider: "password" });
+        const token = await res.user.getIdToken();
+        localStorage.setItem('authToken', token);
       } else {
-        if (isAdminEmail(email)) {
-          setError('Admins cannot sign up. Please log in via Admin Login.');
-          return;
-        }
         const res = await createUserWithEmailAndPassword(auth, email, password);
         if (name) await updateProfile(res.user, { displayName: name });
-        try { await ensureUserDoc(res.user, { provider: "password" }); } catch (err) { console.warn('Firestore write skipped:', err?.message || err); }
-        const token = await res.user.getIdToken(); localStorage.setItem('authToken', token);
+        await ensureUserDoc(res.user, { provider: "password" });
+        const token = await res.user.getIdToken();
+        localStorage.setItem('authToken', token);
       }
-      onClose?.();
+      onClose?.(); // Close the modal on successful login/signup
     } catch (e) {
       setError(e?.message || 'Authentication failed');
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4 sm:px-6"
-      onClick={onClose} // close on overlay click
+      onClick={onClose}
     >
-      {/* Modal Card */}
       <div
         className="relative bg-white rounded-2xl shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg p-6 sm:p-8"
-        onClick={(e) => e.stopPropagation()} // prevent closing when clicking inside
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
         <button
           className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
           onClick={onClose}
@@ -96,20 +87,17 @@ function AuthForm({ onClose }) {
           {isLogin ? "Login" : "Signup"}
         </h2>
 
-        {/* Google Auth */}
         <button onClick={handleGoogle} disabled={loading} className="w-full flex items-center justify-center gap-2 border border-gray-300 rounded-md py-2 hover:bg-gray-100 transition mb-6 text-sm sm:text-base disabled:opacity-60">
-          <img src="/LogIn/Google__G__logo 1.svg" alt="" />
+          <img src="/LogIn/Google__G__logo 1.svg" alt="Google Logo" />
           <span>{isLogin ? "Login" : "Signup"} with Google</span>
         </button>
 
-        {/* OR Divider */}
         <div className="flex items-center gap-2 my-6 text-sm sm:text-base">
           <div className="flex-grow border-t border-gray-300"></div>
           <span className="text-gray-500">OR</span>
           <div className="flex-grow border-t border-gray-300"></div>
         </div>
 
-        {/* Name (Signup only) */}
         {!isLogin && (
           <div className="mb-4">
             <input
@@ -122,7 +110,6 @@ function AuthForm({ onClose }) {
           </div>
         )}
 
-        {/* Email */}
         <div className="mb-4">
           <input
             type="email"
@@ -133,7 +120,6 @@ function AuthForm({ onClose }) {
           />
         </div>
 
-        {/* Password */}
         <div className="mb-6 relative">
           <input
             type={showPassword ? "text" : "password"}
@@ -150,13 +136,11 @@ function AuthForm({ onClose }) {
           </div>
         </div>
 
-        {/* Submit */}
-        {error ? <div className="text-sm text-red-600 mb-2">{String(error)}</div> : null}
+        {error && <div className="text-sm text-red-600 mb-2">{String(error)}</div>}
         <button onClick={handleEmail} disabled={loading} className="w-full bg-red-700 text-white py-2 rounded-md font-semibold hover:bg-red-800 transition text-sm sm:text-base mb-4 disabled:opacity-60">
           {loading ? 'Please wait…' : (isLogin ? "Login" : "Signup")}
         </button>
 
-        {/* Toggle */}
         <p className="text-center text-sm sm:text-base text-gray-600">
           {isLogin ? "Don’t have an account?" : "Already have an account?"}{" "}
           <span
@@ -169,22 +153,6 @@ function AuthForm({ onClose }) {
             {isLogin ? "Signup" : "Login"}
           </span>
         </p>
-      </div>
-
-      {/* Ele Mascot + Bubble */}
-      <div className="hidden sm:flex absolute bottom-4 sm:bottom-6 md:bottom-10 right-4 sm:right-6 md:right-10 flex-col items-center gap-2 sm:gap-3 z-20">
-        <div className="relative bg-white border border-gray-200 rounded-xl px-3 sm:px-4 py-2 shadow-md max-w-[180px] sm:max-w-[220px] text-xs sm:text-sm md:text-sm text-gray-700">
-          {isLogin
-            ? "Login for the best experience!"
-            : "Signup to unlock the reach!"}{" "}
-          <span className="text-red-500">~Ele</span>
-          <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-0 h-0 border-t-6 border-b-6 border-l-6 border-transparent border-l-white sm:border-t-8 sm:border-b-8 sm:border-l-8"></div>
-        </div>
-        <img
-          src="LogIn/image 56 (1).svg"
-          alt="Ele Mascot"
-          className="w-16 sm:w-20 md:w-28"
-        />
       </div>
     </div>
   );

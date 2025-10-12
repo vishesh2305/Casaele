@@ -21,7 +21,6 @@ export default function Materials() {
       .finally(() => setLoading(false))
   }, [])
 
-
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -30,15 +29,12 @@ export default function Materials() {
 
     try {
       const { timestamp, signature } = await apiGet('/api/cloudinary-signature');
-
       const formData = new FormData();
       formData.append('file', file);
       formData.append('api_key', import.meta.env.VITE_CLOUDINARY_API_KEY);
       formData.append('timestamp', timestamp);
       formData.append('signature', signature);
-
       formData.append('upload_preset', 'casadeele_materials');
-
 
       const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
       const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
@@ -52,7 +48,6 @@ export default function Materials() {
       }
 
       const data = await response.json();
-
       setForm({ ...form, fileUrl: data.secure_url, imageSource: 'local' });
     } catch (error) {
       console.error('Upload failed', error);
@@ -88,7 +83,6 @@ export default function Materials() {
     }
   };
 
-
   const openEditModal = (material) => {
     setEditing(material);
     setForm({
@@ -102,16 +96,20 @@ export default function Materials() {
     setModalOpen(true);
   }
 
-
-
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Materials</h1>
       <div className="rounded-xl bg-white shadow-sm border border-gray-200 overflow-hidden">
         <div className="p-3 border-b flex justify-between items-center">
           <div className="text-sm text-gray-600">Manage learning materials</div>
-          <button onClick={()=>{setEditing(null); setForm({ title:'', description: '', content:'', category:'', fileUrl:'', tags: '' }); setModalOpen(true)}} className="px-3 py-1.5 rounded-md bg-red-700 text-white hover:bg-red-800">Add Material</button>
+          <button
+            onClick={() => { setEditing(null); setForm({ title: '', description: '', content: '', category: '', fileUrl: '', tags: '' }); setModalOpen(true) }}
+            className="px-3 py-1.5 rounded-md bg-red-700 text-white hover:bg-red-800"
+          >
+            Add Material
+          </button>
         </div>
+
         <table className="min-w-full text-left">
           <thead className="bg-gray-50 text-gray-600 text-sm">
             <tr>
@@ -146,45 +144,93 @@ export default function Materials() {
           <div className="w-full max-w-lg bg-white rounded-xl shadow p-6 space-y-4">
             <div className="text-lg font-semibold">{editing ? 'Edit material' : 'Add material'}</div>
             {errorMsg ? <div className="text-sm text-red-600">{errorMsg}</div> : null}
-            <div className="grid grid-cols-1 gap-3">
-              <label className="block"><span className="text-sm text-gray-700">Title</span><input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" /></label>
-              <label className="block"><span className="text-sm text-gray-700">Short Description (for cards)</span><input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" /></label>
-              <label className="block"><span className="text-sm text-gray-700">Main Content (for detail page)</span><textarea value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" /></label>
-              <label className="block"><span className="text-sm text-gray-700">Category</span><input value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" /></label>
-              <label className="block"><span className="text-sm text-gray-700">Tags (comma-separated)</span><input value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })} placeholder="e.g., A2, Listening, Culture" className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" /></label>
 
+            <div className="grid grid-cols-1 gap-3">
+              {/* === Common Input Style === */}
+              {[
+                { label: 'Title', key: 'title' },
+                { label: 'Short Description (for cards)', key: 'description' },
+                { label: 'Category', key: 'category' },
+                { label: 'Tags (comma-separated)', key: 'tags', placeholder: 'e.g., A2, Listening, Culture' }
+              ].map(f => (
+                <label key={f.key} className="block">
+                  <span className="text-sm text-gray-700">{f.label}</span>
+                  <input
+                    value={form[f.key]}
+                    onChange={e => setForm({ ...form, [f.key]: e.target.value })}
+                    placeholder={f.placeholder || ''}
+                    className="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 focus:border-red-500 focus:ring-2 focus:ring-red-400/50 transition duration-150 px-3 py-2 text-sm placeholder-gray-400 hover:border-gray-400"
+                  />
+                </label>
+              ))}
+
+              {/* === Textarea === */}
+              <label className="block">
+                <span className="text-sm text-gray-700">Main Content (for detail page)</span>
+                <textarea
+                  value={form.content}
+                  onChange={e => setForm({ ...form, content: e.target.value })}
+                  rows={4}
+                  className="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 focus:border-red-500 focus:ring-2 focus:ring-red-400/50 transition duration-150 px-3 py-2 text-sm placeholder-gray-400 hover:border-gray-400"
+                />
+              </label>
+
+              {/* === Image Source Selection === */}
               <div className="block">
                 <span className="text-sm text-gray-700">Image Source</span>
                 <div className="mt-1 flex items-center gap-4 text-sm">
                   <label className="inline-flex items-center gap-2">
-                    <input type="radio" name="imgMode" checked={imgMode==='local'} onChange={()=>setImgMode('local')} /> Local Upload
+                    <input type="radio" name="imgMode" checked={imgMode === 'local'} onChange={() => setImgMode('local')} /> Local Upload
                   </label>
                   <label className="inline-flex items-center gap-2">
-                    <input type="radio" name="imgMode" checked={imgMode==='pinterest'} onChange={()=>setImgMode('pinterest')} /> Pinterest URL
+                    <input type="radio" name="imgMode" checked={imgMode === 'pinterest'} onChange={() => setImgMode('pinterest')} /> Pinterest URL
                   </label>
                 </div>
               </div>
 
-              {imgMode==='local' ? (
-                <label className="block"><span className="text-sm text-gray-700">File Upload</span>
-                  <input type="file" onChange={handleFileChange} className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
+              {/* === File Upload === */}
+              {imgMode === 'local' ? (
+                <label className="block">
+                  <span className="text-sm text-gray-700">File Upload</span>
+                  <input
+                    type="file"
+                    onChange={handleFileChange}
+                    className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 cursor-pointer transition"
+                  />
                   {uploading && <div className="text-sm text-gray-500 mt-1">Uploading...</div>}
                   {form.fileUrl && !uploading && (<div className="text-sm text-green-600 mt-1">Upload complete. URL saved.</div>)}
                 </label>
               ) : (
                 <div className="grid gap-2">
-                  <label className="block"><span className="text-sm text-gray-700">Pinterest Link</span>
-                    <input value={pinUrl} onChange={e=>setPinUrl(e.target.value)} className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" placeholder="https://www.pinterest..." />
+                  <label className="block">
+                    <span className="text-sm text-gray-700">Pinterest Link</span>
+                    <input
+                      value={pinUrl}
+                      onChange={e => setPinUrl(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 focus:border-red-500 focus:ring-2 focus:ring-red-400/50 transition duration-150 px-3 py-2 text-sm placeholder-gray-400 hover:border-gray-400"
+                      placeholder="https://www.pinterest..."
+                    />
                   </label>
                   <div>
-                    <button type="button" onClick={async ()=>{
-                      try {
-                        setUploading(true);
-                        const data = await apiSend('/api/pinterest/fetch','POST',{ url: pinUrl });
-                        setPinPreview(data);
-                        setForm({ ...form, fileUrl: data.image || data.imageUrl || '', imageSource: 'pinterest' });
-                      } catch(e) { alert(e?.message || 'Failed to fetch Pinterest data'); } finally { setUploading(false); }
-                    }} disabled={uploading || !pinUrl} className="px-3 py-1.5 rounded-md bg-gray-900 text-white hover:bg-black disabled:opacity-60">Fetch</button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          setUploading(true);
+                          const data = await apiSend('/api/pinterest/fetch', 'POST', { url: pinUrl });
+                          setPinPreview(data);
+                          setForm({ ...form, fileUrl: data.image || data.imageUrl || '', imageSource: 'pinterest' });
+                        } catch (e) {
+                          alert(e?.message || 'Failed to fetch Pinterest data');
+                        } finally {
+                          setUploading(false);
+                        }
+                      }}
+                      disabled={uploading || !pinUrl}
+                      className="px-3 py-1.5 rounded-md bg-gray-900 text-white hover:bg-black disabled:opacity-60"
+                    >
+                      Fetch
+                    </button>
                   </div>
                 </div>
               )}
@@ -192,21 +238,20 @@ export default function Materials() {
               {(form.fileUrl || pinPreview) && (
                 <div className="mt-2 border rounded-lg p-2">
                   <div className="text-xs text-gray-500 mb-1">Preview</div>
-                  <img src={form.fileUrl || pinPreview?.image} alt="preview" className="max-h-40 object-contain" />
+                  <img src={form.fileUrl || pinPreview?.image} alt="preview" className="max-h-40 object-contain rounded-md border border-gray-200" />
                 </div>
               )}
             </div>
+
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={() => setModalOpen(false)} className="px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200">Cancel</button>
-              <button onClick={handleSave} disabled={uploading || saving} className="px-3 py-1.5 rounded-md bg-red-700 text-white hover:bg-red-800 disabled:opacity-60">{saving ? 'Saving…' : (uploading ? 'Uploading...' : 'Save')}</button>
+              <button onClick={handleSave} disabled={uploading || saving} className="px-3 py-1.5 rounded-md bg-red-700 text-white hover:bg-red-800 disabled:opacity-60">
+                {saving ? 'Saving…' : (uploading ? 'Uploading...' : 'Save')}
+              </button>
             </div>
           </div>
         </div>
       )}
-
-
     </div>
   )
 }
-
-
