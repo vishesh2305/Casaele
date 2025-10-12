@@ -1,109 +1,78 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { auth, googleProvider, RecaptchaVerifier, signInWithPopup, signInWithPhoneNumber, signInWithEmailAndPassword } from '../../firebase'
+import { auth, signInWithEmailAndPassword, signOut } from '../../firebase';
 import Spinner from '../../components/Common/Spinner';
 
 export default function AdminLogin() {
-  const navigate = useNavigate()
-  const [email, setEmail] = useState('')
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('')
-  const [otp, setOtp] = useState('')
-  const [verificationId, setVerificationId] = useState(null)
-  const [error, setError] = useState('')
-  const [loadingEmail, setLoadingEmail] = useState(false);
-  const [loadingGoogle, setLoadingGoogle] = useState(false);
-  const [loadingOTP, setLoadingOTP] = useState(false);
-  const [loadingVerify, setLoadingVerify] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-      })
+    if (localStorage.getItem('authToken')) {
+      navigate('/admin/dashboard');
     }
-    // If already authenticated, skip login screen
-    const token = localStorage.getItem('authToken')
-    if (token) navigate('/admin/dashboard')
-  }, [])
+  }, [navigate]);
 
-  async function handleGoogle() {
+
+  async function verifyAdminStatus(token) {
     try {
-      setLoadingGoogle(true)
-      const result = await signInWithPopup(auth, googleProvider)
-      const token = await result.user.getIdToken()
-      localStorage.setItem('authToken', token)
-      navigate('/admin/dashboard')
-    } catch (e) {
-      setError(e.message || 'Google sign-in failed')
-    } finally {
-      setLoadingGoogle(false)
+      const response = await fetch('/api/admins/check-status', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      return response.ok;
+    } catch (error) {
+      console.error("Admin check failed:", error);
+      return false;
     }
   }
 
+
+
+  
   async function handleEmailSignIn(e) {
     e.preventDefault();
     setError('');
-    setLoadingEmail(true);
+    setLoading(true);
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
       const token = await result.user.getIdToken();
-      localStorage.setItem('authToken', token);
-      navigate('/admin/dashboard');
+      
+      const isAdmin = await verifyAdminStatus(token);
+
+      if (isAdmin) {
+        localStorage.setItem('authToken', token);
+        navigate('/admin/dashboard');
+      } else {
+        setError('Access denied. You do not have admin privileges.');
+        await signOut(auth); // Sign out the non-admin user
+      }
     } catch (e) {
-      // Provide more specific feedback based on the Firebase error code
       switch (e.code) {
         case 'auth/invalid-email':
-          setError('The email address is not valid. Please check the format.');
+          setError('The email address is not valid.');
           break;
         case 'auth/user-not-found':
         case 'auth/wrong-password':
         case 'auth/invalid-credential':
-          setError('Invalid email or password. Please try again.');
+          setError('Invalid email or password.');
           break;
         case 'auth/too-many-requests':
-           setError('Access to this account has been temporarily disabled due to many failed login attempts. You can reset your password or try again later.');
+           setError('Access has been temporarily disabled due to many failed login attempts.');
            break;
         default:
-          setError('An unexpected error occurred. Please check your connection and try again.');
-          console.error("Firebase Auth Error:", e); // Log the full error for debugging
+          setError('An unexpected error occurred. Please try again.');
+          console.error("Firebase Auth Error:", e);
           break;
       }
     } finally {
-      setLoadingEmail(false);
+      setLoading(false);
     }
   }
 
-  async function handleSendOTP(e){
-    e.preventDefault()
-    setError('')
-    try {
-      setLoadingOTP(true)
-      const appVerifier = window.recaptchaVerifier
-      const confirmation = await signInWithPhoneNumber(auth, phone, appVerifier)
-      setVerificationId(confirmation)
-    } catch(e){
-      setError(e.message || 'Failed to send OTP')
-    } finally {
-      setLoadingOTP(false)
-    }
-  }
 
-  async function handleVerifyOTP(e){
-    e.preventDefault()
-    if (!verificationId) return
-    try {
-      setLoadingVerify(true)
-      const result = await verificationId.confirm(otp)
-      const token = await result.user.getIdToken()
-      localStorage.setItem('authToken', token)
-      navigate('/admin/dashboard')
-    } catch(e){
-      setError(e.message || 'Invalid OTP')
-    } finally {
-      setLoadingVerify(false)
-    }
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
@@ -112,11 +81,10 @@ export default function AdminLogin() {
           <img src="/Horizontal_1.svg" alt="Casa De ELE" className="h-8 w-auto" />
           <span className="text-sm text-gray-500">| Admin Panel</span>
         </div>
-        <h1 className="text-xl font-semibold text-center mb-4">Sign in</h1>
+        <h1 className="text-xl font-semibold text-center mb-4">Admin Sign In</h1>
         {error && <div className="mb-3 text-sm text-red-600 text-center">{error}</div>}
 
-        {/* NEW Email & Password Form */}
-        <form onSubmit={handleEmailSignIn} className="space-y-4 border-b pb-4 mb-4">
+        <form onSubmit={handleEmailSignIn} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Email</label>
             <input 
@@ -139,42 +107,11 @@ export default function AdminLogin() {
               placeholder="••••••••" 
             />
           </div>
-          <button type="submit" disabled={loadingEmail} className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-red-700 text-white hover:bg-red-800 disabled:opacity-60 transition">
-            {loadingEmail ? <Spinner /> : null}Sign in with Email
+          <button type="submit" disabled={loading} className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-red-700 text-white hover:bg-red-800 disabled:opacity-60 transition">
+            {loading ? <Spinner /> : null}Sign in
           </button>
         </form>
-
-        <div className="flex items-center gap-2 my-4 text-sm">
-          <div className="flex-grow border-t border-gray-200"></div>
-          <span className="text-gray-400">OR</span>
-          <div className="flex-grow border-t border-gray-200"></div>
-        </div>
-
-        <button onClick={handleGoogle} disabled={loadingGoogle} className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-60 transition mb-4">
-          {loadingGoogle ? <Spinner className="text-gray-700" /> : <img src="/LogIn/Google__G__logo 1.svg" alt="Google" className="w-5 h-5"/>}
-          Sign in with Google
-        </button>
-
-        <form onSubmit={handleSendOTP} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Phone</label>
-            <input value={phone} onChange={e=>setPhone(e.target.value)} type="tel" required className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" placeholder="+91 98765 43210" />
-          </div>
-          <div id="recaptcha-container" />
-          <button type="submit" disabled={loadingOTP} className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-gray-900 text-white hover:bg-black disabled:opacity-60 transition">{loadingOTP ? <Spinner /> : null}Send OTP</button>
-        </form>
-
-        {verificationId && (
-          <form onSubmit={handleVerifyOTP} className="space-y-4 mt-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">OTP</label>
-              <input value={otp} onChange={e=>setOtp(e.target.value)} required className="mt-1 w-full rounded-md border-gray-300 focus:border-red-600 focus:ring-red-600" placeholder="Enter OTP" />
-            </div>
-            <button type="submit" disabled={loadingVerify} className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-red-700 text-white hover:bg-red-800 disabled:opacity-60 transition">{loadingVerify ? <Spinner /> : null}Verify & Continue</button>
-          </form>
-        )}
       </div>
     </div>
-  )
+  );
 }
-

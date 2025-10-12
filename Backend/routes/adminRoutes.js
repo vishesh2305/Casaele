@@ -1,24 +1,22 @@
 import express from 'express';
-import { verifySuperAdmin, verifyAdminAccess } from '../middleware/superAdminAuth.js';
+import { verifySuperAdmin } from '../middleware/superAdminAuth.js';
+import { verifyVerifiedAdmin } from '../middleware/auth.js';
 import { 
   createAdmin, 
-  verifyAdminOTP, 
   getAllAdmins, 
-  getAdminById, 
-  deleteAdmin, 
-  resendOTP 
-} from '../controllers/adminController.js';
+  deleteAdmin} from '../controllers/adminController.js';
 
 const router = express.Router();
 
-// Public route for OTP verification
-router.post('/verify', verifyAdminOTP);
+router.get('/check-status', verifyVerifiedAdmin, (req, res) => {
+  res.status(200).json({ success: true, message: 'Admin verified.' });
+});
 
 // Super admin only routes
 router.post('/create', verifySuperAdmin, createAdmin);
 router.get('/', verifySuperAdmin, getAllAdmins);
-router.get('/:id', verifySuperAdmin, getAdminById);
 router.delete('/:id', verifySuperAdmin, deleteAdmin);
-router.post('/resend-otp', verifySuperAdmin, resendOTP);
+
+
 
 export default router;
