@@ -29,6 +29,19 @@ import { v2 as cloudinary } from 'cloudinary'
 
 dotenv.config()
 
+console.log("--- Environment Variables ---");
+console.log("PORT:", process.env.PORT);
+console.log("MONGO_URI:", process.env.MONGO_URI ? "Loaded" : "Missing");
+console.log("CLOUDINARY_CLOUD_NAME:", process.env.CLOUDINARY_CLOUD_NAME ? "Loaded" : "Missing");
+console.log("CLOUDINARY_API_KEY:", process.env.CLOUDINARY_API_KEY ? "Loaded" : "Missing");
+console.log("CLOUDINARY_API_SECRET:", process.env.CLOUDINARY_API_SECRET ? "Loaded" : "Missing");
+console.log("RAZORPAY_KEY_ID:", process.env.RAZORPAY_KEY_ID ? "Loaded" : "Missing");
+console.log("RAZORPAYSECRETKEY or RAZORPAY_KEY_SECRET:", (process.env.RAZORPAYSECRETKEY || process.env.RAZORPAY_KEY_SECRET) ? "Loaded" : "Missing");
+console.log("STRIPESECRETKEY or STRIPE_SECRET_KEY:", (process.env.STRIPESECRETKEY || process.env.STRIPE_SECRET_KEY) ? "Loaded" : "Missing");
+console.log("FIREBASE_SERVICE_ACCOUNT_PATH:", process.env.FIREBASE_SERVICE_ACCOUNT_PATH ? "Loaded" : "Missing");
+console.log("FIREBASE_SERVICE_ACCOUNT:", process.env.FIREBASE_SERVICE_ACCOUNT ? "Loaded" : "Missing");
+console.log("--------------------------");
+
 // ✅ Cloudinary Configuration
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
