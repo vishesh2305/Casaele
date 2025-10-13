@@ -28,6 +28,8 @@ import Stripe from 'stripe'
 import { v2 as cloudinary } from 'cloudinary';
 
 dotenv.config()
+app.use(cors())
+
 
 // Connect to Cloudinary
 cloudinary.config(
@@ -61,7 +63,6 @@ if (dbConn) {
 const app = express()
 app.set('isDbConnected', isDbConnected)
 
-app.use(cors())
 app.use(express.json())
 
 // Keep isDbConnected in sync with Mongoose connection events
