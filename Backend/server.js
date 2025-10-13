@@ -25,22 +25,19 @@ import subscriberRoutes from './routes/subscriberRoutes.js'
 import adminRoutes from './routes/adminRoutes.js'
 import Razorpay from 'razorpay'
 import Stripe from 'stripe'
-import { v2 as cloudinary } from 'cloudinary';
+import { v2 as cloudinary } from 'cloudinary'
 
 dotenv.config()
 
-// Connect to Cloudinary
-cloudinary.config(
-  {
+// ✅ Cloudinary Configuration
+cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
   secure: true,
-  }
-)
+})
 
-
-// Connect to MongoDB
+// ✅ Connect to MongoDB
 let isDbConnected = false
 const dbConn = await connectDB()
 if (dbConn) {
@@ -59,27 +56,18 @@ if (dbConn) {
 const app = express()
 app.set('isDbConnected', isDbConnected)
 
-// CORS configuration
-const allowedOrigins = [
-  'https://amrit-project-lms-fnao-git-master-visheshs-projects-48678073.vercel.app/', // Replace with your Vercel URL
-  'http://localhost:3000',
-  'http://localhost:5173'
-];
+// ✅ Allow All Origins for CORS
+app.use(
+  cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+)
 
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  }
-};
-
-app.use(cors(corsOptions));
 app.use(express.json())
 
-// Keep isDbConnected in sync with Mongoose connection events
+// ✅ Mongoose Connection Events
 mongoose.connection.on('connected', () => {
   app.set('isDbConnected', true)
   console.log('Mongoose event: connected')
@@ -91,11 +79,9 @@ mongoose.connection.on('disconnected', () => {
 mongoose.connection.on('error', (err) => {
   app.set('isDbConnected', false)
   console.error('Mongoose event: error', err?.message || err)
-});
+})
 
-// Payment Gateway
-
-// Razorpay (optional)
+// ✅ Razorpay Integration
 const hasRazorpayKeys =
   !!process.env.RAZORPAY_KEY_ID && !!(process.env.RAZORPAYSECRETKEY || process.env.RAZORPAY_KEY_SECRET)
 
@@ -132,7 +118,7 @@ app.post('/create-razorpay-order', async (req, res) => {
   }
 })
 
-// Stripe (optional)
+// ✅ Stripe Integration
 const stripeSecret = process.env.STRIPESECRETKEY || process.env.STRIPE_SECRET_KEY
 let stripe = null
 if (stripeSecret) {
@@ -159,24 +145,26 @@ app.post('/create-payment-intent', async (req, res) => {
   }
 })
 
+// ✅ Cloudinary Signature Route
 app.get('/api/cloudinary-signature', (req, res) => {
-  const timestamp = Math.round(new Date().getTime() / 1000);
+  const timestamp = Math.round(new Date().getTime() / 1000)
   const signature = cloudinary.utils.api_sign_request(
     {
       timestamp: timestamp,
-      upload_preset: 'casadeele_materials'
+      upload_preset: 'casadeele_materials',
     },
     process.env.CLOUDINARY_API_SECRET
-  );
-  res.json({ timestamp, signature });
-});
+  )
+  res.json({ timestamp, signature })
+})
 
-// Disable caching for API responses (useful for admin)
+// ✅ Disable caching for all /api responses
 app.use('/api', (req, res, next) => {
   res.set('Cache-Control', 'no-store')
   next()
 })
 
+// ✅ Routes
 app.use('/', healthRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api', dummyApi)
@@ -196,11 +184,12 @@ app.use('/api/coupons', couponRoutes)
 app.use('/api/subscribers', subscriberRoutes)
 app.use('/api/admins', adminRoutes)
 
-// 404 + Error handlers
+// ✅ Error Handlers
 app.use(notFound)
 app.use(errorHandler)
 
+// ✅ Start Server
 const PORT = process.env.PORT || 5000
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`)
+  console.log(`🚀 Server running on port ${PORT}`)
 })
