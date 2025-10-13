@@ -28,7 +28,10 @@ import Stripe from 'stripe'
 import { v2 as cloudinary } from 'cloudinary';
 
 dotenv.config()
-app.use(cors())
+const corsOptions = {
+  origin: 'https://amrit-project-lms-fnao-git-master-visheshs-projects-48678073.vercel.app/', // Replace with your Vercel URL
+};
+app.use(cors(corsOptions));
 
 
 // Connect to Cloudinary
