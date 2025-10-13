@@ -28,11 +28,6 @@ import Stripe from 'stripe'
 import { v2 as cloudinary } from 'cloudinary';
 
 dotenv.config()
-const corsOptions = {
-  origin: 'https://amrit-project-lms-fnao-git-master-visheshs-projects-48678073.vercel.app/', // Replace with your Vercel URL
-};
-app.use(cors(corsOptions));
-
 
 // Connect to Cloudinary
 cloudinary.config(
@@ -61,11 +56,27 @@ if (dbConn) {
   console.warn('Skipping dummy insert because DB is not connected')
 }
 
-
-
 const app = express()
 app.set('isDbConnected', isDbConnected)
 
+// CORS configuration
+const allowedOrigins = [
+  'https://amrit-project-lms-fnao-git-master-visheshs-projects-48678073.vercel.app/', // Replace with your Vercel URL
+  'http://localhost:3000',
+  'http://localhost:5173'
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+};
+
+app.use(cors(corsOptions));
 app.use(express.json())
 
 // Keep isDbConnected in sync with Mongoose connection events
@@ -81,9 +92,6 @@ mongoose.connection.on('error', (err) => {
   app.set('isDbConnected', false)
   console.error('Mongoose event: error', err?.message || err)
 });
-
-
-
 
 // Payment Gateway
 
@@ -151,8 +159,6 @@ app.post('/create-payment-intent', async (req, res) => {
   }
 })
 
-
-
 app.get('/api/cloudinary-signature', (req, res) => {
   const timestamp = Math.round(new Date().getTime() / 1000);
   const signature = cloudinary.utils.api_sign_request(
@@ -164,12 +170,6 @@ app.get('/api/cloudinary-signature', (req, res) => {
   );
   res.json({ timestamp, signature });
 });
-
-
-
-
-
-
 
 // Disable caching for API responses (useful for admin)
 app.use('/api', (req, res, next) => {
@@ -204,5 +204,3 @@ const PORT = process.env.PORT || 5000
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
-
-
