@@ -1,37 +1,51 @@
-import admin from 'firebase-admin'
-import fs from 'fs'
-import path from 'path'
+// config/firebaseAdmin.js
 
-let app
+import 'dotenv/config'; // <-- This is the main fix!
+import admin from 'firebase-admin';
+import fs from 'fs';
+import path from 'path';
 
-export function initFirebaseAdmin() {
-  if (app) return app
+let app;
 
-  const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH
-  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT
-
-  if (!serviceAccountPath && !serviceAccountJson) {
-    throw new Error('Firebase Admin: provide FIREBASE_SERVICE_ACCOUNT_PATH or FIREBASE_SERVICE_ACCOUNT in .env')
+function initialize() {
+  // Prevent re-initialization
+  if (admin.apps.length > 0) {
+    app = admin.apps[0];
+    return;
   }
 
-  let credential
-  if (serviceAccountPath) {
-    const absolute = path.isAbsolute(serviceAccountPath)
-      ? serviceAccountPath
-      : path.join(process.cwd(), serviceAccountPath)
-    const content = fs.readFileSync(absolute, 'utf-8')
-    credential = admin.credential.cert(JSON.parse(content))
-  } else {
-    credential = admin.credential.cert(JSON.parse(serviceAccountJson))
+  const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
+
+  if (!serviceAccountPath) {
+    console.error('Firebase Admin Error: FIREBASE_SERVICE_ACCOUNT_PATH is not set in your .env file.');
+    // Exit gracefully if the config is missing
+    return;
   }
 
-  app = admin.initializeApp({ credential })
-  return app
+  try {
+    const absolutePath = path.resolve(process.cwd(), serviceAccountPath);
+    if (!fs.existsSync(absolutePath)) {
+        throw new Error(`Service account file not found at path: ${absolutePath}`);
+    }
+
+    const serviceAccount = JSON.parse(fs.readFileSync(absolutePath, 'utf8'));
+
+    app = admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+
+    console.log('Firebase Admin SDK initialized successfully.');
+
+  } catch (error) {
+    console.error('CRITICAL: Failed to initialize Firebase Admin SDK.');
+    console.error(error.message);
+    // Stop the server if Firebase Admin can't be initialized, as it's a critical dependency.
+    process.exit(1);
+  }
 }
 
-export function getAuth() {
-  if (!app) initFirebaseAdmin()
-  return admin.auth()
-}
+// Run the initialization
+initialize();
 
-
+// Export the auth service, checking if the app was initialized
+export const auth = app ? admin.auth() : null;

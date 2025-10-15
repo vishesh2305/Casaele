@@ -1,6 +1,8 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import Spinner from '../Common/Spinner'; // We'll show a spinner during verification
+import { apiGet } from '../../utils/api'; // Import apiGet
+
 
 export default function RequireAuth() {
   const location = useLocation();
@@ -18,19 +20,9 @@ export default function RequireAuth() {
 
       // If there's a token, verify it with the backend.
       try {
-        const response = await fetch('/api/admins/check-status', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (response.ok) {
-          setAuthStatus('authorized'); // Backend confirms they are a verified admin
-        } else {
-          // Token is invalid or user is not an admin
-          localStorage.removeItem('authToken'); // Clean up bad token
-          setAuthStatus('unauthorized');
-        }
+        // Use apiGet instead of fetch
+        await apiGet('/api/admins/check-status');
+        setAuthStatus('authorized');
       } catch (error) {
         console.error("Auth check failed:", error);
         localStorage.removeItem('authToken');
@@ -39,7 +31,7 @@ export default function RequireAuth() {
     };
 
     verifyUser();
-  }, [location.pathname]); // Re-verify on route change
+  }, [location.pathname]);
 
   // Show a loading state while we check the user's status
   if (authStatus === 'loading') {

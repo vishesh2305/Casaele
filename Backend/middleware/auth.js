@@ -1,42 +1,46 @@
-import { getAuth, initFirebaseAdmin } from '../config/firebaseAdmin.js'
+// middleware/auth.js
+
+import { auth } from '../config/firebaseAdmin.js'; // <-- Import auth directly
 
 export async function verifyFirebaseToken(req, res, next) {
   try {
-    // Dev bypass: allow local development without Firebase Admin configured
+    // Check if Firebase Admin SDK is initialized
+    if (!auth) {
+      console.error('verifyFirebaseToken error: Firebase Admin SDK not initialized.');
+      return res.status(503).json({ message: 'Authentication service is unavailable.' });
+    }
+
+    // Dev bypass
     if (process.env.DEV_AUTH_DISABLED === 'true') {
-      req.user = { email: 'dev@local', role: 'admin', devBypass: true }
-      return next()
+      req.user = { email: 'dev@local', role: 'admin', devBypass: true };
+      return next();
     }
 
-    const header = req.headers.authorization || ''
-    const [scheme, token] = header.split(' ')
+    const header = req.headers.authorization || '';
+    const [scheme, token] = header.split(' ');
     if (scheme !== 'Bearer' || !token) {
-      return res.status(401).json({ message: 'Unauthorized: missing Bearer token' })
+      return res.status(401).json({ message: 'Unauthorized: missing Bearer token' });
     }
-    initFirebaseAdmin()
-    const decoded = await getAuth().verifyIdToken(token)
 
-    // Normalize role from custom claims if present
-    const claimsRole = decoded?.role || decoded?.roles || decoded?.customClaims?.role
+    const decoded = await auth.verifyIdToken(token);
+
+    // Normalize role and elevate if whitelisted
+    const claimsRole = decoded?.role || decoded?.roles || decoded?.customClaims?.role;
     const adminEmails = (process.env.ADMIN_EMAILS || '')
       .split(',')
       .map(e => e.trim().toLowerCase())
-      .filter(Boolean)
+      .filter(Boolean);
 
-    // Elevate role to admin if email is whitelisted
-    const isWhitelisted = decoded?.email && adminEmails.includes(decoded.email.toLowerCase())
-    req.user = { ...decoded, role: isWhitelisted ? 'admin' : (claimsRole || 'user') }
-    return next()
+    const isWhitelisted = decoded?.email && adminEmails.includes(decoded.email.toLowerCase());
+    req.user = { ...decoded, role: isWhitelisted ? 'admin' : (claimsRole || 'user') };
+    return next();
+
   } catch (err) {
-    // Surface clearer diagnostics in development
-    console.error('verifyFirebaseToken error:', err?.message || err)
-    const message = err?.errorInfo?.message || err?.message || 'invalid token'
-    return res.status(401).json({ message: `Unauthorized: ${message}` })
+    console.error('verifyFirebaseToken error:', err?.message || err);
+    const message = err?.errorInfo?.message || err?.message || 'invalid token';
+    return res.status(401).json({ message: `Unauthorized: ${message}` });
   }
 }
-
-
-
 
 export function verifyAdmin(req, res, next) {
   if (req.user?.role === 'admin') {
@@ -47,39 +51,37 @@ export function verifyAdmin(req, res, next) {
 
 // Middleware to check if user is verified admin (for admin panel access)
 export async function verifyVerifiedAdmin(req, res, next) {
-  try {
-    // First verify Firebase token
-    await verifyFirebaseToken(req, res, () => {});
+    // This function now correctly relies on verifyFirebaseToken to run first
+    // and does not need to initialize Firebase itself.
+    try {
+        await verifyFirebaseToken(req, res, async () => {
+            const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
+            if (req.user.email === superAdminEmail) {
+                req.user.isSuperAdmin = true;
+                return next();
+            }
 
-    // Check if user is super admin (bypass verification check)
-    const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
-    if (req.user.email === superAdminEmail) {
-      req.user.isSuperAdmin = true;
-      return next();
+            const Admin = (await import('../models/Admin.js')).default;
+            const admin = await Admin.findOne({
+                email: req.user.email,
+                verified: true
+            });
+
+            if (!admin) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Access denied. Admin verification required.'
+                });
+            }
+
+            req.user.adminRole = admin.role;
+            next();
+        });
+    } catch (error) {
+        console.error('Verified admin verification error:', error);
+        res.status(401).json({
+            success: false,
+            message: 'Authentication failed'
+        });
     }
-
-    // For regular admins, check if they exist and are verified
-    const Admin = (await import('../models/Admin.js')).default;
-    const admin = await Admin.findOne({ 
-      email: req.user.email, 
-      verified: true 
-    });
-
-    if (!admin) {
-      return res.status(403).json({ 
-        success: false,
-        message: 'Access denied. Admin verification required. Please contact the main administrator.' 
-      });
-    }
-
-    req.user.adminRole = admin.role;
-    next();
-
-  } catch (error) {
-    console.error('Verified admin verification error:', error);
-    res.status(401).json({ 
-      success: false,
-      message: 'Authentication failed' 
-    });
-  }
 }

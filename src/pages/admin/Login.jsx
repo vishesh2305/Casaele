@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { auth, signInWithEmailAndPassword, signOut } from '../../firebase';
 import Spinner from '../../components/Common/Spinner';
+import { apiGet } from '../../utils/api'; 
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -18,12 +19,11 @@ export default function AdminLogin() {
     }
   }, [navigate]);
 
-  async function verifyAdminStatus(token) {
+  async function verifyAdminStatus() {
     try {
-      const response = await fetch('/api/admins/check-status', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      return response.ok;
+      // No need to pass the token here, apiGet handles it
+      await apiGet('/api/admins/check-status');
+      return true;
     } catch (error) {
       console.error("Admin check failed:", error);
       return false;
@@ -35,25 +35,28 @@ export default function AdminLogin() {
     setError('');
     setLoading(true);
 
+    const SUPER_ADMIN_EMAIL = import.meta.env.VITE_SUPER_ADMIN_EMAIL;
     if (email.toLowerCase() !== SUPER_ADMIN_EMAIL.toLowerCase()) {
-      setError('Access denied. This login is for the super administrator only.');
-      setLoading(false);
-      return;
+        setError('Access denied. This login is for the super administrator only.');
+        setLoading(false);
+        return;
     }
-
+    
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
       const token = await result.user.getIdToken();
-      const isAdmin = await verifyAdminStatus(token);
+      localStorage.setItem('authToken', token); // Set token *before* verifying
+
+      const isAdmin = await verifyAdminStatus();
 
       if (isAdmin) {
-        localStorage.setItem('authToken', token);
         navigate('/admin/dashboard');
       } else {
         setError('Authentication succeeded but you do not have admin privileges.');
         await signOut(auth);
+        localStorage.removeItem('authToken');
       }
-    } catch (e) {
+    }  catch (e) {
       switch (e.code) {
         case 'auth/user-not-found':
         case 'auth/wrong-password':

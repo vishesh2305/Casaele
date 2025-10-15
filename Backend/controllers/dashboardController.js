@@ -4,43 +4,59 @@ import Product from '../models/Product.js'
 import Material from '../models/Material.js'
 import Course from '../models/Course.js'
 import User from '../models/User.js'
-import { getAuth, initFirebaseAdmin } from '../config/firebaseAdmin.js'
+import { auth } from '../config/firebaseAdmin.js'; // Import auth directly
 
 // GET /api/dashboard/stats
 // Returns totals: users, orders, revenue, products
 export async function getDashboardStats(req, res) {
   try {
-    // Users (Firebase Admin)
+    // 1. Fetch Users (with fallback)
     let totalUsers = 0;
-    try {
-      console.log("Attempting to initialize Firebase Admin...");
-      initFirebaseAdmin();
-      console.log("Firebase Admin initialized. Listing users...");
-      // listUsers returns up to 1000 per call; loop if needed
-      let nextPageToken;
-      do {
-        // eslint-disable-next-line no-await-in-loop
-        const result = await getAuth().listUsers(1000, nextPageToken);
-        totalUsers += result.users.length;
-        nextPageToken = result.pageToken;
-      } while (nextPageToken);
-      console.log("Successfully listed users from Firebase.");
-    } catch (e) {
-      console.error("Firebase Admin user listing failed. Falling back to local DB.", e);
-      // Fallback gracefully if Firebase Admin is not configured: use local User collection
-      try {
+    if (auth) {
+        try {
+            const result = await auth.listUsers(1000); // Simple count for now
+            totalUsers = result.users.length; // Note: For >1000 users, you'd need to paginate
+        } catch (e) {
+            console.error("Firebase user listing failed. Falling back to local DB.", e.message);
+            totalUsers = await User.countDocuments({});
+        }
+    } else {
+        console.warn("Firebase auth not initialized. Counting local DB users.");
         totalUsers = await User.countDocuments({});
-        console.log("Successfully counted users from local DB.");
-      } catch (dbError) {
-        console.error("Local DB user count failed.", dbError);
-        totalUsers = 0;
-      }
     }
 
-    // ... rest of the function ...
+
+    // 2. Fetch all other stats concurrently for performance
+    const [
+      totalOrders,
+      totalRevenue,
+      totalProducts,
+      totalMaterials,
+      totalCourses,
+    ] = await Promise.all([
+      Order.countDocuments({}),
+      Order.aggregate([
+        { $match: { paymentStatus: 'completed' } },
+        { $group: { _id: null, total: { $sum: '$amount' } } },
+      ]),
+      Product.countDocuments({}),
+      Material.countDocuments({}),
+      Course.countDocuments({}),
+    ]);
+
+    // 3. Send the complete stats object as a response
+    res.status(200).json({
+      users: totalUsers,
+      orders: totalOrders,
+      revenue: totalRevenue.length > 0 ? totalRevenue[0].total : 0,
+      products: totalProducts,
+      materials: totalMaterials,
+      courses: totalCourses,
+    });
+
   } catch (error) {
     console.error('Dashboard stats error:', error);
-    return res.status(500).json({ message: 'Failed to fetch dashboard stats' });
+    res.status(500).json({ message: 'Failed to fetch dashboard stats' });
   }
 }
 

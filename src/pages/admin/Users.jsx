@@ -1,5 +1,8 @@
+// src/pages/admin/Users.jsx
+
 import { useEffect, useMemo, useState } from 'react';
-import { apiSend } from '../../utils/api';
+// Import your apiGet and apiSend functions
+import { apiGet, apiSend } from '../../utils/api';
 
 export default function Users() {
   const [rows, setRows] = useState([]);
@@ -10,13 +13,16 @@ export default function Users() {
   const [statusFilter, setStatusFilter] = useState('');
   const [message, setMessage] = useState({ type: '', text: '' });
 
+  // CORRECTED: This function now uses apiGet
   const fetchUsers = () => {
     setLoading(true);
-    const token = localStorage.getItem('authToken');
-    fetch('/api/users', { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.ok ? r.json() : Promise.reject('Failed to load users'))
+    apiGet('/api/users')
       .then(data => setRows(Array.isArray(data) ? data : []))
-      .catch(() => setRows([]))
+      .catch((err) => {
+        console.error(err);
+        setRows([]);
+        setMessage({ type: 'error', text: 'Failed to load users.' });
+      })
       .finally(() => setLoading(false));
   };
   
@@ -59,9 +65,11 @@ export default function Users() {
     
     setMessage({ type: '', text: '' });
     try {
+      // CORRECTED: This now uses apiSend
       const res = await apiSend('/api/admins/promote', 'POST', { email: user.email });
       if (res.success) {
         setMessage({ type: 'success', text: res.message });
+        // Optimistically update the UI
         setRows(rows.map(r => r.uid === user.uid ? { ...r, role: 'admin' } : r));
       } else {
         setMessage({ type: 'error', text: res.message });

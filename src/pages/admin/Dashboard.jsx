@@ -114,7 +114,7 @@ function RecentActivityList({ items, loading }) {
   );
 }
 
-// -------------------- CUSTOM HOOK --------------------
+
 function useDashboardData() {
   const [data, setData] = useState({
     stats: { users: 0, orders: 0, revenue: 0, products: 0, materials: 0, courses: 0 },
@@ -126,14 +126,17 @@ function useDashboardData() {
 
   const fetchDashboardData = async () => {
     try {
+      // Set loading state and clear previous errors
       setData((prev) => ({ ...prev, loading: true, error: null }));
 
+      // Fetch all dashboard data concurrently
       const [stats, sales, recent] = await Promise.all([
-        apiGet('/api/dashboard/stats').catch(() => null),
-        apiGet('/api/dashboard/sales?months=7').catch(() => []),
-        apiGet('/api/dashboard/recent').catch(() => []),
+        apiGet('/api/dashboard/stats'),
+        apiGet('/api/dashboard/sales?months=7'),
+        apiGet('/api/dashboard/recent'),
       ]);
 
+      // If all requests succeed, update the state
       setData({
         stats: stats || { users: 0, orders: 0, revenue: 0, products: 0, materials: 0, courses: 0 },
         salesData: sales || [],
@@ -141,25 +144,27 @@ function useDashboardData() {
         loading: false,
         error: null,
       });
+
     } catch (error) {
+      // If ANY request fails, this block will now execute
       console.error('Dashboard fetch error:', error);
       setData((prev) => ({
         ...prev,
         loading: false,
-        error: 'Failed to load dashboard data. Check console for details.',
+        error: `Failed to load dashboard data: ${error.message}`, // Set the specific error message
       }));
     }
   };
 
   useEffect(() => {
     fetchDashboardData();
-    const id = setInterval(fetchDashboardData, 30000); // every 30s
-    return () => clearInterval(id);
+    // We are removing the interval for now to prevent repeated errors during debugging
+    // const id = setInterval(fetchDashboardData, 30000);
+    // return () => clearInterval(id);
   }, []);
 
   return { ...data, refetch: fetchDashboardData };
 }
-
 // -------------------- MAIN DASHBOARD COMPONENT --------------------
 export default function Dashboard() {
   const { stats, salesData, recentActivity, loading, error, refetch } = useDashboardData();

@@ -1,5 +1,5 @@
 import User from '../models/User.js'
-import { getAuth, initFirebaseAdmin } from '../config/firebaseAdmin.js'
+import { auth } from '../config/firebaseAdmin.js';
 // Upsert a user on login
 export async function upsertUserOnLogin(req, res) {
   try {
@@ -55,7 +55,7 @@ export async function getFirebaseUsers(req, res) {
   try {
     // If dev auth bypass is enabled, serve local users so the UI works in dev
     if (process.env.DEV_AUTH_DISABLED === 'true') {
-      const users = await User.find().limit(1000)
+      const users = await User.find().limit(1000);
       return res.json(users.map(u => ({
         uid: u._id?.toString(),
         email: u.email || '',
@@ -68,17 +68,19 @@ export async function getFirebaseUsers(req, res) {
         disabled: false,
         creationTime: u.createdAt || '',
         lastSignInTime: u.updatedAt || ''
-      })))
+      })));
+    }
+    
+    // CORRECTED: Add a check to ensure auth is initialized
+    if (!auth) {
+        throw new Error("Firebase Admin SDK is not initialized.");
     }
 
-    initFirebaseAdmin()
-    const auth = getAuth()
-
-    const allUsers = []
-    let nextPageToken = undefined
+    const allUsers = [];
+    let nextPageToken = undefined;
     do {
-      // Firebase returns up to 1000 users per page
-      const result = await auth.listUsers(1000, nextPageToken)
+      // CORRECTED: Use the imported 'auth' object directly
+      const result = await auth.listUsers(1000, nextPageToken);
       const mapped = result.users.map(u => ({
         uid: u.uid,
         email: u.email || '',
@@ -91,17 +93,18 @@ export async function getFirebaseUsers(req, res) {
         disabled: !!u.disabled,
         creationTime: u.metadata?.creationTime || '',
         lastSignInTime: u.metadata?.lastSignInTime || ''
-      }))
-      allUsers.push(...mapped)
-      nextPageToken = result.pageToken
-    } while (nextPageToken)
+      }));
+      allUsers.push(...mapped);
+      nextPageToken = result.pageToken;
+    } while (nextPageToken);
 
-    return res.json(allUsers)
+    return res.json(allUsers);
+
   } catch (err) {
-    console.error('getFirebaseUsers error:', err?.message || err)
-    // Fallback: attempt to return local users instead of failing the UI entirely
+    console.error('getFirebaseUsers error:', err?.message || err);
+    // Fallback to local users to prevent total UI failure
     try {
-      const users = await User.find().limit(1000)
+      const users = await User.find().limit(1000);
       return res.json(users.map(u => ({
         uid: u._id?.toString(),
         email: u.email || '',
@@ -114,16 +117,12 @@ export async function getFirebaseUsers(req, res) {
         disabled: false,
         creationTime: u.createdAt || '',
         lastSignInTime: u.updatedAt || ''
-      })))
+      })));
     } catch (e) {
-      return res.status(500).json({ message: 'Failed to fetch users' })
+      return res.status(500).json({ message: 'Failed to fetch users' });
     }
   }
 }
-
-
-
-
 
 export async function setFirebaseUserRole(req, res) {
   try {
@@ -137,9 +136,12 @@ export async function setFirebaseUserRole(req, res) {
       return res.status(400).json({ message: 'Invalid role specified' });
     }
 
-    initFirebaseAdmin();
-    const auth = getAuth();
+    // CORRECTED: Add a check to ensure auth is initialized
+    if (!auth) {
+        throw new Error("Firebase Admin SDK is not initialized.");
+    }
     
+    // CORRECTED: Use the imported 'auth' object directly
     await auth.setCustomUserClaims(uid, { role: role });
     
     return res.json({ message: `Successfully set role of ${role} for user ${uid}` });

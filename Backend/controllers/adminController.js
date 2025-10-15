@@ -1,5 +1,5 @@
 import Admin from '../models/Admin.js';
-import { getAuth, initFirebaseAdmin } from '../config/firebaseAdmin.js';
+import { auth } from '../config/firebaseAdmin.js'; // Import auth directly
 
 // @route   POST /api/admins/create
 // @desc    Create new admin in Firebase Auth and MongoDB
@@ -18,7 +18,6 @@ export async function createAdmin(req, res) {
     }
 
     // Initialize Firebase Admin SDK
-    initFirebaseAdmin();
     const auth = getAuth();
 
     // Check if admin already exists in MongoDB
@@ -134,7 +133,6 @@ export async function deleteAdmin(req, res) {
     }
 
     // Delete from Firebase Auth
-    initFirebaseAdmin();
     const auth = getAuth();
     try {
         const user = await auth.getUserByEmail(admin.email);
