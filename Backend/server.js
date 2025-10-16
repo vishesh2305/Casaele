@@ -2,6 +2,8 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import mongoose from 'mongoose'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import connectDB from './config/db.js'
 import healthRoutes from './routes/healthRoutes.js'
 import userRoutes from './routes/userRoutes.js'
@@ -79,6 +81,11 @@ app.use(
 )
 
 app.use(express.json())
+
+// ✅ Serve static files from public folder
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+app.use(express.static(path.join(__dirname, '../src/public')))
 
 // ✅ Mongoose Connection Events
 mongoose.connection.on('connected', () => {

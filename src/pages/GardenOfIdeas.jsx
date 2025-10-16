@@ -26,12 +26,12 @@ function Garden() {
           <p className="text-2xl text-center text-black mb-12">Share your thoughts and suggestions to help us grow CasaDeELE <br /> and make your Spanish learning journey even better.</p>
           {/* Plant Images */}
           <div className="flex justify-center flex-wrap gap-8 mb-12">
-            <img src="GardenOfIdeas\a-2d-digital-illustration-of-a-glowing-spiral-shap.svg" alt="plant 1" className="w-[150px] h-[150px]" />
-            <img src="GardenOfIdeas\a-2d-digital-illustration-of-a-small--bright-green.svg" alt="plant 2" className="w-[150px] h-[150px]" />
-            <img src="GardenOfIdeas\a-2d-digital-illustration-of-a-small-alien-plant-w.svg" alt="plant 3" className="w-[150px] h-[150px]" />
-            <img src="GardenOfIdeas\a-2d-digital-illustration-of-a-tiny-alien-plant-wi.svg" alt="plant 4" className="w-[150px] h-[150px]" />
-            <img src="GardenOfIdeas\a-2d-digital-illustration-of-a-whimsical-alien-sap.svg" alt="plant 5" className="w-[150px] h-[150px]" />
-            <img src="GardenOfIdeas\a-2d-digital-illustration-of-an-alien-plant-with-c.svg" alt="plant 6" className="w-[150px] h-[150px]" />
+            <img src="/GardenOfIdeas/a-2d-digital-illustration-of-a-glowing-spiral-shap.svg" alt="plant 1" className="w-[150px] h-[150px]" />
+            <img src="/GardenOfIdeas/a-2d-digital-illustration-of-a-small--bright-green.svg" alt="plant 2" className="w-[150px] h-[150px]" />
+            <img src="/GardenOfIdeas/a-2d-digital-illustration-of-a-small-alien-plant-w.svg" alt="plant 3" className="w-[150px] h-[150px]" />
+            <img src="/GardenOfIdeas/a-2d-digital-illustration-of-a-tiny-alien-plant-wi.svg" alt="plant 4" className="w-[150px] h-[150px]" />
+            <img src="/GardenOfIdeas/a-2d-digital-illustration-of-a-whimsical-alien-sap.svg" alt="plant 5" className="w-[150px] h-[150px]" />
+            <img src="/GardenOfIdeas/a-2d-digital-illustration-of-an-alien-plant-with-c.svg" alt="plant 6" className="w-[150px] h-[150px]" />
           </div>
 
           {/* Text Area + Button */}

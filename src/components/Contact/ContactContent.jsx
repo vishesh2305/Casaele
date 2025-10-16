@@ -63,7 +63,7 @@ const ContactContent = () => {
               ¡Hola! We're here to help you on your Spanish learning journey. Whether you're a future student ready to discover the beauty of Spanish, an educator interested in our methodology, or a potential collaborator looking to connect, we'd love to hear from you. Vamos a conversar!
             </p>
             <img
-              src="Contact/image 53.svg"
+              src="/Contact/image 53.svg"
               alt="Alien Teacher"
               className="w-48 sm:w-56 md:w-72 h-auto mx-auto lg:mx-8"
             />

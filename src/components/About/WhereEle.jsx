@@ -10,7 +10,7 @@ const WhereEle = () => {
         </h2>
         <div className="relative w-full">
           <img
-            src="About/image 54.svg"
+            src="/About/image 54.svg"
             alt="World Map"
             className="shadow-md w-full h-auto object-cover"
           />

@@ -35,7 +35,7 @@ function HowWeHelp() {
           {/* Right Image */}
           <div className="w-full md:w-1/2 flex justify-center">
             <img
-              src="Home\a-comic-style-panel-showing-a-diverse-group-of-ind.svg"
+              src="/Home/a-comic-style-panel-showing-a-diverse-group-of-ind.svg"
               alt="Online Course Visual"
               className="w-72 sm:w-96 md:w-[410px] h-auto rounded-2xl shadow-md"
             />
@@ -49,7 +49,7 @@ function HowWeHelp() {
           {/* Left Image */}
           <div className="w-full md:w-1/2 flex justify-center">
             <img
-              src="Home\an-energetic-comic-style-scene-with-floating-audio.svg"
+              src="/Home/an-energetic-comic-style-scene-with-floating-audio.svg"
               alt="Audio-Visual Learning Material"
               className="w-72 sm:w-96 md:w-[410px] h-auto rounded-2xl shadow-md"
             />
@@ -91,7 +91,7 @@ function HowWeHelp() {
           {/* Right Image */}
           <div className="w-full md:w-1/2 flex justify-center">
             <img
-              src="Home\a-cozy-comic-style-pop-up-shop-inside-ele-s-house-.svg"
+              src="/Home/a-cozy-comic-style-pop-up-shop-inside-ele-s-house-.svg"
               alt="Shop Visual"
               className="w-72 sm:w-96 md:w-[410px] h-auto rounded-2xl shadow-md"
             />

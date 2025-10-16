@@ -37,7 +37,7 @@ const AboutSection = () => {
           {/* Left Side Image */}
           <div className="w-full md:w-1/2 flex justify-center md:justify-start">
             <img
-              src="About/image 52.svg"
+              src="/About/image 52.svg"
               alt="A curious, friendly green alien character named Ele"
               className="w-48 sm:w-72 md:w-[26rem] lg:w-[32rem] xl:w-[34rem] h-auto object-contain"
             />

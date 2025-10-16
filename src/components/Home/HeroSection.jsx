@@ -38,7 +38,7 @@ function HeroSection() {
         {/* Cartoon in middle */}
         <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 translate-y-1/2 w-72 md:w-80 lg:w-96 xl:w-[28rem] z-20">
           <img
-            src="Home/image 58.svg"
+            src="/Home/image 58.svg"
             alt="cartoon"
             className="w-full h-auto object-contain"
           />
@@ -84,7 +84,7 @@ function HeroSection() {
         {/* Cartoon */}
         <div className="w-72 md:w-80 xl:w-[28rem]">
           <img
-            src="Home/image 58.svg"
+            src="/Home/image 58.svg"
             alt="cartoon"
             className="w-full h-auto object-contain"
           />

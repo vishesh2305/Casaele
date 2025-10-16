@@ -14,4 +14,9 @@ export default defineConfig({
       },
     },
   },
+  // Ensure static assets are properly handled
+  publicDir: 'src/public',
+  assetsInclude: ['**/*.svg', '**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.gif', '**/*.webp'],
+  // Ensure proper base path for assets
+  base: '/'
 })

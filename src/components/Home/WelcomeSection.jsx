@@ -63,7 +63,7 @@ function WelcomeSection() {
       <div className="mt-10 flex justify-center">
         <div className="relative w-full max-w-4xl">
           <img
-            src="Home/image 59.svg"
+            src="/Home/image 59.svg"
             alt="Ele’s House"
             className="w-full h-auto object-contain"
           />

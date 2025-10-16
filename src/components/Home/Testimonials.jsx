@@ -103,7 +103,7 @@ function Testimonials() {
               className="w-full sm:w-72 lg:w-64 h-96 flex-shrink-0 flex flex-col bg-white p-6 rounded-xl"
             >
               <img
-                src="Home/Frame.svg"
+                src="/Home/Frame.svg"
                 alt="Quote"
                 className="w-10 mx-auto mb-4 flex-shrink-0"
               />
