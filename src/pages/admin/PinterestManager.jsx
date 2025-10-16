@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiExternalLink, FiImage, FiSave, FiTrash2, FiEdit, FiRefreshCw, FiShare2 } from 'react-icons/fi';
+import { apiGet, apiSend } from '../../utils/api';
 
 function useAuthHeaders() {
   const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
@@ -25,8 +26,7 @@ export default function PinterestManager() {
   const fetchPinterestData = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/pinterest', { headers });
-      const result = await response.json();
+      const result = await apiGet('/api/pinterest');
       
       if (result.success) {
         setPinterestData(result.data);
@@ -52,13 +52,7 @@ export default function PinterestManager() {
       setError('');
       setFetchedData(null);
 
-      const response = await fetch('/api/pinterest/fetch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...headers },
-        body: JSON.stringify({ url })
-      });
-
-      const result = await response.json();
+      const result = await apiSend('/api/pinterest/fetch', 'POST', { url });
 
       if (result.success) {
         setFetchedData(result.data);
@@ -80,13 +74,7 @@ export default function PinterestManager() {
       setLoading(true);
       setError('');
 
-      const response = await fetch('/api/pinterest/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...headers },
-        body: JSON.stringify(fetchedData)
-      });
-
-      const result = await response.json();
+      const result = await apiSend('/api/pinterest/save', 'POST', fetchedData);
 
       if (result.success) {
         setSuccess('Pinterest data saved successfully!');
@@ -108,12 +96,7 @@ export default function PinterestManager() {
 
     try {
       setLoading(true);
-      const response = await fetch(`/api/pinterest/${id}`, {
-        method: 'DELETE',
-        headers
-      });
-
-      const result = await response.json();
+      const result = await apiSend(`/api/pinterest/${id}`, 'DELETE');
 
       if (result.success) {
         setSuccess('Pinterest item deleted successfully!');
@@ -136,13 +119,7 @@ export default function PinterestManager() {
   const handleUpdate = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/pinterest/${editingId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...headers },
-        body: JSON.stringify(editForm)
-      });
-
-      const result = await response.json();
+      const result = await apiSend(`/api/pinterest/${editingId}`, 'PUT', editForm);
 
       if (result.success) {
         setSuccess('Pinterest item updated successfully!');
