@@ -1,5 +1,8 @@
+// controllers/adminController.js
+
 import Admin from '../models/Admin.js';
-import { auth } from '../config/firebaseAdmin.js'; // Import auth directly
+// CORRECTED: Import the 'auth' object directly
+import { auth } from '../config/firebaseAdmin.js';
 
 // @route   POST /api/admins/create
 // @desc    Create new admin in Firebase Auth and MongoDB
@@ -16,9 +19,11 @@ export async function createAdmin(req, res) {
     if (password.length < 6) {
         return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long' });
     }
-
-    // Initialize Firebase Admin SDK
-    const auth = getAuth();
+    
+    // CORRECTED: Add check for auth object
+    if (!auth) {
+        throw new Error("Firebase Admin SDK not initialized.");
+    }
 
     // Check if admin already exists in MongoDB
     const existingAdmin = await Admin.findOne({ email: email.toLowerCase() });
@@ -26,11 +31,11 @@ export async function createAdmin(req, res) {
       return res.status(400).json({ success: false, message: 'An admin with this email already exists.' });
     }
 
-    // Create user in Firebase Authentication
+    // CORRECTED: Use imported 'auth' object
     const userRecord = await auth.createUser({
       email: email,
       password: password,
-      emailVerified: true, // Mark as verified since a super admin is creating it
+      emailVerified: true,
     });
 
     // Create admin in MongoDB
@@ -44,7 +49,7 @@ export async function createAdmin(req, res) {
 
     res.status(201).json({ 
       success: true, 
-      message: 'Admin created successfully. They can now log in with the provided credentials.',
+      message: 'Admin created successfully.',
       admin: {
           id: newAdmin._id,
           email: newAdmin.email,
@@ -55,7 +60,6 @@ export async function createAdmin(req, res) {
   } catch (error) {
     console.error('Error creating admin:', error);
     
-    // Provide more specific feedback for common Firebase errors
     if (error.code === 'auth/email-already-exists') {
         return res.status(400).json({ success: false, message: 'This email is already in use by a Firebase user.' });
     }
@@ -131,14 +135,18 @@ export async function deleteAdmin(req, res) {
     if (admin.role === 'super-admin') {
       return res.status(400).json({ success: false, message: 'Cannot delete super-admin' });
     }
+    
+    // CORRECTED: Add check for auth object
+    if (!auth) {
+        throw new Error("Firebase Admin SDK not initialized.");
+    }
 
     // Delete from Firebase Auth
-    const auth = getAuth();
     try {
+        // CORRECTED: Use imported 'auth' object
         const user = await auth.getUserByEmail(admin.email);
         await auth.deleteUser(user.uid);
     } catch (error) {
-        // Log if user not in Firebase, but proceed with DB deletion
         console.warn(`Could not delete user from Firebase (may not exist): ${admin.email}`);
     }
 

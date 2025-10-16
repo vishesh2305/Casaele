@@ -1,3 +1,5 @@
+// src/pages/admin/ManageAdmins.jsx
+
 import React, { useState, useEffect } from 'react';
 import { 
   FiPlus, 
@@ -10,6 +12,8 @@ import {
   FiShield,
   FiAlertCircle
 } from 'react-icons/fi';
+// CORRECTED: Import the API utility
+import { apiGet, apiSend } from '../../utils/api';
 
 const ManageAdmins = () => {
   const [admins, setAdmins] = useState([]);
@@ -28,31 +32,21 @@ const ManageAdmins = () => {
   const fetchAdmins = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
       const params = new URLSearchParams({
         page: currentPage,
         limit: 10,
         ...(searchTerm && { search: searchTerm })
       });
 
-      const response = await fetch(`/api/admins?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setAdmins(data.admins || []);
-        setTotalPages(data.totalPages || 1);
-      } else {
-        const errorData = await response.json();
-        setMessage({ type: 'error', text: errorData.message || 'Failed to fetch admins' });
-      }
+      // CORRECTED: Use apiGet to fetch data
+      const data = await apiGet(`/api/admins?${params}`);
+      
+      setAdmins(data.admins || []);
+      setTotalPages(data.totalPages || 1);
+      
     } catch (error) {
       console.error('Error fetching admins:', error);
-      setMessage({ type: 'error', text: 'Failed to fetch admins' });
+      setMessage({ type: 'error', text: error.message || 'Failed to fetch admins' });
     } finally {
       setLoading(false);
     }
@@ -73,17 +67,8 @@ const ManageAdmins = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch('/api/admins/create', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
+      // CORRECTED: Use apiSend to post data
+      const data = await apiSend('/api/admins/create', 'POST', formData);
 
       if (data.success) {
         setMessage({ type: 'success', text: data.message });
@@ -95,7 +80,7 @@ const ManageAdmins = () => {
       }
     } catch (error) {
       console.error('Error creating admin:', error);
-      setMessage({ type: 'error', text: 'Failed to create admin' });
+      setMessage({ type: 'error', text: error.message || 'Failed to create admin' });
     } finally {
       setIsCreating(false);
     }
@@ -104,13 +89,8 @@ const ManageAdmins = () => {
   const handleDeleteAdmin = async (adminId) => {
     if (window.confirm('Are you sure you want to delete this admin? This will remove their access permanently.')) {
       try {
-        const token = localStorage.getItem('authToken');
-        const response = await fetch(`/api/admins/${adminId}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        const data = await response.json();
+        // CORRECTED: Use apiSend for DELETE request
+        const data = await apiSend(`/api/admins/${adminId}`, 'DELETE');
 
         if (data.success) {
           setMessage({ type: 'success', text: data.message });
@@ -125,6 +105,7 @@ const ManageAdmins = () => {
     }
   };
 
+  // ... (rest of the component's JSX is unchanged and correct)
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
