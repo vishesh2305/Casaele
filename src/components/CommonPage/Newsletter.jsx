@@ -5,6 +5,10 @@ const Newsletter = () => {
   const roles = ["Teacher", "Student", "Explorer"];
 
   const [showAuth, setShowAuth] = useState(false);
+  const [email, setEmail] = useState('');
+  const [role, setRole] = useState('Teacher');
+  const [status, setStatus] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   return (
     <section className="py-20 px-8 bg-[#FDF2F2] text-center">
@@ -19,18 +23,19 @@ const Newsletter = () => {
 
         {/* Role Selection without state */}
         <div className="flex justify-center items-center gap-4 mb-8">
-          {roles.map((role, i) => (
-            <React.Fragment key={role}>
+          {roles.map((r, i) => (
+            <React.Fragment key={r}>
               <label className="flex items-center cursor-pointer">
                 <input
                   type="radio"
                   name="role"
-                  value={role}
+                  value={r}
                   defaultChecked={i === 0} // by default Teacher selected
                   className="hidden peer"
+                  onChange={() => setRole(r)}
                 />
                 <span className="text-lg text-gray-500 peer-checked:font-bold peer-checked:text-gray-800 hover:text-gray-800 transition-colors duration-300">
-                  {role}
+                  {r}
                 </span>
               </label>
               {i < roles.length - 1 && (
@@ -43,25 +48,46 @@ const Newsletter = () => {
         {/* Subscription Form */}
         <form
           className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-xl mx-auto"
-          onSubmit={(e) => e.preventDefault()}
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setStatus('');
+            if (!email) { setStatus('Please enter your email'); return; }
+            try {
+              setSubmitting(true);
+              const res = await fetch('/api/subscribers/public', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, role }) });
+              const data = await res.json().catch(()=>({}));
+              if (!res.ok) throw new Error(data?.message || 'Subscription failed');
+              // brief visual confirmation delay
+              setTimeout(()=>{
+                setStatus('Subscribed');
+                setEmail('');
+                setSubmitting(false);
+              }, 800);
+            } catch(err) {
+              setStatus(err?.message || 'Subscription failed');
+              setSubmitting(false);
+            }
+          }}
         >
           <input
             type="email"
             placeholder="Enter your email"
+            value={email}
+            onChange={(e)=>setEmail(e.target.value)}
             className="flex-1 w-full px-6 py-4 bg-[#FDF2F2] text-gray-700 placeholder-gray-400 focus:outline-none rounded-full border border-gray-200 shadow-sm focus:ring-2 focus:ring-red-400"
             aria-label="Email for newsletter"
           />
           <button
-            onClick={(e) => {
-            e.preventDefault(); // prevent form submission
-            setShowAuth(true); // open modal
-          }}
             type="submit"
-            className="bg-[rgba(173,21,24,1)] hover:bg-red-700 text-white px-8 py-4 rounded-full font-semibold transition-transform transform hover:scale-105 shadow-md w-full sm:w-auto"
+            disabled={submitting}
+            className={`px-8 py-4 rounded-full font-semibold transition-transform transform shadow-md w-full sm:w-auto text-white ${submitting ? 'bg-red-400 cursor-not-allowed' : 'bg-[rgba(173,21,24,1)] hover:bg-red-700 hover:scale-105'}`}
           >
-            Subscribe
+            {submitting ? 'Subscribing…' : (status === 'Subscribed' ? 'Subscribed' : 'Subscribe')}
           </button>
         </form>
+        {status && status !== 'Subscribed' && (
+          <div className="mt-3 text-sm text-gray-700">{status}</div>
+        )}
       </div>
 
       {/* Modal */}

@@ -64,7 +64,8 @@ export default function Materials() {
       if (!form.fileUrl) { setErrorMsg('Please select an image (local or Pinterest).'); setSaving(false); return; }
       const payload = {
         ...form,
-        tags: form.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+        tags: form.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+        imageSource: form.imageSource || (imgMode === 'pinterest' ? 'pinterest' : 'local')
       };
       const saved = editing
         ? await apiSend(`/api/materials/${editing._id}`, 'PUT', payload)
@@ -217,9 +218,11 @@ export default function Materials() {
                       onClick={async () => {
                         try {
                           setUploading(true);
-                          const data = await apiSend('/api/pinterest/fetch', 'POST', { url: pinUrl });
+                          const res = await apiSend('/api/pinterest/fetch', 'POST', { url: pinUrl });
+                          const ok = res && (res.success === true) && res.data;
+                          const data = ok ? res.data : res;
                           setPinPreview(data);
-                          setForm({ ...form, fileUrl: data.image || data.imageUrl || '', imageSource: 'pinterest' });
+                          setForm({ ...form, fileUrl: data.imageUrl || data.image || '', imageSource: 'pinterest' });
                         } catch (e) {
                           alert(e?.message || 'Failed to fetch Pinterest data');
                         } finally {

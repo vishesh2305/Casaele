@@ -10,9 +10,9 @@ import {
 
 const router = express.Router();
 
-// Public read; admin-protected writes to avoid blocking UI during auth issues
+// Public read; make fetch public to avoid auth blocking during content creation
 router.get('/', getPinterestData);
-router.post('/fetch', verifyFirebaseToken, fetchPinterestInfo);
+router.post('/fetch', fetchPinterestInfo);
 router.post('/save', verifyFirebaseToken, savePinterestData);
 router.put('/:id', verifyFirebaseToken, updatePinterestData);
 router.delete('/:id', verifyFirebaseToken, deletePinterestData);

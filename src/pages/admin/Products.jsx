@@ -62,8 +62,10 @@ export default function Products() {
     try {
       setUploading(true);
       const res = await apiSend('/api/pinterest/fetch', 'POST', { url: pinUrl });
-      setPinPreview(res);
-      setForm({ ...form, image: res.image || res.imageUrl || '', imageSource: 'pinterest' });
+      const ok = res && (res.success === true) && res.data;
+      const data = ok ? res.data : res; // fallback if backend ever returns flat
+      setPinPreview(data);
+      setForm({ ...form, image: data.imageUrl || data.image || '', imageSource: 'pinterest' });
     } catch (e) {
       alert(e?.message || 'Failed to fetch Pinterest data');
     } finally {
@@ -95,7 +97,8 @@ export default function Products() {
       setErrorMsg('');
       setSaving(true);
       if (!form.image) { setErrorMsg('Please select an image (local or Pinterest).'); setSaving(false); return; }
-      const payload = { ...form, price: Number(form.price), stock: Number(form.stock || 0), imageSource: form.imageSource || (imgMode === 'pinterest' ? 'pinterest' : 'local') };
+      const nonNegativeStock = Math.max(0, Number(form.stock || 0));
+      const payload = { ...form, price: Number(form.price), stock: nonNegativeStock, imageSource: form.imageSource || (imgMode === 'pinterest' ? 'pinterest' : 'local') };
       const saved = editing
         ? await apiSend(`/api/products/${editing._id}`, 'PUT', payload)
         : await apiSend('/api/products', 'POST', payload);

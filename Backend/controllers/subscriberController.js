@@ -79,6 +79,46 @@ export async function createSubscriber(req, res) {
   }
 }
 
+// @route   POST /api/subscribers/public
+// @desc    Public subscription endpoint (no auth)
+// @access  Public
+export async function subscribePublic(req, res) {
+  try {
+    const { email, name, role } = req.body || {};
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const safeName = name && String(name).trim() ? String(name).trim() : 'Subscriber';
+    const tags = [];
+    if (role && String(role).trim()) tags.push(String(role).trim());
+
+    const existing = await Subscriber.findOne({ email });
+    if (existing) {
+      existing.isActive = true;
+      existing.unsubscribedAt = undefined;
+      existing.name = existing.name || safeName;
+      // merge tags without duplicates
+      const set = new Set([...(existing.tags || []), ...tags]);
+      existing.tags = Array.from(set);
+      await existing.save();
+      return res.status(200).json({ message: 'Already subscribed, updated preferences', subscriber: existing });
+    }
+
+    const subscriber = await Subscriber.create({
+      email,
+      name: safeName,
+      isActive: true,
+      source: 'website',
+      tags
+    });
+    return res.status(201).json({ message: 'Subscribed successfully', subscriber });
+  } catch (error) {
+    console.error('Public subscribe error:', error);
+    return res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+}
+
 // @route   PUT /api/subscribers/:id
 // @desc    Update subscriber
 // @access  Admin

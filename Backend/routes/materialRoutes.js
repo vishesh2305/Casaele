@@ -7,9 +7,17 @@ const router = Router()
 // Create (admin)
 router.post('/', verifyFirebaseToken, async (req, res) => {
   try {
-    const { title, content, category, fileUrl } = req.body
+    const { title, content, category, fileUrl, imageSource, description, tags } = req.body
     if (!title) return res.status(400).json({ message: 'title is required' })
-    const material = await Material.create({ title, content, category, fileUrl })
+    const material = await Material.create({ 
+      title, 
+      content: content || '', 
+      description: description || '',
+      category: category || '', 
+      fileUrl: fileUrl || '', 
+      imageSource: imageSource || '',
+      tags: Array.isArray(tags) ? tags : []
+    })
     res.status(201).json(material)
   } catch (e) {
     res.status(500).json({ message: 'Failed to create material' })

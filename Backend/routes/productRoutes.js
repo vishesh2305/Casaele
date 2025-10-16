@@ -7,9 +7,10 @@ const router = Router()
 // Create (admin)
 router.post('/', verifyFirebaseToken, async (req, res) => {
   try {
-    const { name, price, description, image, stock } = req.body
+    const { name, price, description, image, stock, imageSource } = req.body
     if (!name || price == null) return res.status(400).json({ message: 'name and price are required' })
-    const product = await Product.create({ name, price, description, image, stock })
+    const normalizedStock = Number.isFinite(Number(stock)) && Number(stock) > 0 ? Number(stock) : 0
+    const product = await Product.create({ name, price, description, image, stock: normalizedStock, imageSource: imageSource || '' })
     res.status(201).json(product)
   } catch (e) {
     res.status(500).json({ message: 'Failed to create product' })

@@ -559,9 +559,11 @@ const Courses = () => {
                           const token = localStorage.getItem('authToken');
                           const res = await fetch('/api/pinterest/fetch', { method:'POST', headers:{ 'Authorization':`Bearer ${token}`, 'Content-Type':'application/json' }, body: JSON.stringify({ url: pinUrl }) });
                           if (!res.ok) throw new Error(await res.text());
-                          const data = await res.json();
+                          const payload = await res.json();
+                          const ok = payload && (payload.success === true) && payload.data;
+                          const data = ok ? payload.data : payload;
                           setPinPreview(data);
-                          setFormData(prev => ({ ...prev, thumbnail: data.image || data.imageUrl || '', imageSource: 'pinterest' }));
+                          setFormData(prev => ({ ...prev, thumbnail: data.imageUrl || data.image || '', imageSource: 'pinterest' }));
                         } catch(e) { alert(e?.message || 'Failed to fetch Pinterest data'); }
                       }} disabled={!pinUrl} className="px-3 py-1.5 rounded-md bg-gray-900 text-white hover:bg-black disabled:opacity-60">Fetch</button>
                     </div>

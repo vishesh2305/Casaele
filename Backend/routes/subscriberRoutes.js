@@ -1,6 +1,6 @@
 import express from 'express';
 import { verifyFirebaseToken } from '../middleware/auth.js';
-import { getSubscribers, getSubscriberById, createSubscriber, updateSubscriber, deleteSubscriber, unsubscribeUser } from '../controllers/subscriberController.js';
+import { getSubscribers, getSubscriberById, createSubscriber, updateSubscriber, deleteSubscriber, unsubscribeUser, subscribePublic } from '../controllers/subscriberController.js';
 
 const router = express.Router();
 
@@ -14,5 +14,8 @@ router.route('/:id')
   .delete(verifyFirebaseToken, deleteSubscriber);
 
 router.put('/:id/unsubscribe', verifyFirebaseToken, unsubscribeUser);
+
+// Public subscribe endpoint
+router.post('/public', subscribePublic);
 
 export default router;
