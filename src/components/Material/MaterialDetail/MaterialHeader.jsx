@@ -2,7 +2,7 @@ import React from "react";
 
 function MaterialHeader({ material }) {
   // ✅ FIXED: Use material.fileUrl as the primary source for the image
-  const displayImage = material.fileUrl || material.image;
+  const displayImage = material.fileUrl && material.fileUrl.trim() !== '' ? material.fileUrl : (material.image && material.image.trim() !== '' ? material.image : "https://placehold.co/1200x800/e5e7eb/4b5563?text=Image");
 
   return (
     <div className="w-full pt-12 sm:pt-16">
@@ -39,6 +39,17 @@ function MaterialHeader({ material }) {
             {material.content ||
               "Cortometraje animado sobre la migración, construido a partir de testimonios reales de personas migrantes hispanoamericanas, para trabajar la expresión y el léxico relacionado."}
           </p>
+
+          {/* H5P/AI Embedded Content */}
+          {material.embedId && material.embedType && (
+            <div className="mt-8 rounded-lg border border-gray-200 p-4">
+              <h3 className="text-lg font-semibold mb-4">{material.embedType} Content</h3>
+              <div 
+                className="embed-container w-full min-h-[400px]" 
+                dangerouslySetInnerHTML={{ __html: material.embedId?.embedCode || '' }} 
+              />
+            </div>
+          )}
         </div>
 
         {/* Right Column */}

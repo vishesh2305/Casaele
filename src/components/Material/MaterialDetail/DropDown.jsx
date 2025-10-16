@@ -5,10 +5,10 @@ function DropDown() {
   const [active, setActive] = useState(null);
 
   const data = [
-    { q: "Ejercicio 1 - Itaque earum rerum hic tenetur a sapiente delectus", a: "Contenido del Ejercicio 1...", img: "/Material/cartoon2.svg" },
-    { q: "Ejercicio 2 - Ut aut reiciendis voluptatibus maiores alias", a: "Contenido del Ejercicio 2...", img: "/Material/cartoon1.svg" },
-    { q: "Ejercicio 3 - Nemo enim ipsam voluptatem quia voluptas", a: "Contenido del Ejercicio 3...", img: "/Material/cartoon2.svg" },
-    { q: "Ejercicio 4 - Quis autem vel eum iure reprehenderit", a: "Contenido del Ejercicio 4...", img: "/Material/cartoon1.svg" },
+  { q: "Ejercicio 1 - Itaque earum rerum hic tenetur a sapiente delectus", a: "Contenido del Ejercicio 1...", img: "Material/cartoon2.svg" },
+  { q: "Ejercicio 2 - Ut aut reiciendis voluptatibus maiores alias", a: "Contenido del Ejercicio 2...", img: "Material/cartoon1.svg" },
+  { q: "Ejercicio 3 - Nemo enim ipsam voluptatem quia voluptas", a: "Contenido del Ejercicio 3...", img: "Material/cartoon2.svg" },
+  { q: "Ejercicio 4 - Quis autem vel eum iure reprehenderit", a: "Contenido del Ejercicio 4...", img: "Material/cartoon1.svg" },
   ];
 
   return (
