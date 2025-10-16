@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
+import { apiGet, apiSend } from '../../utils/api'
 
 function useAuthHeaders() {
   const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null
@@ -19,9 +20,7 @@ export default function Embeds() {
   async function fetchEmbeds() {
     try {
       setLoading(true)
-      const res = await fetch('/api/embeds', { headers })
-      if (!res.ok) throw new Error(await res.text())
-      const data = await res.json()
+      const data = await apiGet('/api/embeds')
       setItems(data)
     } catch (e) {
       setError(e?.message || 'Failed to load embeds')
@@ -44,12 +43,7 @@ export default function Embeds() {
       setError('')
       const method = editingId ? 'PUT' : 'POST'
       const url = editingId ? `/api/embeds/${editingId}` : '/api/embeds'
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json', ...headers },
-        body: JSON.stringify(form)
-      })
-      if (!res.ok) throw new Error(await res.text())
+      const res = await apiSend(url, method, form)
       setForm({ title: '', type: 'H5P', embedCode: '' })
       setEditingId(null)
       fetchEmbeds()
@@ -61,8 +55,7 @@ export default function Embeds() {
   async function onDelete(id) {
     if (!confirm('Delete this embed?')) return
     try {
-      const res = await fetch(`/api/embeds/${id}`, { method: 'DELETE', headers })
-      if (!res.ok) throw new Error(await res.text())
+      await apiSend(`/api/embeds/${id}`, 'DELETE')
       setItems(items.filter(i => i._id !== id))
     } catch (e) {
       setError(e?.message || 'Delete failed')
