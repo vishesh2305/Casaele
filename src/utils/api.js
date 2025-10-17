@@ -1,4 +1,5 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+// Use VITE_API_BASE_URL if set, otherwise default to production backend
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://amrit-project-lms.onrender.com';
 
 export async function apiGet(path) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
