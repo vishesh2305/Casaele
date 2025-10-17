@@ -9,8 +9,13 @@ export async function submitForm(req, res) {
     const doc = await FormSubmission.create({ name, email, message })
     console.log('[forms] saved submission id:', doc._id)
     res.status(201).json(doc)
-  } catch {
-    console.error('[forms] submitForm error:', arguments)
+  } catch (err) {
+    // Log full stack for debugging
+    console.error('[forms] submitForm error:', err && err.stack ? err.stack : err)
+    // Provide more details in non-production for debugging convenience
+    if (process.env.NODE_ENV !== 'production') {
+      return res.status(500).json({ message: 'Failed to save form', error: err?.message || String(err) })
+    }
     res.status(500).json({ message: 'Failed to save form' })
   }
 }
@@ -20,8 +25,11 @@ export async function listForms(req, res) {
     const items = await FormSubmission.find().sort({ createdAt: -1 })
     console.log('[forms] listForms returning', items.length, 'items')
     res.json(items)
-  } catch {
-    console.error('[forms] listForms error:', arguments)
+  } catch (err) {
+    console.error('[forms] listForms error:', err && err.stack ? err.stack : err)
+    if (process.env.NODE_ENV !== 'production') {
+      return res.status(500).json({ message: 'Failed to list forms', error: err?.message || String(err) })
+    }
     res.status(500).json({ message: 'Failed to list forms' })
   }
 }
