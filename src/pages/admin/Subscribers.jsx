@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiGet, apiSend } from '../../utils/api';
 import { 
   FiSearch, 
   FiRefreshCw,
@@ -27,26 +28,15 @@ const Subscribers = () => {
   const fetchSubscribers = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
       const params = new URLSearchParams({
         page: currentPage,
         limit: 10,
         ...(searchTerm && { search: searchTerm }),
         ...(statusFilter && { isActive: statusFilter })
       });
-
-      const response = await fetch(`/api/subscribers?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSubscribers(data.subscribers || []);
-        setTotalPages(data.totalPages || 1);
-      }
+      const data = await apiGet(`/api/subscribers?${params}`);
+      setSubscribers(data.subscribers || []);
+      setTotalPages(data.totalPages || 1);
     } catch (error) {
       console.error('Error fetching subscribers:', error);
     } finally {
@@ -61,17 +51,8 @@ const Subscribers = () => {
   const handleUnsubscribe = async (subscriberId) => {
     if (window.confirm('Are you sure you want to unsubscribe this user?')) {
       try {
-        const token = localStorage.getItem('authToken');
-        const response = await fetch(`/api/subscribers/${subscriberId}/unsubscribe`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (response.ok) {
-          fetchSubscribers();
-        }
+        await apiSend(`/api/subscribers/${subscriberId}/unsubscribe`, 'PUT');
+        fetchSubscribers();
       } catch (error) {
         console.error('Error unsubscribing user:', error);
       }
@@ -81,17 +62,8 @@ const Subscribers = () => {
   const handleDelete = async (subscriberId) => {
     if (window.confirm('Are you sure you want to delete this subscriber?')) {
       try {
-        const token = localStorage.getItem('authToken');
-        const response = await fetch(`/api/subscribers/${subscriberId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (response.ok) {
-          fetchSubscribers();
-        }
+        await apiSend(`/api/subscribers/${subscriberId}`, 'DELETE');
+        fetchSubscribers();
       } catch (error) {
         console.error('Error deleting subscriber:', error);
       }
