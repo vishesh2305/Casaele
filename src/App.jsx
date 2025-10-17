@@ -19,7 +19,6 @@ import Forms from "./pages/admin/Forms";
 import Coupons from "./pages/admin/Coupons";
 import ManageAdmins from "./pages/admin/ManageAdmins";
 import Subscribers from "./pages/admin/Subscribers";
-import Messages from "./pages/admin/Messages";
 import Embeds from "./pages/admin/Embeds";
 import PinterestManager from "./pages/admin/PinterestManager";
 import AdminNotFound from "./pages/admin/NotFound";
@@ -104,7 +103,6 @@ function AppWrapper() {
           <Route path="coupons" element={<Coupons />} />
           <Route path="manage-admins" element={<ManageAdmins />} />
           <Route path="subscribers" element={<Subscribers />} />
-          <Route path="messages" element={<Messages />} />
           <Route path="embeds" element={<Embeds />} />
           <Route path="pinterest" element={<PinterestManager />} />
           <Route path="*" element={<AdminNotFound />} />
