@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import AuthForm from "../../pages/LogIn";
+import { apiSend } from "../../utils/api";
 
 const Newsletter = () => {
   const roles = ["Teacher", "Student", "Explorer"];
@@ -54,9 +55,7 @@ const Newsletter = () => {
             if (!email) { setStatus('Please enter your email'); return; }
             try {
               setSubmitting(true);
-              const res = await fetch('/api/subscribers/public', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, role }) });
-              const data = await res.json().catch(()=>({}));
-              if (!res.ok) throw new Error(data?.message || 'Subscription failed');
+              const data = await apiSend('/api/subscribers/public', 'POST', { email, role });
               // brief visual confirmation delay
               setTimeout(()=>{
                 setStatus('Subscribed');
