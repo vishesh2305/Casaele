@@ -45,7 +45,8 @@ const Banners = () => {
         ...(statusFilter && { isActive: statusFilter })
       });
 
-      const response = await fetch(`/api/banners?${params}`, {
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://amrit-project-lms.onrender.com';
+      const response = await fetch(`${API_BASE}/api/banners?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -72,7 +73,8 @@ const Banners = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('authToken');
-      const url = editingBanner ? `/api/banners/${editingBanner._id}` : '/api/banners';
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://amrit-project-lms.onrender.com';
+  const url = editingBanner ? `${API_BASE}/api/banners/${editingBanner._id}` : `${API_BASE}/api/banners`;
       const method = editingBanner ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -119,7 +121,8 @@ const Banners = () => {
     if (window.confirm('Are you sure you want to delete this banner?')) {
       try {
         const token = localStorage.getItem('authToken');
-        const response = await fetch(`/api/banners/${bannerId}`, {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://amrit-project-lms.onrender.com';
+  const response = await fetch(`${API_BASE}/api/banners/${bannerId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -138,7 +141,8 @@ const Banners = () => {
   const toggleBannerStatus = async (bannerId) => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`/api/banners/${bannerId}/toggle`, {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://amrit-project-lms.onrender.com';
+  const response = await fetch(`${API_BASE}/api/banners/${bannerId}/toggle`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`
