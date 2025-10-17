@@ -22,15 +22,42 @@ export async function submitForm(req, res) {
 
 export async function listForms(req, res) {
   try {
-    const items = await FormSubmission.find().sort({ createdAt: -1 })
-    console.log('[forms] listForms returning', items.length, 'items')
-    res.json(items)
-  } catch (err) {
-    console.error('[forms] listForms error:', err && err.stack ? err.stack : err)
-    if (process.env.NODE_ENV !== 'production') {
-      return res.status(500).json({ message: 'Failed to list forms', error: err?.message || String(err) })
+    // If paginated request (page/limit/search/status), return paginated object
+    const { page, limit, search, status } = req.query;
+    if (page || limit || search || status) {
+      const pageNum = parseInt(page, 10) || 1;
+      const pageSize = parseInt(limit, 10) || 10;
+      const query = {};
+      if (search) {
+        query.$or = [
+          { name: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } },
+          { subject: { $regex: search, $options: 'i' } },
+          { message: { $regex: search, $options: 'i' } }
+        ];
+      }
+      if (status) {
+        query.status = status;
+      }
+      const total = await FormSubmission.countDocuments(query);
+      const forms = await FormSubmission.find(query)
+        .sort({ createdAt: -1 })
+        .skip((pageNum - 1) * pageSize)
+        .limit(pageSize);
+      const totalPages = Math.ceil(total / pageSize) || 1;
+      return res.json({ forms, totalPages });
+    } else {
+      // Default: return all forms as array (for legacy/Forms.jsx)
+      const items = await FormSubmission.find().sort({ createdAt: -1 });
+      console.log('[forms] listForms returning', items.length, 'items');
+      res.json(items);
     }
-    res.status(500).json({ message: 'Failed to list forms' })
+  } catch (err) {
+    console.error('[forms] listForms error:', err && err.stack ? err.stack : err);
+    if (process.env.NODE_ENV !== 'production') {
+      return res.status(500).json({ message: 'Failed to list forms', error: err?.message || String(err) });
+    }
+    res.status(500).json({ message: 'Failed to list forms' });
   }
 }
 
