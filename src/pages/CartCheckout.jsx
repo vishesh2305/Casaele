@@ -19,7 +19,7 @@ function CartCheckout() {
   }, [totalPrice]);
 
   const handlePlaceOrderRazorpay = async () => {
-    const response = await fetch('http://localhost:5000/create-razorpay-order', {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/create-razorpay-order`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
