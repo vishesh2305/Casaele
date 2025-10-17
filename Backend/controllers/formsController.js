@@ -5,9 +5,12 @@ export async function submitForm(req, res) {
   try {
     const { name, email, message } = req.body
     if (!name || !email) return res.status(400).json({ message: 'name and email are required' })
+    console.log('[forms] incoming submission:', { name, email, message })
     const doc = await FormSubmission.create({ name, email, message })
+    console.log('[forms] saved submission id:', doc._id)
     res.status(201).json(doc)
   } catch {
+    console.error('[forms] submitForm error:', arguments)
     res.status(500).json({ message: 'Failed to save form' })
   }
 }
@@ -15,8 +18,10 @@ export async function submitForm(req, res) {
 export async function listForms(req, res) {
   try {
     const items = await FormSubmission.find().sort({ createdAt: -1 })
+    console.log('[forms] listForms returning', items.length, 'items')
     res.json(items)
   } catch {
+    console.error('[forms] listForms error:', arguments)
     res.status(500).json({ message: 'Failed to list forms' })
   }
 }
@@ -47,6 +52,22 @@ export async function exportFormsExcel(req, res) {
     res.end()
   } catch (err) {
     res.status(500).json({ message: 'Export failed' })
+  }
+}
+
+// Secure debug: return recent submissions when a secret debug key header matches
+export async function getRecentDebug(req, res) {
+  try {
+    const key = req.headers['x-debug-key'] || ''
+    if (!process.env.DEBUG_KEY || key !== process.env.DEBUG_KEY) {
+      return res.status(403).json({ message: 'Forbidden' })
+    }
+    const limit = parseInt(req.query.limit, 10) || 20
+    const items = await FormSubmission.find().sort({ createdAt: -1 }).limit(limit)
+    res.json({ count: items.length, items })
+  } catch (err) {
+    console.error('[forms] getRecentDebug error:', err)
+    res.status(500).json({ message: 'Failed to fetch recent forms' })
   }
 }
 

@@ -8,7 +8,7 @@ export default function Forms() {
   useEffect(() => {
     apiGet('/api/forms')
       .then((data) => setRows(Array.isArray(data) ? data : []))
-      .catch(() => setRows([]))
+      .catch((err) => { console.error('Failed to load forms', err); setRows([]) })
       .finally(() => setLoading(false))
   }, [])
 
