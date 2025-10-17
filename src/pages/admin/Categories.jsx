@@ -34,7 +34,8 @@ const Categories = () => {
         ...(searchTerm && { search: searchTerm })
       });
 
-      const response = await fetch(`/api/categories?${params}`, {
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://amrit-project-lms.onrender.com';
+      const response = await fetch(`${API_BASE}/api/categories?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -61,7 +62,8 @@ const Categories = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('authToken');
-      const url = editingCategory ? `/api/categories/${editingCategory._id}` : '/api/categories';
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://amrit-project-lms.onrender.com';
+  const url = editingCategory ? `${API_BASE}/api/categories/${editingCategory._id}` : `${API_BASE}/api/categories`;
       const method = editingCategory ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
