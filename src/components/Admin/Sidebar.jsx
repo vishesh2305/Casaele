@@ -16,7 +16,6 @@ const links = [
   { to: '/admin/coupons', label: 'Coupons', icon: FiTag },
   { to: '/admin/manage-admins', label: 'Manage Admins', icon: FiUsers },
   { to: '/admin/subscribers', label: 'Subscribers', icon: FiMail },
-  { to: '/admin/messages', label: 'Messages', icon: FiMail },
   { to: '/admin/embeds', label: 'AI / H5P Manager', icon: FiCpu },
   { to: '/admin/pinterest', label: 'Pinterest Manager', icon: FiShare2 },
 ]
