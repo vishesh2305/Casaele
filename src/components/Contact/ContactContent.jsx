@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { apiSend } from '../../utils/api'
 
 const ContactContent = () => {
 
@@ -22,16 +23,11 @@ const ContactContent = () => {
     }
 
     try {
-      const res = await fetch('/api/forms', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          email,
-          message: `${country}${selectedUser ? ` (${selectedUser})` : ''} - ${reason}`
-        })
+      await apiSend('/api/forms', 'POST', {
+        name,
+        email,
+        message: `${country}${selectedUser ? ` (${selectedUser})` : ''} - ${reason}`
       })
-      if (!res.ok) throw new Error('Failed to submit')
       alert("¡Gracias! Your message has been received. We'll respond within 2-3 business days. In the meantime, feel free to explore Ele’s house and the magic in each room!");
       setName('');
       setEmail('');
