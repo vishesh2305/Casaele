@@ -46,7 +46,8 @@ const Coupons = () => {
         ...(statusFilter && { isActive: statusFilter })
       });
 
-      const response = await fetch(`/api/coupons?${params}`, {
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://amrit-project-lms.onrender.com';
+      const response = await fetch(`${API_BASE}/api/coupons?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -73,7 +74,8 @@ const Coupons = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('authToken');
-      const url = editingCoupon ? `/api/coupons/${editingCoupon._id}` : '/api/coupons';
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://amrit-project-lms.onrender.com';
+  const url = editingCoupon ? `${API_BASE}/api/coupons/${editingCoupon._id}` : `${API_BASE}/api/coupons`;
       const method = editingCoupon ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -126,7 +128,8 @@ const Coupons = () => {
     if (window.confirm('Are you sure you want to delete this coupon?')) {
       try {
         const token = localStorage.getItem('authToken');
-        const response = await fetch(`/api/coupons/${couponId}`, {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://amrit-project-lms.onrender.com';
+  const response = await fetch(`${API_BASE}/api/coupons/${couponId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -149,7 +152,8 @@ const Coupons = () => {
   const toggleCouponStatus = async (couponId) => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`/api/coupons/${couponId}/toggle`, {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://amrit-project-lms.onrender.com';
+  const response = await fetch(`${API_BASE}/api/coupons/${couponId}/toggle`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`
