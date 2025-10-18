@@ -14,6 +14,7 @@ import {
   FiSave,
   FiX
 } from 'react-icons/fi';
+import { apiGet, apiSend } from '../../utils/api';
 
 const Courses = () => {
   const [courses, setCourses] = useState([]);
@@ -43,10 +44,9 @@ const Courses = () => {
   const [pinUrl, setPinUrl] = useState('');
   const [pinPreview, setPinPreview] = useState(null);
 
-  const fetchCourses = async () => {
+const fetchCourses = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
       const params = new URLSearchParams({
         page: currentPage,
         limit: 10,
@@ -54,18 +54,9 @@ const Courses = () => {
         ...(categoryFilter && { category: categoryFilter })
       });
 
-      const response = await fetch(`/api/courses?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setCourses(data.courses || []);
-        setTotalPages(data.totalPages || 1);
-      }
+      const data = await apiGet(`/api/courses?${params}`);
+      setCourses(data.courses || []);
+      setTotalPages(data.totalPages || 1);
     } catch (error) {
       console.error('Error fetching courses:', error);
     } finally {
@@ -75,18 +66,8 @@ const Courses = () => {
 
   const fetchCategories = async () => {
     try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch('/api/categories', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setCategories(data.categories || []);
-      }
+      const data = await apiGet('/api/categories');
+      setCategories(data.categories || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
     }

@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  FiPlus, 
-  FiSearch, 
-  FiEdit, 
-  FiTrash2, 
+import {
+  FiPlus,
+  FiSearch,
+  FiEdit,
+  FiTrash2,
   FiRefreshCw,
   FiTag,
   FiSave,
   FiX,
   FiHash
 } from 'react-icons/fi';
+import { apiGet, apiSend } from '../../utils/api'; // Import apiSend
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
@@ -27,27 +28,16 @@ const Categories = () => {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
       const params = new URLSearchParams({
         page: currentPage,
         limit: 10,
         ...(searchTerm && { search: searchTerm })
       });
 
-      const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://amrit-project-lms.onrender.com';
-      const response = await fetch(`${API_BASE}/api/categories?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setCategories(data.categories || []);
-        setTotalPages(data.totalPages || 1);
-      }
-    } catch (error) {
+      const data = await apiGet(`/api/categories?${params}`);
+      setCategories(data.categories || []);
+      setTotalPages(data.totalPages || 1);
+    } catch (error){
       console.error('Error fetching categories:', error);
     } finally {
       setLoading(false);
@@ -61,29 +51,14 @@ const Categories = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('authToken');
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://amrit-project-lms.onrender.com';
-  const url = editingCategory ? `${API_BASE}/api/categories/${editingCategory._id}` : `${API_BASE}/api/categories`;
+      const url = editingCategory ? `/api/categories/${editingCategory._id}` : '/api/categories';
       const method = editingCategory ? 'PUT' : 'POST';
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
-
-      if (response.ok) {
-        setShowModal(false);
-        setEditingCategory(null);
-        setFormData({ name: '', description: '' });
-        fetchCategories();
-      } else {
-        const errorData = await response.json();
-        alert(errorData.message || 'Error saving category');
-      }
+      await apiSend(url, method, formData);
+      setShowModal(false);
+      setEditingCategory(null);
+      setFormData({ name: '', description: '' });
+      fetchCategories();
     } catch (error) {
       console.error('Error saving category:', error);
       alert('Error saving category');
@@ -102,20 +77,8 @@ const Categories = () => {
   const handleDelete = async (categoryId) => {
     if (window.confirm('Are you sure you want to delete this category?')) {
       try {
-        const token = localStorage.getItem('authToken');
-        const response = await fetch(`/api/categories/${categoryId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (response.ok) {
-          fetchCategories();
-        } else {
-          const errorData = await response.json();
-          alert(errorData.message || 'Error deleting category');
-        }
+        await apiSend(`/api/categories/${categoryId}`, 'DELETE');
+        fetchCategories();
       } catch (error) {
         console.error('Error deleting category:', error);
         alert('Error deleting category');
@@ -128,6 +91,7 @@ const Categories = () => {
   };
 
   return (
+    // ... rest of the component is unchanged
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
