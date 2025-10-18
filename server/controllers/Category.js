@@ -69,22 +69,35 @@ exports.updateCategory = async (req, res) => {
 
 exports.deleteCategory = async (req, res) => {
     try {
-        const { id } = req.params
-        const category = await Category.findByIdAndDelete(id)
+        const { id } = req.params;
+        
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: "Category ID is required"
+            });
+        }
+
+        const category = await Category.findById(id);
         if (!category) {
             return res.status(404).json({
                 success: false,
                 message: "Category not found"
-            })
+            });
         }
-        res.status(200).json({
+
+        await Category.findByIdAndDelete(id);
+        
+        return res.status(200).json({
             success: true,
             message: "Category deleted successfully"
-        })
+        });
     } catch (error) {
+        console.error("Delete category error:", error);
         return res.status(500).json({
             success: false,
-            message: error.message
-        })
+            message: "Error deleting category",
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
-}
+};
