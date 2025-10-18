@@ -11,10 +11,13 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.response.use(
     response => response,
     error => {
-        console.error('API Error:', error);
-        if (error.response?.status === 403) {
-            // Handle unauthorized access
-            window.location.href = '/login';
+        if (error.response) {
+            // Always expect JSON
+            try {
+                error.response.data = JSON.parse(error.response.request.responseText);
+            } catch (e) {
+                error.response.data = { success: false, message: "Invalid server response" };
+            }
         }
         return Promise.reject(error);
     }

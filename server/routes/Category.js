@@ -11,7 +11,7 @@ const {
 // Category routes
 router.post("/createCategory", auth, isAdmin, createCategory)
 router.get("/getAllCategories", getAllCategories)
-router.put("/updateCategory/:id", auth, isAdmin, updateCategory)
 router.delete("/deleteCategory/:id", auth, isAdmin, deleteCategory)
+router.put("/updateCategory/:id", auth, isAdmin, updateCategory)
 
 module.exports = router
