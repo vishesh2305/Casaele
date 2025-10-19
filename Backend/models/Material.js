@@ -8,8 +8,8 @@ const materialSchema = new mongoose.Schema({
   category: { type: String, default: '' },
   fileUrl: { type: String, default: '' },
   imageSource: { type: String, enum: ['local', 'pinterest', ''], default: '' },
-  embedIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Embed' }], // Changed to embedIds
-  embedType: { type: String, enum: ['H5P', 'AI', ''], default: '' },
+  embedIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Embed' }], // Array of embed references
+  // Removed embedType as each embed now has its own type
 }, { timestamps: { createdAt: true, updatedAt: true } })
 
 export default mongoose.models.Material || mongoose.model('Material', materialSchema)

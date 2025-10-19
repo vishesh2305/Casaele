@@ -6,8 +6,9 @@ export default function Materials() {
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
-  const [form, setForm] = useState({ title: '', description: '', content: '', category: '', fileUrl: '', tags: '', imageSource: '', embedIds: [], embedType: '' })
+  const [form, setForm] = useState({ title: '', description: '', content: '', category: '', fileUrl: '', tags: '', imageSource: '', embedIds: [] })
   const [embeds, setEmbeds] = useState([])
+  const [materialEmbeds, setMaterialEmbeds] = useState([]) // New state for direct embed creation
   const [uploading, setUploading] = useState(false);
   const [imgMode, setImgMode] = useState('local');
   const [pinUrl, setPinUrl] = useState('');
@@ -72,7 +73,8 @@ export default function Materials() {
       const payload = {
         ...form,
         tags: form.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
-        imageSource: form.imageSource || (imgMode === 'pinterest' ? 'pinterest' : 'local')
+        imageSource: form.imageSource || (imgMode === 'pinterest' ? 'pinterest' : 'local'),
+        embeds: materialEmbeds.filter(embed => embed.title.trim() && embed.embedCode.trim()) // Only include valid embeds
       };
 
       const saved = editing
@@ -83,6 +85,7 @@ export default function Materials() {
       else setItems([saved, ...items]);
 
       setModalOpen(false);
+      setMaterialEmbeds([]); // Reset material embeds after save
     } catch (err) {
       const msg = err?.message || 'Failed to save material';
       setErrorMsg(msg);
@@ -102,9 +105,17 @@ export default function Materials() {
       fileUrl: material.fileUrl || '',
       tags: Array.isArray(material.tags) ? material.tags.join(', ') : '',
       embedIds: material.embedIds?.map(e => e._id) || [],
-      embedType: material.embedType || '',
       imageSource: material.imageSource || ''
     });
+    
+    // Convert existing embeds to material embeds format for editing
+    const existingEmbeds = material.embedIds?.map(embed => ({
+      title: embed.title || '',
+      type: embed.type || 'AI',
+      embedCode: embed.embedCode || ''
+    })) || [];
+    setMaterialEmbeds(existingEmbeds);
+    
     setModalOpen(true);
   }
   
@@ -115,6 +126,21 @@ export default function Materials() {
         : [...prevForm.embedIds, embedId];
       return { ...prevForm, embedIds: newEmbedIds };
     });
+  };
+
+  // New functions for managing material embeds
+  const addMaterialEmbed = () => {
+    setMaterialEmbeds(prev => [...prev, { title: '', type: 'AI', embedCode: '' }]);
+  };
+
+  const updateMaterialEmbed = (index, field, value) => {
+    setMaterialEmbeds(prev => prev.map((embed, i) => 
+      i === index ? { ...embed, [field]: value } : embed
+    ));
+  };
+
+  const removeMaterialEmbed = (index) => {
+    setMaterialEmbeds(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -134,7 +160,6 @@ export default function Materials() {
                 fileUrl: '', 
                 tags: '',
                 embedIds: [],
-                embedType: '',
                 imageSource: ''
               }); 
               setImgMode('local');
@@ -153,6 +178,7 @@ export default function Materials() {
             <tr>
               <th className="px-4 py-3">Title</th>
               <th className="px-4 py-3">Category</th>
+              <th className="px-4 py-3">Embeds</th>
               <th className="px-4 py-3">File URL</th>
               <th className="px-4 py-3">Actions</th>
             </tr>
@@ -160,12 +186,24 @@ export default function Materials() {
           <tbody className="divide-y divide-gray-100">
             {loading ? (
               Array.from({ length: 4 }).map((_, i) => (
-                <tr key={i}><td className="px-4 py-3"><div className="h-4 w-56 bg-gray-100 animate-pulse rounded" /></td><td className="px-4 py-3"><div className="h-4 w-24 bg-gray-100 animate-pulse rounded" /></td><td className="px-4 py-3"><div className="h-4 w-40 bg-gray-100 animate-pulse rounded" /></td><td className="px-4 py-3"><div className="h-8 w-24 bg-gray-100 animate-pulse rounded" /></td></tr>
+                <tr key={i}>
+                  <td className="px-4 py-3"><div className="h-4 w-56 bg-gray-100 animate-pulse rounded" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-24 bg-gray-100 animate-pulse rounded" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-16 bg-gray-100 animate-pulse rounded" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-40 bg-gray-100 animate-pulse rounded" /></td>
+                  <td className="px-4 py-3"><div className="h-8 w-24 bg-gray-100 animate-pulse rounded" /></td>
+                </tr>
               ))
             ) : items.map((m) => (
               <tr key={m._id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium text-gray-800">{m.title}</td>
                 <td className="px-4 py-3 text-gray-700">{m.category || '-'}</td>
+                <td className="px-4 py-3 text-gray-700">
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm font-medium">{m.embedIds?.length || 0}</span>
+                    <span className="text-xs text-gray-500">embeds</span>
+                  </div>
+                </td>
                 <td className="px-4 py-3 text-gray-700 truncate max-w-xs">{m.fileUrl || '-'}</td>
                 <td className="px-4 py-3 space-x-2">
                   <button onClick={() => openEditModal(m)} className="px-3 py-1 rounded bg-red-50 text-red-700 hover:bg-red-100 transition">Edit</button>
@@ -179,7 +217,7 @@ export default function Materials() {
 
       {modalOpen && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-white rounded-xl shadow p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-2xl bg-white rounded-xl shadow p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="text-lg font-semibold">{editing ? 'Edit material' : 'Add material'}</div>
             {errorMsg ? <div className="text-sm text-red-600">{errorMsg}</div> : null}
 
@@ -211,9 +249,74 @@ export default function Materials() {
                 />
               </label>
 
+              {/* Multiple Embeds Section */}
               <div className="block">
-                <span className="text-sm text-gray-700">Select Exercises (H5P/AI Content)</span>
-                <div className="mt-2 space-y-2 max-h-48 overflow-y-auto border rounded-lg p-2">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-700">Add Multiple Embeds (AI/H5P Content)</span>
+                  <button
+                    type="button"
+                    onClick={addMaterialEmbed}
+                    className="px-3 py-1.5 text-xs bg-red-700 text-white rounded-md hover:bg-red-800 transition"
+                  >
+                    + Add Another Embed
+                  </button>
+                </div>
+                
+                {materialEmbeds.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
+                    <p className="text-sm">No embeds added yet. Click "Add Another Embed" to start.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 max-h-64 overflow-y-auto border rounded-lg p-3">
+                    {materialEmbeds.map((embed, index) => (
+                      <div key={index} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-medium text-gray-600">Embed #{index + 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeMaterialEmbed(index)}
+                            className="text-red-600 hover:text-red-800 text-xs"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 gap-2">
+                          <input
+                            type="text"
+                            placeholder="Embed Title (e.g., Listening Exercise 1)"
+                            value={embed.title}
+                            onChange={(e) => updateMaterialEmbed(index, 'title', e.target.value)}
+                            className="w-full text-sm rounded border border-gray-300 px-2 py-1 focus:border-red-500 focus:ring-1 focus:ring-red-400/50"
+                          />
+                          
+                          <select
+                            value={embed.type}
+                            onChange={(e) => updateMaterialEmbed(index, 'type', e.target.value)}
+                            className="w-full text-sm rounded border border-gray-300 px-2 py-1 focus:border-red-500 focus:ring-1 focus:ring-red-400/50"
+                          >
+                            <option value="AI">AI Content</option>
+                            <option value="H5P">H5P Content</option>
+                          </select>
+                          
+                          <textarea
+                            placeholder="Paste your embed code here (iframe, script, etc.)"
+                            value={embed.embedCode}
+                            onChange={(e) => updateMaterialEmbed(index, 'embedCode', e.target.value)}
+                            rows={3}
+                            className="w-full text-sm rounded border border-gray-300 px-2 py-1 focus:border-red-500 focus:ring-1 focus:ring-red-400/50 resize-none"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Legacy Embed Selection (for backward compatibility) */}
+              <div className="block">
+                <span className="text-sm text-gray-700">Or Select Existing Embeds (Legacy)</span>
+                <div className="mt-2 space-y-2 max-h-32 overflow-y-auto border rounded-lg p-2">
                   {embeds.map(embed => (
                     <label key={embed._id} className="flex items-center gap-2 p-2 rounded-md hover:bg-gray-50">
                       <input
