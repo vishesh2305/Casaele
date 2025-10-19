@@ -5,11 +5,11 @@ import { getCourses, getCourseById, createCourse, updateCourse, deleteCourse } f
 const router = express.Router();
 
 router.route('/')
-  .get(verifyFirebaseToken, getCourses)
+  .get(getCourses) // Make this route public
   .post(verifyFirebaseToken, createCourse);
 
 router.route('/:id')
-  .get(verifyFirebaseToken, getCourseById)
+  .get(getCourseById) // Make this route public
   .put(verifyFirebaseToken, updateCourse)
   .delete(verifyFirebaseToken, deleteCourse);
 

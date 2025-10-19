@@ -4,7 +4,7 @@ const courseSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
   category: { type: String, required: true },
-  thumbnail: { type: String }, // Cloudinary URL
+  images: [{ type: String }], // Changed 'thumbnail' to 'images' array
   imageSource: { type: String, enum: ['local', 'pinterest', ''], default: '' },
   modules: [{ 
     title: String, 

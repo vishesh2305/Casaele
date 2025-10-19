@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
   return (
@@ -83,10 +84,10 @@ const Footer = () => {
           <div>
             <h3 className="font-bold mb-3">Support</h3>
             <ul className="space-y-2">
-              <li><a href="/contact">Contact Us</a></li>
-              <li><a href="/privacy-policy">Privacy Policy</a></li>
+              <li><Link to="/contact">Contact Us</Link></li>
+              <li><Link to="/page/privacy-policy">Privacy Policy</Link></li>
               <li>How to use</li>
-              <li><a href="/terms-and-conditions">Terms &amp; Conditions</a></li>
+              <li><Link to="/page/terms-and-conditions">Terms & Conditions</Link></li>
             </ul>
           </div>
         </div>

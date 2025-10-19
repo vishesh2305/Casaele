@@ -67,7 +67,9 @@ export async function getCourseById(req, res) {
 // @access  Admin
 export async function createCourse(req, res) {
   try {
-    const course = new Course(req.body);
+    // Replace thumbnail with images
+    const { thumbnail, ...courseData } = req.body;
+    const course = new Course(courseData);
     await course.save();
     res.status(201).json({ message: 'Course created successfully', course });
   } catch (error) {
@@ -81,9 +83,11 @@ export async function createCourse(req, res) {
 // @access  Admin
 export async function updateCourse(req, res) {
   try {
+    // Replace thumbnail with images
+    const { thumbnail, ...courseData } = req.body;
     const course = await Course.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      courseData,
       { new: true, runValidators: true }
     );
     if (!course) {

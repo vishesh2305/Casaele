@@ -6,15 +6,23 @@ function ProductInfo({ item, quantity, setQuantity, added, handleAddToCart }) {
   const [selectedFormat, setSelectedFormat] = useState(null);
 
   const levels = ["A1", "A2", "B1", "B2", "C1", "C2"];
+  
+  const hasDiscount = item?.discountPrice > 0;
+  const discountPercentage = hasDiscount ? Math.round(((item.price - item.discountPrice) / item.price) * 100) : 0;
+
 
   useEffect(() => {
     setSelectedLevel(null);
-    setSelectedFormat(null);
-  }, [item.id]);
+    setSelectedFormat(item?.productType === 'Both' ? null : item?.productType);
+  }, [item.id, item?.productType]);
 
   const handleAdd = () => {
-    if (!selectedLevel || !selectedFormat) {
-      alert("Please select Level and Format before adding to cart.");
+    if ((item?.productType === 'Digital' || item?.productType === 'Physical' || item?.productType === 'Both') && !selectedFormat) {
+      alert("Please select a format before adding to cart.");
+      return;
+    }
+    if (!selectedLevel) {
+      alert("Please select a Level before adding to cart.");
       return;
     }
     handleAddToCart({
@@ -27,13 +35,18 @@ function ProductInfo({ item, quantity, setQuantity, added, handleAddToCart }) {
   return (
     <div className="w-full flex flex-col space-y-5">
       <h1 className="font-bold text-4xl lg:text-5xl">{item?.title}</h1>
-      <p className="text-gray-600 text-base">{item?.description}</p>
 
       {/* Pricing */}
       <div className="flex items-center space-x-3 pt-2">
-        <span className="font-bold text-4xl lg:text-5xl text-black">${item?.price}</span>
-        <span className="text-2xl text-gray-400 line-through">$300</span>
-        <span className="bg-[#FDF2F2] text-red-600 text-sm font-semibold px-3 py-1 rounded-full">-40%</span>
+        {hasDiscount ? (
+          <>
+            <span className="font-bold text-4xl lg:text-5xl text-black">₹{item.discountPrice}</span>
+            <span className="text-2xl text-gray-400 line-through">₹{item.price}</span>
+            <span className="bg-[#FDF2F2] text-red-600 text-sm font-semibold px-3 py-1 rounded-full">-{discountPercentage}%</span>
+          </>
+        ) : (
+          <span className="font-bold text-4xl lg:text-5xl text-black">₹{item?.price}</span>
+        )}
       </div>
 
       {/* Levels with Images */}
@@ -53,7 +66,7 @@ function ProductInfo({ item, quantity, setQuantity, added, handleAddToCart }) {
               <img
                 src={`/Shop/${level}.svg`}
                 alt={`Level ${level}`}
-                className="w-10 h-10 object-contain" // Smaller image size
+                className="w-10 h-10 object-contain"
               />
             </button>
           ))}
@@ -61,30 +74,35 @@ function ProductInfo({ item, quantity, setQuantity, added, handleAddToCart }) {
       </div>
 
       {/* Format Options */}
-      {/* Removed bg-gray-100 from wrapper, set default button background to white, adjusted text */}
-      <div className="flex items-center p-1 rounded-full w-full max-w-xs"> {/* Added subtle border */}
-        <button
-          onClick={() => setSelectedFormat("Digital")}
-          className={`flex-1 py-2 rounded-full text-base font-normal transition-colors ${
-            selectedFormat === "Digital"
-              ? "bg-[#FDF2F2] text-pink-800 shadow"
-              : "bg-white text-gray-600 hover:bg-gray-50"
-          }`}
-        >
-          Digital
-        </button>
-        <button
-          onClick={() => setSelectedFormat("Physical")}
-          className={`flex-1 py-2 rounded-full text-base font-normal transition-colors ${
-            selectedFormat === "Physical"
-              ? "bg-[#FDF2F2] text-pink-800 shadow"
-              : "bg-white text-gray-600 hover:bg-gray-50"
-          }`}
-        >
-          Physical
-        </button>
-      </div>
-
+      {(item?.productType === 'Digital' || item?.productType === 'Physical' || item?.productType === 'Both') && (
+        <div className="flex items-center p-1 rounded-full w-full max-w-xs">
+          {(item.productType === 'Digital' || item.productType === 'Both') && (
+            <button
+              onClick={() => setSelectedFormat("Digital")}
+              className={`flex-1 py-2 rounded-full text-base font-normal transition-colors ${
+                selectedFormat === "Digital"
+                  ? "bg-[#FDF2F2] text-pink-800 shadow"
+                  : "bg-white text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              Digital
+            </button>
+          )}
+          {(item.productType === 'Physical' || item.productType === 'Both') && (
+            <button
+              onClick={() => setSelectedFormat("Physical")}
+              className={`flex-1 py-2 rounded-full text-base font-normal transition-colors ${
+                selectedFormat === "Physical"
+                  ? "bg-[#FDF2F2] text-pink-800 shadow"
+                  : "bg-white text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              Physical
+            </button>
+          )}
+        </div>
+      )}
+      
       {/* Quantity Selector + Cart */}
       <div className="pt-4">
         <QuantitySelector

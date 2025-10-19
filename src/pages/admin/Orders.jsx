@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  FiSearch, 
-  FiEye, 
-  FiTrash2, 
-  FiEdit, 
+import {
+  FiSearch,
+  FiEye,
+  FiTrash2,
+  FiEdit,
   FiFilter,
   FiDownload,
   FiRefreshCw,

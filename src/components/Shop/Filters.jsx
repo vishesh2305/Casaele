@@ -4,10 +4,11 @@ function Filters({
   categoryData,
   selectedCategory,
   setSelectedCategory,
-  setFilteredItems,
+  setFilteredItems, // Note: setFilteredItems is not used here but kept for stability
   setCurrentPage,
   maxPrice,
   setMaxPrice,
+  actualMaxPrice, // New prop for the slider's max value
   allItems,
 }) {
   return (
@@ -25,21 +26,21 @@ function Filters({
         {/* Categories */}
         <div>
           <ul className="space-y-2">
-            {Object.keys(categoryData || {}).map((category) => (
+            {Object.entries(categoryData || {}).map(([category, count]) => (
               <li
                 key={category}
                 onClick={() => {
                   setSelectedCategory(category);
-                  setFilteredItems([]);
                   setCurrentPage(1);
                 }}
-                className={`cursor-pointer px-3 py-2 rounded-md transition-all duration-200 ${
+                className={`flex justify-between items-center cursor-pointer px-3 py-2 rounded-md transition-all duration-200 ${
                   selectedCategory === category
                     ? "text-red-600 font-semibold bg-red-50"
                     : "text-gray-700 hover:text-red-500 hover:bg-gray-100"
                 }`}
               >
-                {category}
+                <span>{category}</span>
+                <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">{count}</span>
               </li>
             ))}
           </ul>
@@ -66,16 +67,16 @@ function Filters({
         <div>
           <h3 className="text-2xl sm:text-xl font-semibold text-gray-900 mb-2">Price</h3>
           <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-            <span>$0</span>
-            <span className="font-semibold text-gray-900">${maxPrice}</span>
-            <span>$200</span>
+            <span>₹0</span>
+            <span className="font-semibold text-gray-900">₹{maxPrice}</span>
+            <span>₹{actualMaxPrice}</span>
           </div>
           <input
             type="range"
             className="w-full accent-[rgba(173,21,24,1)]"
             min="0"
-            max="200"
-            step={50}
+            max={actualMaxPrice}
+            step="10" // You can adjust the step value as needed
             value={maxPrice}
             onChange={(e) => setMaxPrice(Number(e.target.value))}
           />
@@ -83,17 +84,7 @@ function Filters({
 
         <hr className="border-gray-300" />
 
-        {/* Apply Button */}
-        <button
-          onClick={() => {
-            const filtered = allItems.filter((item) => item.price <= maxPrice);
-            setFilteredItems(filtered);
-            setCurrentPage(1);
-          }}
-          className="w-full py-3 mt-4 text-white bg-[rgba(173,21,24,1)] hover:bg-red-700 rounded-full text-base font-medium transition-all duration-200"
-        >
-          Apply Filter
-        </button>
+        {/* The "Apply Filter" button is no longer needed since the filter applies automatically */}
       </div>
     </aside>
   );

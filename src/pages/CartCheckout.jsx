@@ -11,7 +11,8 @@ function CartCheckout() {
   const [quantity, setQuantity] = useState(initialQty || 1);
   const [finalTotal, setFinalTotal] = useState(0);
 
-  const totalPrice = cartItem ? cartItem.price * quantity : 0;
+  const priceToUse = (cartItem?.discountPrice > 0) ? cartItem.discountPrice : cartItem?.price;
+  const totalPrice = cartItem ? priceToUse * quantity : 0;
 
   // Update final total when cart item or quantity changes
   useEffect(() => {

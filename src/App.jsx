@@ -37,6 +37,7 @@ import CartCheckout from "./pages/CartCheckout";
 import Garden from "./pages/GardenOfIdeas";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsAndConditions from "./pages/TermsAndConditions";
+import CmsPage from "./pages/CmsPage"; 
 import ScrollToTop from "./pages/ScrollToTop";
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
@@ -81,6 +82,7 @@ function AppWrapper() {
         <Route path="/garden-of-ideas" element={<Garden />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+        <Route path="/page/:slug" element={<CmsPage />} />
 
         {/* Admin routes */}
         <Route path="/admin/login" element={<AdminLogin />} />

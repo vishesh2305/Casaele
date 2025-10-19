@@ -4,6 +4,7 @@ import CouponSection from "./CouponSection";
 function CartSection({ cartItem, onRemove, quantity, totalPrice, onTotalUpdate }) {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [discountAmount, setDiscountAmount] = useState(0);
+  const hasDiscount = cartItem?.discountPrice > 0;
 
   const handleCouponApplied = (coupon, discount) => {
     setAppliedCoupon(coupon);
@@ -24,7 +25,7 @@ function CartSection({ cartItem, onRemove, quantity, totalPrice, onTotalUpdate }
   useEffect(() => {
     onTotalUpdate?.(finalTotal);
   }, [finalTotal, onTotalUpdate]);
-  // Note: The 'quantity' prop is available but not used in the target design.
+  
   return (
     <>
       <h2 className="text-3xl font-semibold mb-6">
@@ -32,24 +33,19 @@ function CartSection({ cartItem, onRemove, quantity, totalPrice, onTotalUpdate }
       </h2>
 
       {cartItem ? (
-        // Main container for the cart item card and totals
         <div>
-          {/* Cart Item Card - Styled to match the image */}
           <div className="border border-gray-200 bg-white rounded-2xl shadow-sm p-4 flex gap-4">
-            {/* Left side: Image */}
             <img
-              src={cartItem.image}
+              src={cartItem.images && cartItem.images.length > 0 ? cartItem.images[0] : (cartItem.image || "https://placehold.co/600x500/e5e7eb/4b5563?text=Image")}
               alt={cartItem.title}
               className="w-24 h-24 rounded-xl object-cover flex-shrink-0"
             />
 
-            {/* Right side: Details */}
             <div className="flex-1 flex flex-col">
               <h3 className="font-semibold text-xl">
                 {cartItem.title}
               </h3>
-              
-              {/* Tags */}
+
               <div className="flex items-center gap-2 mt-2 flex-wrap">
                 {cartItem.selectedFormat && (
                   <span className="px-3 py-1 text-sm bg-pink-100 text-pink-800 font-medium rounded-md">
@@ -62,16 +58,22 @@ function CartSection({ cartItem, onRemove, quantity, totalPrice, onTotalUpdate }
                   </span>
                 )}
               </div>
-              
+
               <p className="text-gray-600 mt-2 text-sm leading-snug">
                 {cartItem.description}
               </p>
-              
-              {/* Price and Remove Button (pushed to the bottom) */}
+
               <div className="flex justify-between items-center mt-auto pt-2">
-                <span className="font-bold text-2xl text-gray-900">
-                  ${cartItem.price}
-                </span>
+                <div className="flex items-center gap-2">
+                  {hasDiscount ? (
+                    <>
+                      <span className="font-bold text-2xl text-gray-900">₹{cartItem.discountPrice}</span>
+                      <span className="text-lg text-gray-400 line-through">₹{cartItem.price}</span>
+                    </>
+                  ) : (
+                    <span className="font-bold text-2xl text-gray-900">₹{cartItem.price}</span>
+                  )}
+                </div>
                 <button
                   className="text-sm font-semibold"
                   onClick={onRemove}
@@ -82,7 +84,6 @@ function CartSection({ cartItem, onRemove, quantity, totalPrice, onTotalUpdate }
             </div>
           </div>
 
-          {/* Coupon Section */}
           <CouponSection
             totalPrice={totalPrice}
             onCouponApplied={handleCouponApplied}
@@ -90,27 +91,26 @@ function CartSection({ cartItem, onRemove, quantity, totalPrice, onTotalUpdate }
             onRemoveCoupon={handleRemoveCoupon}
           />
 
-          {/* Totals Section - Cleanly styled to follow the card */}
           <div className="space-y-3 text-base mt-8">
             <div className="flex justify-between text-gray-600">
               <span>Subtotal:</span>
-              <span>${totalPrice.toFixed(2)}</span>
+              <span>₹{totalPrice.toFixed(2)}</span>
             </div>
-            
+
             {discountAmount > 0 && (
               <div className="flex justify-between text-green-600">
                 <span>Discount ({appliedCoupon?.code}):</span>
-                <span>-${discountAmount.toFixed(2)}</span>
+                <span>-₹{discountAmount.toFixed(2)}</span>
               </div>
             )}
-            
+
             <div className="flex justify-between text-gray-600 border-t border-gray-200 pt-3">
               <span>Shipping:</span>
               <span>Free</span>
             </div>
             <div className="flex justify-between font-semibold text-gray-900 border-t border-gray-200 pt-3">
               <span>Total:</span>
-              <span>${finalTotal.toFixed(2)}</span>
+              <span>₹{finalTotal.toFixed(2)}</span>
             </div>
           </div>
         </div>

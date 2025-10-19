@@ -1,99 +1,126 @@
-import { useEffect, useState } from 'react'
-import { apiGet, apiSend } from '../../utils/api'
-import { Link, useNavigate } from 'react-router-dom'
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { apiGet, apiSend } from '../../utils/api';
+import { FiFileText, FiEdit, FiRefreshCw, FiHome, FiShield, FiBriefcase, FiMail, FiLayout, FiShoppingBag } from 'react-icons/fi';
+
+// A structured list of all editable content blocks on the website.
+const editablePages = [
+  // Home Page
+  { group: 'Home Page', name: 'Hero Section (Students) - Title', slug: 'home-hero-students-title', description: 'The headline for the "Spanish For Students" card.' },
+  { group: 'Home Page', name: 'Hero Section (Students) - Description', slug: 'home-hero-students-desc', description: 'The paragraph for the "Spanish For Students" card.' },
+  { group: 'Home Page', name: 'Hero Section (Teachers) - Title', slug: 'home-hero-teachers-title', description: 'The headline for the "Teacher Material" card.' },
+  { group: 'Home Page', name: 'Hero Section (Teachers) - Description', slug: 'home-hero-teachers-desc', description: 'The paragraph for the "Teacher Material" card.' },
+  { group: 'Home Page', name: 'Welcome Section - Title', slug: 'home-welcome-title', description: 'The "Welcome to Ele’s House" title.' },
+  { group: 'Home Page', name: 'Welcome Section - Description', slug: 'home-welcome-desc', description: 'The paragraph below the welcome title.' },
+  { group: 'Home Page', name: 'Experience Spanish - Title', slug: 'home-experience-title', description: 'The "We help you experience Spanish!" title.' },
+  { group: 'Home Page', name: 'Experience Spanish - Description', slug: 'home-experience-desc', description: 'The long description on the Experience Spanish section.' },
+
+  // School Page
+  { group: 'School Page', name: 'School Hero - Title', slug: 'school-hero-title', description: 'The main title on the School page hero section.' },
+  { group: 'School Page', name: 'School Hero - Description', slug: 'school-hero-desc', description: 'The paragraph on the School page hero section.' },
+
+  // Shop Page
+  { group: 'Shop Page', name: 'Shop Banner - Title', slug: 'shop-banner-title', description: 'The main title on the Shop page banner.' },
+  { group: 'Shop Page', name: 'Shop Banner - Description', slug: 'shop-banner-desc', description: 'The paragraph on the Shop page banner.' },
+
+  // Contact Page
+  { group: 'Contact Page', name: 'Contact Intro', slug: 'contact-intro-p', description: 'The introductory paragraph on the Contact Us page.' },
+
+  // Standalone Pages
+  { group: 'Standalone Pages', name: 'About Us Page', slug: 'about-us', description: 'The main content section for the /about page.' },
+  { group: 'Standalone Pages', name: 'Privacy Policy Page', slug: 'privacy-policy', description: 'Full content for the /privacy-policy page.' },
+  { group: 'Standalone Pages', name: 'Terms & Conditions Page', slug: 'terms-and-conditions', description: 'Full content for the /terms-and-conditions page.' },
+];
 
 export default function CMSList() {
-  const [rows, setRows] = useState([])
-  const [loading, setLoading] = useState(true)
-  const navigate = useNavigate()
+  const [cmsEntries, setCmsEntries] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  const fetchCmsEntries = () => {
+    setLoading(true);
+    apiGet('/api/cms')
+      .then(setCmsEntries)
+      .catch(() => setCmsEntries([]))
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => {
-    apiGet('/api/cms')
-      .then(setRows)
-      .catch(() => setRows([]))
-      .finally(() => setLoading(false))
-  }, [])
+    fetchCmsEntries();
+  }, []);
 
-  async function remove(id) {
-    await apiSend(`/api/cms/${id}`, 'DELETE')
-    setRows(rows.filter(r => r._id !== id))
+  const handleEditClick = async (page) => {
+    const existingEntry = cmsEntries.find(entry => entry.slug === page.slug);
+    if (existingEntry) {
+      navigate(`/admin/cms/edit/${existingEntry._id}`);
+    } else {
+      try {
+        const newEntry = await apiSend('/api/cms', 'POST', {
+          title: page.name,
+          slug: page.slug,
+          content: `<p>Start editing the ${page.name} content here.</p>`,
+        });
+        navigate(`/admin/cms/edit/${newEntry._id}`);
+      } catch (error) {
+        alert("Could not create the page for editing. Please try again.");
+      }
+    }
+  };
+  
+  const groupedPages = editablePages.reduce((acc, page) => {
+    acc[page.group] = acc[page.group] || [];
+    acc[page.group].push(page);
+    return acc;
+  }, {});
+
+  const getGroupIcon = (groupName) => {
+    if (groupName.includes('Home')) return <FiHome className="w-5 h-5" />;
+    if (groupName.includes('School')) return <FiBriefcase className="w-5 h-5" />;
+    if (groupName.includes('Shop')) return <FiShoppingBag className="w-5 h-5" />;
+    if (groupName.includes('Contact')) return <FiMail className="w-5 h-5" />;
+    return <FiFileText className="w-5 h-5" />;
   }
 
   return (
     <div className="space-y-6">
-      {/* Header Section */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-800">CMS Pages</h1>
-        <button
-          onClick={() => navigate('/admin/cms/new')}
-          className="px-4 py-2 rounded-md bg-red-700 text-white hover:bg-red-800 shadow-sm transition-all duration-200"
-        >
-          + Add Page
+        <h1 className="text-2xl font-semibold text-gray-800">Content Management</h1>
+        <button onClick={fetchCmsEntries} disabled={loading} className="flex items-center gap-2 px-4 py-2 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition">
+          <FiRefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
         </button>
       </div>
 
-      {/* Table Section */}
-      <div className="rounded-2xl bg-white shadow-md border border-gray-200 overflow-hidden">
-        <table className="min-w-full text-left border-collapse">
-          <thead className="bg-gray-50 text-gray-600 text-sm font-medium">
-            <tr>
-              <th className="px-5 py-3">Title</th>
-              <th className="px-5 py-3">Slug</th>
-              <th className="px-5 py-3">Updated</th>
-              <th className="px-5 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {loading ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <tr key={i}>
-                  <td className="px-5 py-3">
-                    <div className="h-4 w-56 bg-gray-100 animate-pulse rounded" />
-                  </td>
-                  <td />
-                  <td />
-                  <td />
-                </tr>
-              ))
-            ) : rows.length === 0 ? (
-              <tr>
-                <td colSpan="4" className="text-center py-8 text-gray-500">
-                  No CMS pages found.
-                </td>
-              </tr>
-            ) : (
-              rows.map((p) => (
-                <tr
-                  key={p._id}
-                  className="hover:bg-gray-50 transition-colors duration-150"
-                >
-                  <td className="px-5 py-3 font-medium text-gray-800">
-                    {p.title}
-                  </td>
-                  <td className="px-5 py-3 text-gray-700">{p.slug || '—'}</td>
-                  <td className="px-5 py-3 text-gray-700">
-                    {new Date(p.updatedAt).toLocaleString()}
-                  </td>
-                  <td className="px-5 py-3 flex justify-end gap-2">
-                    <Link
-                      to={`/admin/cms/edit/${p._id}`}
-                      className="px-3 py-1.5 rounded-md bg-red-50 text-red-700 hover:bg-red-100 transition-all duration-200"
-                    >
-                      Edit
-                    </Link>
-                    <button
-                      onClick={() => remove(p._id)}
-                      className="px-3 py-1.5 rounded-md bg-gray-100 text-gray-800 hover:bg-gray-200 transition-all duration-200"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+      <div className="p-4 bg-blue-50 border border-blue-200 text-blue-800 rounded-lg text-sm">
+        Select a content block from the list below to edit. Your changes will appear on the live website immediately after saving.
       </div>
+
+      {loading ? (
+        <div className="text-center py-10 text-gray-500">Loading content list...</div>
+      ) : (
+        <div className="space-y-8">
+          {Object.entries(groupedPages).map(([groupName, pages]) => (
+            <div key={groupName}>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-gray-100 p-2 rounded-md text-gray-600">{getGroupIcon(groupName)}</div>
+                <h2 className="text-xl font-semibold text-gray-800">{groupName}</h2>
+              </div>
+              <div className="space-y-3">
+                {pages.map((page) => (
+                  <div key={page.slug} className="bg-white rounded-lg border border-gray-200 p-4 flex items-center justify-between hover:border-red-300 transition-colors">
+                    <div>
+                      <h3 className="font-medium text-gray-800">{page.name}</h3>
+                      <p className="text-sm text-gray-500">{page.description}</p>
+                    </div>
+                    <button onClick={() => handleEditClick(page)} className="flex items-center gap-2 px-4 py-2 rounded-md bg-red-50 text-red-700 hover:bg-red-100 font-medium transition">
+                      <FiEdit className="w-4 h-4" /> Edit
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
-  )
+  );
 }

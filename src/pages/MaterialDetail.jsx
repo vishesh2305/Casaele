@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import {apiGet} from '../utils/api';
-import cardData from '../components/Material/MaterialDetail/material';
-import CommentsData from "../components/Material/MaterialDetail/commentsData";
 
 import MaterialHeader from "../components/Material/MaterialDetail/MaterialHeader";
 import RelatedMaterials from "../components/Material/MaterialDetail/RelatedMaterial";
 import CommentForm from "../components/Material/MaterialDetail/CommentForm";
 import CommentList from "../components/Material/MaterialDetail/CommentList";
 import DropDown from "../components/Material/MaterialDetail/DropDown";
+import reviewsData from "../components/CourseDetail/ReviewsData.js";
 
 
 function MaterialDetail() {
@@ -53,14 +52,14 @@ function MaterialDetail() {
                 <section>
                     <MaterialHeader material={material} />
                 </section>
-                <section className="py-12 sm:py-16"><DropDown /></section>
+                <section className="py-12 sm:py-16"><DropDown exercises={material.embedIds || []} /></section>
                 <section className="py-12 sm:py-16">
                     <RelatedMaterials materials={related} onCardClick={setMaterial} />
                 </section>
                 <section className="py-12 sm:py-16">
                     <h1 className="text-3xl md:text-4xl font-bold mb-8">Comentario</h1>
                     <CommentForm />
-                    <CommentList comments={CommentsData} />
+                    <CommentList comments={reviewsData} />
                 </section>
             </div>
         </div>
@@ -68,3 +67,6 @@ function MaterialDetail() {
 }
 
 export default MaterialDetail;
+
+
+

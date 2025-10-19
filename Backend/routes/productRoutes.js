@@ -7,10 +7,10 @@ const router = Router()
 // Create (admin)
 router.post('/', verifyFirebaseToken, async (req, res) => {
   try {
-    const { name, price, description, image, stock, imageSource } = req.body
+    const { name, price, discountPrice, productType, description, images, stock, imageSource } = req.body
     if (!name || price == null) return res.status(400).json({ message: 'name and price are required' })
     const normalizedStock = Number.isFinite(Number(stock)) && Number(stock) > 0 ? Number(stock) : 0
-    const product = await Product.create({ name, price, description, image, stock: normalizedStock, imageSource: imageSource || '' })
+    const product = await Product.create({ name, price, discountPrice, productType, description, images, stock: normalizedStock, imageSource: imageSource || '' })
     res.status(201).json(product)
   } catch (e) {
     res.status(500).json({ message: 'Failed to create product' })
@@ -33,10 +33,10 @@ router.get('/:id', async (req, res) => {
 // Update (admin)
 router.put('/:id', verifyFirebaseToken, async (req, res) => {
   try {
-    const { name, price, description, image, stock } = req.body
+    const { name, price, discountPrice, productType, description, images, stock } = req.body
     const updated = await Product.findByIdAndUpdate(
       req.params.id,
-      { name, price, description, image, stock },
+      { name, price, discountPrice, productType, description, images, stock },
       { new: true, runValidators: true }
     )
     if (!updated) return res.status(404).json({ message: 'Not found' })
@@ -54,5 +54,3 @@ router.delete('/:id', verifyFirebaseToken, async (req, res) => {
 })
 
 export default router
-
-

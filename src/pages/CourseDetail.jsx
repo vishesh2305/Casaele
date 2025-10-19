@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { apiGet } from '../utils/api'; 
+import { apiGet } from '../utils/api';
 import ProductImage from '../components/CourseDetail/ProductImage.jsx';
 import ProductInfo from '../components/CourseDetail/ProductInfo.jsx';
 import DetailedInfo from '../components/CourseDetail/DetailedInfo.jsx';
@@ -25,7 +25,7 @@ function CourseDetail() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const isProduct = location.pathname.includes('course-detail'); 
+      const isProduct = location.pathname.includes('course-detail');
       const apiUrl = isProduct ? `/api/products/${id}` : `/api/materials/${id}`;
 
       try {
@@ -44,7 +44,7 @@ function CourseDetail() {
     }
   }, [id, item, location.pathname]);
 
-  
+
 
   const handleAddToCart = (productDataWithSelections) => {
     navigate('/cart-checkout', { state: { item: productDataWithSelections, quantity } });
@@ -63,7 +63,7 @@ function CourseDetail() {
   if (loading) {
     return <div className="text-center p-20">Loading...</div>;
   }
-  
+
   if (!item) {
     return <div className="text-center p-20">Product not found.</div>;
   }
@@ -88,7 +88,7 @@ function CourseDetail() {
         <section className="py-8 sm:py-12">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-16">
             <div className="lg:col-span-2">
-              <DetailedInfo />
+              <DetailedInfo item={item} />
             </div>
             <div className="lg:col-span-1">
               <KeyFeatures />

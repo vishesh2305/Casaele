@@ -6,7 +6,7 @@ export default function Materials() {
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
-  const [form, setForm] = useState({ title: '', description: '', content: '', category: '', fileUrl: '', tags: '', imageSource: '', embedId: '', embedType: '' })
+  const [form, setForm] = useState({ title: '', description: '', content: '', category: '', fileUrl: '', tags: '', imageSource: '', embedIds: [], embedType: '' })
   const [embeds, setEmbeds] = useState([])
   const [uploading, setUploading] = useState(false);
   const [imgMode, setImgMode] = useState('local');
@@ -69,27 +69,11 @@ export default function Materials() {
       setErrorMsg('');
       setSaving(true);
       
-      // Validate file URL for non-embed materials
-      if (!form.embedId && !form.fileUrl) { 
-        setErrorMsg('Please select an image (local or Pinterest).'); 
-        setSaving(false); 
-        return; 
-      }
-
       const payload = {
         ...form,
         tags: form.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
         imageSource: form.imageSource || (imgMode === 'pinterest' ? 'pinterest' : 'local')
       };
-
-      // Make sure embedId is properly sent
-      if (form.embedType && form.embedId) {
-        payload.embedId = form.embedId;
-        payload.embedType = form.embedType;
-      } else {
-        payload.embedId = null;
-        payload.embedType = '';
-      }
 
       const saved = editing
         ? await apiSend(`/api/materials/${editing._id}`, 'PUT', payload)
@@ -117,12 +101,21 @@ export default function Materials() {
       category: material.category || '',
       fileUrl: material.fileUrl || '',
       tags: Array.isArray(material.tags) ? material.tags.join(', ') : '',
-      embedId: material.embedId?._id || '',
+      embedIds: material.embedIds?.map(e => e._id) || [],
       embedType: material.embedType || '',
       imageSource: material.imageSource || ''
     });
     setModalOpen(true);
   }
+  
+  const handleEmbedSelection = (embedId) => {
+    setForm(prevForm => {
+      const newEmbedIds = prevForm.embedIds.includes(embedId)
+        ? prevForm.embedIds.filter(id => id !== embedId)
+        : [...prevForm.embedIds, embedId];
+      return { ...prevForm, embedIds: newEmbedIds };
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -140,7 +133,7 @@ export default function Materials() {
                 category: '', 
                 fileUrl: '', 
                 tags: '',
-                embedId: '',
+                embedIds: [],
                 embedType: '',
                 imageSource: ''
               }); 
@@ -191,7 +184,6 @@ export default function Materials() {
             {errorMsg ? <div className="text-sm text-red-600">{errorMsg}</div> : null}
 
             <div className="grid grid-cols-1 gap-3">
-              {/* === Common Input Style === */}
               {[
                 { label: 'Title', key: 'title' },
                 { label: 'Short Description (for cards)', key: 'description' },
@@ -209,7 +201,6 @@ export default function Materials() {
                 </label>
               ))}
 
-              {/* === Textarea === */}
               <label className="block">
                 <span className="text-sm text-gray-700">Main Content (for detail page)</span>
                 <textarea
@@ -220,45 +211,24 @@ export default function Materials() {
                 />
               </label>
 
-              {/* H5P/AI Embed Selection */}
               <div className="block">
-                <span className="text-sm text-gray-700">H5P/AI Content</span>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">Type</label>
-                    <select
-                      value={form.embedType}
-                      onChange={(e) => setForm({ ...form, embedType: e.target.value, embedId: '' })}
-                      className="w-full rounded-lg border border-gray-300 bg-gray-50 focus:border-red-500 focus:ring-2 focus:ring-red-400/50 transition duration-150 px-3 py-2 text-sm"
-                    >
-                      <option value="">None</option>
-                      <option value="H5P">H5P</option>
-                      <option value="AI">AI</option>
-                    </select>
-                  </div>
-                  {form.embedType && (
-                    <div>
-                      <label className="block text-sm text-gray-600 mb-1">Select Content</label>
-                      <select
-                        value={form.embedId}
-                        onChange={(e) => setForm({ ...form, embedId: e.target.value })}
-                        className="w-full rounded-lg border border-gray-300 bg-gray-50 focus:border-red-500 focus:ring-2 focus:ring-red-400/50 transition duration-150 px-3 py-2 text-sm"
-                      >
-                        <option value="">Select content</option>
-                        {embeds
-                          .filter(embed => embed.type === form.embedType)
-                          .map(embed => (
-                            <option key={embed._id} value={embed._id}>
-                              {embed.title}
-                            </option>
-                          ))}
-                      </select>
-                    </div>
-                  )}
+                <span className="text-sm text-gray-700">Select Exercises (H5P/AI Content)</span>
+                <div className="mt-2 space-y-2 max-h-48 overflow-y-auto border rounded-lg p-2">
+                  {embeds.map(embed => (
+                    <label key={embed._id} className="flex items-center gap-2 p-2 rounded-md hover:bg-gray-50">
+                      <input
+                        type="checkbox"
+                        checked={form.embedIds.includes(embed._id)}
+                        onChange={() => handleEmbedSelection(embed._id)}
+                        className="rounded accent-red-600"
+                      />
+                      <span className="text-sm">{embed.title} ({embed.type})</span>
+                    </label>
+                  ))}
                 </div>
               </div>
 
-              {/* === Image Source Selection === */}
+
               <div className="block">
                 <span className="text-sm text-gray-700">Image Source</span>
                 <div className="mt-1 flex items-center gap-4 text-sm">
@@ -271,7 +241,6 @@ export default function Materials() {
                 </div>
               </div>
 
-              {/* === File Upload === */}
               {imgMode === 'local' ? (
                 <label className="block">
                   <span className="text-sm text-gray-700">File Upload</span>
