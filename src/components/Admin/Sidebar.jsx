@@ -4,6 +4,7 @@ import { FiHome, FiUsers, FiUpload, FiBox, FiShoppingCart, FiSettings, FiFileTex
 const links = [
   { to: '/admin', label: 'Dashboard', icon: FiHome },
   { to: '/admin/users', label: 'Users', icon: FiUsers },
+  { to: '/admin/garden-content', label: 'Garden Content', icon: FiUpload },
   { to: '/admin/content-upload', label: 'Content Upload', icon: FiUpload },
   { to: '/admin/products', label: 'Products', icon: FiBox },
   { to: '/admin/orders', label: 'Orders', icon: FiShoppingCart },

@@ -8,7 +8,7 @@ import { auth, onAuthStateChanged, signOut } from "../../firebase";
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLangOpen, setIsLangOpen] = useState(false);
-  const [selectedLang, setSelectedLang] = useState("Spanish"); // Default to Spanish
+  const [selectedLang, setSelectedLang] = useState("Spanish"); 
   const langDropdownRef = useRef(null);
   const { pathname } = useLocation();
   const [showAuth, setShowAuth] = useState(false);
@@ -19,11 +19,11 @@ const Header = () => {
     { name: "School", path: "/school" },
     { name: "Shop", path: "/shop" },
     { name: "About Ele", path: "/about" },
+{ name: "Garden of Ideas", path: "/garden-of-ideas" }, 
     { name: "Contact Us", path: "/contact" },
     { name: "Admin Login", path: "/admin/login" },
   ];
 
-  // Effect to handle clicks outside the language dropdown
   useEffect(() => {
     function handleClickOutside(event) {
       if (langDropdownRef.current && !langDropdownRef.current.contains(event.target)) {
@@ -36,7 +36,6 @@ const Header = () => {
     };
   }, [langDropdownRef]);
 
-  // Track auth state for navbar button
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setCurrentUser(u || null);
@@ -46,12 +45,11 @@ const Header = () => {
 
   const handleLangSelect = (lang) => {
     setSelectedLang(lang);
-    setIsLangOpen(false); // Close dropdown after selection
+    setIsLangOpen(false);
   };
 
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between w-full px-4 sm:px-8 lg:px-16 py-4 bg-white shadow-sm">
-      {/* Left Section: Logo + Language Selector */}
       <div className="flex items-center gap-4">
         <Link to="/" className="flex items-center gap-2 flex-shrink-0">
           <img

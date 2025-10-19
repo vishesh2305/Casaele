@@ -1,57 +1,97 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Link } from 'react-router-dom'; // 1. Import Link
+import { apiGet, apiSend } from "../utils/api";
+import { FiTrash2 } from 'react-icons/fi';
 
 function Garden() {
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const [idea, setIdea] = useState("");
 
-  const handleSubmit = () => {
-    if (idea.trim() === "") {
-      alert("Please enter your idea before submitting!");
-      return;
+  const isAdmin = useMemo(() => {
+    const token = localStorage.getItem('authToken');
+    if (!token) return false;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.role === 'admin' || payload.email === import.meta.env.VITE_SUPER_ADMIN_EMAIL;
+    } catch {
+      return false;
     }
-    alert(`Your idea: "${idea}" has been submitted 🌱`);
-    setIdea(""); // clear textarea
+  }, []);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      setLoading(true);
+      try {
+        const data = await apiGet('/api/posts');
+        setPosts(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Failed to fetch posts:", error);
+        setPosts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPosts();
+  }, []);
+
+  const handleDelete = async (postId) => {
+    if (window.confirm('Are you sure you want to delete this post?')) {
+      try {
+        await apiSend(`/api/posts/${postId}`, 'DELETE');
+        setPosts(posts.filter(p => p._id !== postId));
+      } catch (error) {
+        alert(`Failed to delete post: ${error.message}`);
+      }
+    }
   };
 
-  return (
-    <div className="font-sans text-gray-800 ">
-
-      {/* Garden Section */}
+return (
+    <div className="font-sans text-gray-800">
       <section className="flex justify-center items-center w-full bg-white py-16">
         <div className="w-full max-w-6xl text-center px-6">
-          {/* Heading */}
           <h1 className="text-4xl font-bold text-black py-16">
             El jardín de ideas
           </h1>
-          <p className="text-2xl text-center text-black mb-12">Share your thoughts and suggestions to help us grow CasaDeELE <br /> and make your Spanish learning journey even better.</p>
-          {/* Plant Images */}
-          <div className="flex justify-center flex-wrap gap-8 mb-12">
-            <img src="/GardenOfIdeas/a-2d-digital-illustration-of-a-glowing-spiral-shap.svg" alt="plant 1" className="w-[150px] h-[150px]" />
-            <img src="/GardenOfIdeas/a-2d-digital-illustration-of-a-small--bright-green.svg" alt="plant 2" className="w-[150px] h-[150px]" />
-            <img src="/GardenOfIdeas/a-2d-digital-illustration-of-a-small-alien-plant-w.svg" alt="plant 3" className="w-[150px] h-[150px]" />
-            <img src="/GardenOfIdeas/a-2d-digital-illustration-of-a-tiny-alien-plant-wi.svg" alt="plant 4" className="w-[150px] h-[150px]" />
-            <img src="/GardenOfIdeas/a-2d-digital-illustration-of-a-whimsical-alien-sap.svg" alt="plant 5" className="w-[150px] h-[150px]" />
-            <img src="/GardenOfIdeas/a-2d-digital-illustration-of-an-alien-plant-with-c.svg" alt="plant 6" className="w-[150px] h-[150px]" />
-          </div>
+          <p className="text-2xl text-center text-black mb-12">
+            Explore our garden of ideas! Here you'll find creative content, updates, and inspiration for your Spanish learning journey.
+          </p>
+          
+          {loading ? (
+            <div className="py-12">Loading ideas...</div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {posts.map((post) => (
+                // 2. Wrap the card in a Link component
+                <Link to={`/garden-of-ideas/${post._id}`} key={post._id} className="relative bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 flex flex-col group">
+                  <img
+                    src={post.imageUrl}
+                    alt={post.title}
+                    className="w-full h-56 object-cover"
+                  />
+                  <div className="p-6 text-left flex flex-col flex-grow">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2 truncate">{post.title}</h3>
+                    <p className="text-gray-600 text-sm flex-grow line-clamp-3">{post.description}</p>
+                  </div>
 
-          {/* Text Area + Button */}
-          <div className="flex flex-col items-center gap-6">
-            <textarea
-              value={idea}
-              onChange={(e) => setIdea(e.target.value)}
-              placeholder="Describe your idea"
-              className="w-full max-w-3xl h-[150px] px-4 py-3 rounded-xl border border-gray-300 shadow-sm resize-none focus:outline-none focus:ring-2 focus:ring-red-400"
-            />
-            <button
-              onClick={handleSubmit}
-              className="w-full max-w-3xl h-[55px] bg-[rgba(173,21,24,1)] text-white font-semibold rounded-full hover:bg-red-700 transition"
-            >
-              Plant Your Idea
-            </button>
-          </div>
+                  {isAdmin && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault(); // Prevent navigation when deleting
+                        handleDelete(post._id);
+                      }}
+                      className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Delete Post"
+                    >
+                      <FiTrash2 className="w-5 h-5" />
+                    </button>
+                  )}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </section>
-
     </div>
   );
 }
