@@ -4,7 +4,8 @@ import SectionHeader from "../components/Material/MaterialPage/SectionHeader";
 import CardSlider from "../components/Material/MaterialPage/CardSlider";
 import SearchBar from "../components/Searchbar/Searchbar";
 import { useLocation } from "react-router-dom";
-import { apiGet } from "../utils/api"; // ✅ Import the apiGet utility
+import { apiGet } from "../utils/api";
+import BannerDisplay from "../components/Material/MaterialPage/BannerDisplay"; 
 
 function MaterialPage() {
   const location = useLocation();
@@ -12,39 +13,34 @@ function MaterialPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
   
-  // ✅ State to hold materials fetched from the backend
   const [materials, setMaterials] = useState([]);
+  const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const cardRef = useRef(null);
-  const mostlyRef = useRef(null); // Keep this ref if you plan to have a second slider
+  const mostlyRef = useRef(null);
 
-  // ✅ Fetch materials from the backend when the component loads
   useEffect(() => {
     setLoading(true);
-    apiGet('/api/materials')
-      .then(data => {
-        if (Array.isArray(data)) {
-          setMaterials(data);
-        } else {
-          setMaterials([]); // Ensure materials is always an array
-        }
-      })
-      .catch(() => setMaterials([]))
-      .finally(() => setLoading(false));
+    Promise.all([
+      apiGet('/api/materials'),
+      apiGet('/api/banners?isActive=true') 
+    ])
+    .then(([materialsData, bannersData]) => {
+      setMaterials(Array.isArray(materialsData) ? materialsData : []);
+      setBanners(bannersData?.banners && Array.isArray(bannersData.banners) ? bannersData.banners : []);
+    })
+    .catch(() => {
+      setMaterials([]);
+      setBanners([]);
+    })
+    .finally(() => setLoading(false));
   }, []);
 
-  // Filter data based on the dynamic search query
-  const searchResults = useMemo(() => {
-    if (!searchQuery) return [];
-    const query = searchQuery.toLowerCase();
-    // Search through the dynamically fetched materials
-    return materials.filter(item =>
-      item.title.toLowerCase().includes(query) ||
-      (item.description && item.description.toLowerCase().includes(query)) ||
-      (item.category && item.category.toLowerCase().includes(query))
-    );
-  }, [searchQuery, materials]);
+  // Find banners for each position
+  const heroBanner = useMemo(() => banners.find(b => b.position === 'hero'), [banners]);
+  const middleBanner = useMemo(() => banners.find(b => b.position === 'middle'), [banners]);
+  const bottomBanner = useMemo(() => banners.find(b => b.position === 'bottom'), [banners]); // **THE FIX IS HERE**
 
   const handleScroll = (ref, direction) => {
     const container = ref.current;
@@ -59,9 +55,20 @@ function MaterialPage() {
     setShowSearchResults(query.length > 0);
   };
 
+  const searchResults = useMemo(() => {
+    if (!searchQuery) return [];
+    const query = searchQuery.toLowerCase();
+    return materials.filter(item =>
+      item.title.toLowerCase().includes(query) ||
+      (item.description && item.description.toLowerCase().includes(query)) ||
+      (item.category && item.category.toLowerCase().includes(query))
+    );
+  }, [searchQuery, materials]);
+
   useEffect(() => {
     if (location.state?.keyword) {
       setActiveButton("Keyword");
+      handleSearch(location.state.keyword);
     }
   }, [location.state]);
 
@@ -69,41 +76,25 @@ function MaterialPage() {
     return <div className="text-center p-20 font-semibold">Loading Materials...</div>;
   }
 
-
-
   return (
-    <div
-      className="
-        w-full
-        px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16
-        pb-10
-      "
-    >
-      {/* Toggle Buttons */}
-      <ToggleButtons
-        activeButton={activeButton}
-        setActiveButton={setActiveButton}
-      />
-
+    <div className="w-full px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 pb-10">
+      {heroBanner && !showSearchResults && <BannerDisplay banner={heroBanner} />}
+      
+      <ToggleButtons activeButton={activeButton} setActiveButton={setActiveButton} />
       <SearchBar activeButton={activeButton} onSearch={handleSearch} />
 
-      {/* Search Results Section */}
-      {showSearchResults && (
+      {showSearchResults ? (
         <div className="mt-6 sm:mt-8 md:mt-10">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-800">Results ({searchResults.length})</h2>
-            {/* <div className="text-sm text-gray-600">
-              {searchQuery.toUpperCase()}
-            </div> */}
           </div>
-
           {searchResults.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {searchResults.map((item) => (
-                <div key={item.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                <div key={item._id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="h-48 overflow-hidden">
                     <img
-                      src={item.image}
+                      src={item.fileUrl || "https://placehold.co/400x300/e5e7eb/4b5563?text=Image"}
                       alt={item.title}
                       className="w-full h-full object-cover"
                     />
@@ -113,12 +104,7 @@ function MaterialPage() {
                     <p className="text-gray-600 text-sm mb-3">{item.description}</p>
                     <div className="flex flex-wrap gap-2">
                       {item.tags.map((tag, index) => (
-                        <span
-                          key={index}
-                          className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
-                        >
-                          {tag}
-                        </span>
+                        <span key={index} className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">{tag}</span>
                       ))}
                     </div>
                   </div>
@@ -127,38 +113,35 @@ function MaterialPage() {
             </div>
           ) : (
             <div className="text-center flex justify-center py-12 -mt-11">
-              <img
-                src="/Material/errrorpage.svg"
-                alt="No results"
-                className=""
-              />
+              <img src="/Material/errrorpage.svg" alt="No results" />
             </div>
           )}
         </div>
-      )}
+      ) : (
+        <>
+          <div className="mt-6 sm:mt-8 md:mt-10">
+            <SectionHeader
+              title="Latest Chapters Out Now!"
+              onScrollLeft={() => handleScroll(cardRef, "left")}
+              onScrollRight={() => handleScroll(cardRef, "right")}
+            />
+            <CardSlider ref={cardRef} data={materials} />
+          </div>
 
-      {/* Latest Chapters Section (hidden when search results are shown) */}
-      {!showSearchResults && (
-        <div className="mt-6 sm:mt-8 md:mt-10">
-          <SectionHeader
-            title="Latest Chapters Out Now!"
-            onScrollLeft={() => handleScroll(cardRef, "left")}
-            onScrollRight={() => handleScroll(cardRef, "right")}
-          />
-          <CardSlider ref={cardRef} data={materials} />
-        </div>
-      )}
+          {middleBanner && <BannerDisplay banner={middleBanner} />}
 
-      {/* Most Liked Section (hidden when search results are shown) */}
-      {!showSearchResults && (
-        <div className="mt-6 sm:mt-8 md:mt-10">
-          <SectionHeader
-            title="Most Liked!"
-            onScrollLeft={() => handleScroll(mostlyRef, "left")}
-            onScrollRight={() => handleScroll(mostlyRef, "right")}
-          />
-          <CardSlider ref={mostlyRef} data={[...materials].reverse()} />
-        </div>
+          <div className="mt-6 sm:mt-8 md:mt-10">
+            <SectionHeader
+              title="Most Liked!"
+              onScrollLeft={() => handleScroll(mostlyRef, "left")}
+              onScrollRight={() => handleScroll(mostlyRef, "right")}
+            />
+            <CardSlider ref={mostlyRef} data={[...materials].reverse()} />
+          </div>
+
+          {/* **THE FIX IS HERE** - Display the bottom banner at the end of the page */}
+          {bottomBanner && <BannerDisplay banner={bottomBanner} />}
+        </>
       )}
     </div>
   );
