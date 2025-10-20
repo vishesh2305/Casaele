@@ -22,6 +22,7 @@ import Subscribers from "./pages/admin/Subscribers";
 import Embeds from "./pages/admin/Embeds";
 import TestimonialsManager from "./pages/admin/TestimonialsManager";
 import CommentsManager from "./pages/admin/CommentsManager";
+import Teachers from "./pages/admin/Teachers";
 import PinterestManager from "./pages/admin/PinterestManager";
 import AdminNotFound from "./pages/admin/NotFound";
 import Header from "./components/CommonPage/Header";
@@ -114,6 +115,7 @@ function AppWrapper() {
             <Route path="embeds" element={<Embeds />} />
             <Route path="testimonials" element={<TestimonialsManager />} />
             <Route path="comments" element={<CommentsManager />} />
+            <Route path="teachers" element={<Teachers />} />
             <Route path="pinterest" element={<PinterestManager />} />
             <Route path="*" element={<AdminNotFound />} />
           </Route>

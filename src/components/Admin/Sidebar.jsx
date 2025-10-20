@@ -21,6 +21,7 @@ const links = [
   { to: '/admin/pinterest', label: 'Pinterest Manager', icon: FiShare2 },
   { to: '/admin/testimonials', label: 'Testimonials', icon: FiMail },
   { to: '/admin/comments', label: 'Comments', icon: FiMail },
+  { to: '/admin/teachers', label: 'Teachers', icon: FiUsers },
 ]
 
 export default function AdminSidebar({ open, onClose }) {

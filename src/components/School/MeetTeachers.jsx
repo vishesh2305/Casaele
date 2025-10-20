@@ -1,15 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { GoArrowLeft, GoArrowRight } from "react-icons/go";
+import { apiGet } from "../../utils/api";
 
 const MeetTeachers = () => {
-  const teachers = [
-    { img: "/School/unsplash_DH_u2aV3nGM.svg", name: "Steve K.", description: "ellentesque sed. Ornare suspendisse ut ac neque lobortis sed tincidunt." },
-    { img: "/School/unsplash_DH_u2aV3nGM (1).svg", name: "Jeremy Sil", description: "ellentesque sed. Ornare suspendisse ut ac neque lobortis sed tincidunt." },
-    { img: "/School/unsplash_DH_u2aV3nGM (2).svg", name: "Theri Jacobs", description: "ellentesque sed. Ornare suspendisse ut ac neque lobortis sed tincidunt." },
-    { img: "/School/unsplash_DH_u2aV3nGM (3).svg", name: "Amrit Goyal", description: "ellentesque sed. Ornare suspendisse ut ac neque lobortis sed tincidunt." },
-    { img: "/School/unsplash_DH_u2aV3nGM (1).svg", name: "Alice R.", description: "ellentesque sed. Ornare suspendisse ut ac neque lobortis sed tincidunt." },
-    { img: "/School/unsplash_DH_u2aV3nGM (2).svg", name: "Bob M.", description: "ellentesque sed. Ornare suspendisse ut ac neque lobortis sed tincidunt." },
-  ];
+  const [teachers, setTeachers] = useState([])
+  const [loading, setLoading] = useState(true)
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [itemsPerRow, setItemsPerRow] = useState(4);
@@ -26,6 +21,22 @@ const MeetTeachers = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  useEffect(() => {
+    setLoading(true)
+    apiGet('/api/teachers')
+      .then(data => setTeachers(Array.isArray(data) ? data : []))
+      .catch(() => setTeachers([]))
+      .finally(() => setLoading(false))
+
+    const reload = () => {
+      apiGet('/api/teachers')
+        .then(data => setTeachers(Array.isArray(data) ? data : []))
+        .catch(() => {})
+    }
+    window.addEventListener('teachers:updated', reload)
+    return () => window.removeEventListener('teachers:updated', reload)
+  }, [])
+
   const prev = () => {
     setCurrentIndex((prevIndex) =>
       prevIndex === 0 ? teachers.length - itemsPerRow : prevIndex - 1
@@ -38,7 +49,7 @@ const MeetTeachers = () => {
     );
   };
 
-  const visibleTeachers = teachers.slice(
+  const visibleTeachers = (teachers || []).slice(
     currentIndex,
     currentIndex + itemsPerRow
   );
@@ -62,7 +73,9 @@ const MeetTeachers = () => {
 
           {/* Teachers Row */}
           <div className="flex gap-4 md:gap-6 w-full justify-center overflow-hidden">
-            {visibleTeachers.map((teacher, index) => (
+            {loading ? (
+              <div className="text-gray-500">Loading...</div>
+            ) : visibleTeachers.map((teacher, index) => (
               <div
                 key={index}
                 className="flex flex-col items-center text-center px-2"
@@ -74,7 +87,7 @@ const MeetTeachers = () => {
                 }}
               >
                 <img
-                  src={teacher.img}
+                  src={teacher.photoUrl}
                   alt={teacher.name}
                   className="w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full mb-6 object-cover shadow-md"
                 />
