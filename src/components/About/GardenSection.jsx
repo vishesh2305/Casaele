@@ -1,11 +1,11 @@
 import React from 'react'
-import { useNavigate } from 'react-router-dom';
 
 const GaedenSection = () => {
-    const navigate = useNavigate();
-  
-    const handleNavigate = () => {
-      navigate('/garden-of-ideas');
+    const scrollToSuggestions = () => {
+      const suggestionsSection = document.querySelector('#suggestions-section');
+      if (suggestionsSection) {
+        suggestionsSection.scrollIntoView({ behavior: 'smooth' });
+      }
     };
 
   return (
@@ -31,8 +31,8 @@ const GaedenSection = () => {
               — share a song, a fun feature, or a way to make learning Spanish
               more exciting...
             </p>
-            <button onClick={handleNavigate} className="bg-[rgba(173,21,24,1)] hover:bg-red-700 text-white font-semibold px-5 sm:px-6 py-2.5 sm:py-3 rounded-full transition-colors lg:px-24">
-              Garden of Ideas
+            <button onClick={scrollToSuggestions} className="bg-[rgba(173,21,24,1)] hover:bg-red-700 text-white font-semibold px-5 sm:px-6 py-2.5 sm:py-3 rounded-full transition-colors lg:px-24">
+              Share Your Ideas
             </button>
           </div>
         </div>

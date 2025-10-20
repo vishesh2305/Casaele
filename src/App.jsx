@@ -37,7 +37,6 @@ import Newsletter from "./components/CommonPage/Newsletter";
 import Footer from "./components/CommonPage/Footer";
 import CourseDetail from "./pages/CourseDetail";
 import CartCheckout from "./pages/CartCheckout";
-import Garden from "./pages/GardenOfIdeas";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import CmsPage from "./pages/CmsPage";
@@ -46,7 +45,6 @@ import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import DisableContextMenu from "./components/Common/DisableContextMenu";
 import GardenContent from "./pages/admin/GardenContent";
-import PostDetail from "./pages/PostDetail";
 // The Translate import has been removed
 
 // Guard Stripe initialization: require Vite-prefixed key and avoid crashing if missing
@@ -83,8 +81,6 @@ function AppWrapper() {
         <Route path="/cart-checkout" element={<CartCheckout />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/garden-of-ideas" element={<Garden />} />
-<Route path="/garden-of-ideas/:id" element={<PostDetail />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
         <Route path="/page/:slug" element={<CmsPage />} />

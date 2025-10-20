@@ -7,6 +7,7 @@ import SchoolSteps from "../components/School/SchoolSteps";
 import MeetTeachers from "../components/School/MeetTeachers";
 import FAQSection from "../components/School/FAQSection";
 import Testimonials from "../components/Home/Testimonials";
+import SuggestionsSection from "../components/Home/SuggestionsSection";
 
 function Schoolpage() {
   return (
@@ -18,6 +19,7 @@ function Schoolpage() {
       <SchoolSteps />
       <MeetTeachers />
       <Testimonials />
+      <SuggestionsSection />
       <FAQSection />
     </>
   );

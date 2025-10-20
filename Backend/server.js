@@ -19,6 +19,7 @@ import embedRoutes from './routes/embedRoutes.js'
 import testimonialRoutes from './routes/testimonialRoutes.js'
 import commentRoutes from './routes/commentRoutes.js'
 import teacherRoutes from './routes/teacherRoutes.js'
+import suggestionRoutes from './routes/suggestionRoutes.js'
 import pinterestRoutes from './routes/pinterestRoutes.js'
 import dashboardRoutes from './routes/dashboardRoutes.js'
 import orderRoutes from './routes/orderRoutes.js'
@@ -200,6 +201,7 @@ app.use('/api/embeds', embedRoutes)
 app.use('/api/testimonials', testimonialRoutes)
 app.use('/api/comments', commentRoutes)
 app.use('/api/teachers', teacherRoutes)
+app.use('/api/suggestions', suggestionRoutes)
 app.use('/api/pinterest', pinterestRoutes)
 app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/orders', orderRoutes)

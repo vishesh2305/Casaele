@@ -19,7 +19,6 @@ const Header = () => {
     { name: "School", path: "/school" },
     { name: "Shop", path: "/shop" },
     { name: "About Ele", path: "/about" },
-{ name: "Garden of Ideas", path: "/garden-of-ideas" }, 
     { name: "Contact Us", path: "/contact" },
     { name: "Admin Login", path: "/admin/login" },
   ];
