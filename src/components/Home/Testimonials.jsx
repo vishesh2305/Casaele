@@ -1,45 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { GoArrowLeft, GoArrowRight } from "react-icons/go";
+import { apiGet } from "../../utils/api";
 
 function Testimonials() {
-  const testimonials = [
-    {
-      text: "Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperioresItaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      img: "Home/Ellipse 756.svg",
-      name: "Sarah Levi",
-      location: "France",
-    },
-    {
-      text: "At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores",
-      img: "Home/Ellipse 755.svg",
-      name: "Sarah Levi",
-      location: "India",
-    },
-    {
-      text: "Cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga.",
-      img: "Home/Ellipse 754.svg",
-      name: "Levi Fisher",
-      location: "Russia",
-    },
-    {
-      text: "This is another testimonial to demonstrate the functionality with more items. It is intentionally made longer than the others to show the text truncation in action. The card size will not change.",
-      img: "Home/Ellipse 755.svg",
-      name: "John Doe",
-      location: "USA",
-    },
-    {
-      text: "A final, shorter testimonial.",
-      img: "Home/Ellipse 756.svg",
-      name: "Jane Smith",
-      location: "Canada",
-    },
-    {
-      text: "One more for the road! This ensures the pagination works correctly.",
-      img: "Home/Ellipse 754.svg",
-      name: "Alex Ray",
-      location: "UK",
-    },
-  ];
+  const [items, setItems] = useState([])
+  const [loading, setLoading] = useState(true)
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(3);
@@ -61,10 +26,18 @@ function Testimonials() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  useEffect(() => {
+    setLoading(true)
+    apiGet('/api/testimonials/approved')
+      .then(data => setItems(Array.isArray(data) ? data : []))
+      .catch(() => setItems([]))
+      .finally(() => setLoading(false))
+  }, [])
+
   const handlePrev = () => {
     setCurrentIndex((prevIndex) => {
       const newIndex = prevIndex - itemsPerPage;
-      const lastPossibleIndex = Math.floor((testimonials.length - 1) / itemsPerPage) * itemsPerPage;
+      const lastPossibleIndex = Math.floor(((items?.length || 0) - 1) / itemsPerPage) * itemsPerPage;
       return newIndex < 0 ? lastPossibleIndex : newIndex;
     });
   };
@@ -72,11 +45,11 @@ function Testimonials() {
   const handleNext = () => {
     setCurrentIndex((prevIndex) => {
       const newIndex = prevIndex + itemsPerPage;
-      return newIndex >= testimonials.length ? 0 : newIndex;
+      return newIndex >= (items?.length || 0) ? 0 : newIndex;
     });
   };
 
-  const visibleTestimonials = testimonials.slice(currentIndex, currentIndex + itemsPerPage);
+  const visibleTestimonials = (items || []).slice(currentIndex, currentIndex + itemsPerPage);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
@@ -97,7 +70,11 @@ function Testimonials() {
 
         {/* This container adds padding on mobile to create space */}
         <div className="w-full flex justify-center gap-6 px-12 md:px-0">
-          {visibleTestimonials.map((t, index) => (
+          {loading ? (
+            <div className="w-full text-center py-10 text-gray-500">Loading testimonials...</div>
+          ) : visibleTestimonials.length === 0 ? (
+            <div className="w-full text-center py-10 text-gray-400">No testimonials yet.</div>
+          ) : visibleTestimonials.map((t, index) => (
             <div
               key={index}
               className="w-full sm:w-72 lg:w-64 h-96 flex-shrink-0 flex flex-col bg-white p-6 rounded-xl"
@@ -109,20 +86,15 @@ function Testimonials() {
               />
               
               <p className="flex-grow text-sm mb-4 font-medium leading-snug overflow-hidden">
-                {t.text.length > CHARACTER_LIMIT
-                  ? `${t.text.substring(0, CHARACTER_LIMIT)}...`
-                  : t.text}
+                {(t.message || '').length > CHARACTER_LIMIT
+                  ? `${(t.message || '').substring(0, CHARACTER_LIMIT)}...`
+                  : (t.message || '')}
               </p>
               
-              <div className="flex items-center justify-center space-x-3 flex-shrink-0 border-t pt-4">
-                <img
-                  src={t.img}
-                  alt={t.name}
-                  className="w-10 h-10 rounded-full"
-                />
-                <div className="text-left">
-                  <p className="font-semibold">{t.name}</p>
-                  <p className="text-xs text-gray-400">{t.location}</p>
+              <div className="flex items-center justify-center flex-shrink-0 border-t pt-4">
+                <div className="text-center">
+                  <p className="font-semibold">{t.name || 'Anonymous'}</p>
+                  <p className="text-xs text-gray-400">{typeof t.rating === 'number' ? `${t.rating.toFixed(1)}/5` : ''}</p>
                 </div>
               </div>
             </div>

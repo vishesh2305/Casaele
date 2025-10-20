@@ -19,6 +19,8 @@ const links = [
   { to: '/admin/subscribers', label: 'Subscribers', icon: FiMail },
   { to: '/admin/embeds', label: 'AI / H5P Manager', icon: FiCpu },
   { to: '/admin/pinterest', label: 'Pinterest Manager', icon: FiShare2 },
+  { to: '/admin/testimonials', label: 'Testimonials', icon: FiMail },
+  { to: '/admin/comments', label: 'Comments', icon: FiMail },
 ]
 
 export default function AdminSidebar({ open, onClose }) {

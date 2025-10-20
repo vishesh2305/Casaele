@@ -59,7 +59,7 @@ function MaterialDetail() {
                 <section className="py-12 sm:py-16">
                     <h1 className="text-3xl md:text-4xl font-bold mb-8">Comentario</h1>
                     <CommentForm />
-                    <CommentList comments={reviewsData} />
+                    <CommentList />
                 </section>
             </div>
         </div>
