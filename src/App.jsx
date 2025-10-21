@@ -24,6 +24,7 @@ import TestimonialsManager from "./pages/admin/TestimonialsManager";
 import CommentsManager from "./pages/admin/CommentsManager";
 import Teachers from "./pages/admin/Teachers";
 import PinterestManager from "./pages/admin/PinterestManager";
+import PicksManager from "./pages/admin/PicksManager";
 import AdminNotFound from "./pages/admin/NotFound";
 import Header from "./components/CommonPage/Header";
 import Home from "./pages/Home";
@@ -113,6 +114,7 @@ function AppWrapper() {
             <Route path="comments" element={<CommentsManager />} />
             <Route path="teachers" element={<Teachers />} />
             <Route path="pinterest" element={<PinterestManager />} />
+            <Route path="picks" element={<PicksManager />} />
             <Route path="*" element={<AdminNotFound />} />
           </Route>
         </Route>

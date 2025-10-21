@@ -33,6 +33,7 @@ import Razorpay from 'razorpay'
 import Stripe from 'stripe'
 import { v2 as cloudinary } from 'cloudinary'
 import postRoutes from './routes/postRoutes.js';
+import pickRoutes from './routes/pickRoutes.js';
 dotenv.config()
 
 console.log("--- Environment Variables ---");
@@ -212,6 +213,7 @@ app.use('/api/coupons', couponRoutes)
 app.use('/api/subscribers', subscriberRoutes)
 app.use('/api/admins', adminRoutes)
 app.use('/api/posts', postRoutes);
+app.use('/api/picks', pickRoutes);
 
 // ✅ Error Handlers
 app.use(notFound)

@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { FiHome, FiUsers, FiUpload, FiBox, FiShoppingCart, FiSettings, FiFileText, FiTag, FiMail, FiGlobe, FiImage, FiLayers, FiCpu, FiShare2 } from 'react-icons/fi'
+import { FiHome, FiUsers, FiUpload, FiBox, FiShoppingCart, FiSettings, FiFileText, FiTag, FiMail, FiGlobe, FiImage, FiLayers, FiCpu, FiShare2, FiStar } from 'react-icons/fi'
 
 const links = [
   { to: '/admin', label: 'Dashboard', icon: FiHome },
@@ -22,6 +22,7 @@ const links = [
   { to: '/admin/testimonials', label: 'Testimonials', icon: FiMail },
   { to: '/admin/comments', label: 'Comments', icon: FiMail },
   { to: '/admin/teachers', label: 'Teachers', icon: FiUsers },
+  { to: '/admin/picks', label: "Ele's Picks", icon: FiStar },
 ]
 
 export default function AdminSidebar({ open, onClose }) {
