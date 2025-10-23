@@ -1,92 +1,163 @@
-import React from "react";
+import React from 'react';
+import { FiFilter } from 'react-icons/fi';
 
-function Filters({
-  categoryData,
-  selectedCategory,
-  setSelectedCategory,
-  setFilteredItems, // Note: setFilteredItems is not used here but kept for stability
-  setCurrentPage,
-  maxPrice,
-  setMaxPrice,
-  actualMaxPrice, // New prop for the slider's max value
-  allItems,
+// Updated props 
+function Filters({ 
+    categoryData = {}, 
+    selectedCategory, 
+    setSelectedCategory, 
+    // Min Price
+    minPrice,
+    setMinPrice,
+    actualMinPrice,
+    // Max Price
+    maxPrice, 
+    setMaxPrice,        
+    actualMaxPrice,
+    // Sort
+    sortOrder,          
+    setSortOrder,       
+    itemType            
 }) {
+  
+  const allItemsKey = ''; 
+  const allItemsLabel = itemType === 'course' ? 'All Courses' : 'All Products';
+
+  const sortedCategories = Object.keys(categoryData).sort((a, b) => {
+      if (a === allItemsKey) return -1; 
+      if (b === allItemsKey) return 1;
+      return a.localeCompare(b); 
+  });
+
+  // Handler to ensure min price doesn't exceed max price
+  const handleMinChange = (e) => {
+    const value = parseInt(e.target.value, 10);
+    if (value <= maxPrice) {
+      setMinPrice(value);
+    }
+  };
+
+  // Handler to ensure max price doesn't go below min price
+  const handleMaxChange = (e) => {
+    const value = parseInt(e.target.value, 10);
+    if (value >= minPrice) {
+      setMaxPrice(value);
+    }
+  };
+
   return (
-    <aside className="w-full p-4 sm:p-6 bg-white border rounded-2xl shadow-md">
-      <div className="mb-6 sm:text-left flex justify-between">
-        <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+          <FiFilter className="w-5 h-5 text-gray-500" />
           Filters
-        </h2>
-        <img src="/Shop/Filter.svg" alt="frame icon" className="" />
-        
+        </h3>
+        {/* Optional Clear Filters Button */}
+         <button 
+           onClick={() => {
+             setSelectedCategory(allItemsKey); 
+             setMinPrice(actualMinPrice); // Reset min price
+             setMaxPrice(actualMaxPrice); // Reset max price
+             setSortOrder('newest'); 
+            }} 
+           className="text-sm text-red-600 hover:text-red-800"
+         >
+           Clear All
+         </button>
       </div>
-      <hr className="border-gray-300 mb-4" />
 
-      <div className="space-y-6">
-        {/* Categories */}
-        <div>
-          <ul className="space-y-2">
-            {Object.entries(categoryData || {}).map(([category, count]) => (
-              <li
-                key={category}
-                onClick={() => {
-                  setSelectedCategory(category);
-                  setCurrentPage(1);
-                }}
-                className={`flex justify-between items-center cursor-pointer px-3 py-2 rounded-md transition-all duration-200 ${
-                  selectedCategory === category
-                    ? "text-red-600 font-semibold bg-red-50"
-                    : "text-gray-700 hover:text-red-500 hover:bg-gray-100"
-                }`}
-              >
-                <span>{category}</span>
-                <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5">{count}</span>
+      {/* Categories Filter */}
+      <div className="mb-6">
+        <h4 className="text-base font-medium text-gray-800 mb-3">Category</h4>
+        <ul className="space-y-2">
+          {sortedCategories.map((categoryKey) => {
+            const categoryLabel = categoryKey === allItemsKey ? allItemsLabel : categoryKey; 
+            return (
+              <li key={categoryKey}>
+                <button
+                  onClick={() => setSelectedCategory(categoryKey)} 
+                  className={`w-full text-left flex justify-between items-center px-3 py-2 rounded-md transition-colors text-sm ${
+                    selectedCategory === categoryKey 
+                      ? 'bg-red-50 text-red-700 font-medium'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <span>{categoryLabel}</span> 
+                  <span className={`text-xs px-1.5 py-0.5 rounded ${
+                     selectedCategory === categoryKey ? 'bg-red-200' : 'bg-gray-200 text-gray-500'
+                  }`}>
+                    {categoryData[categoryKey] || 0}
+                  </span>
+                </button>
               </li>
-            ))}
-          </ul>
+            );
+            })}
+        </ul>
+      </div>
+
+      {/* --- Combined Price Range Filter --- */}
+      <div className="mb-6">
+        <h4 className="text-base font-medium text-gray-800 mb-3">Price Range</h4>
+        
+        {/* Display Current Range */}
+        <div className="flex items-center justify-between mb-2 text-sm text-gray-700 font-medium">
+           <span>₹{minPrice}</span>
+           <span>₹{maxPrice}</span>
         </div>
 
-        {/* Levels */}
-        <div>
-          <h3 className="text-2xl sm:text-xl font-semibold text-gray-900 mb-4">Level</h3>
-          <hr className="border-gray-300 mb-8" />
-          <div className="grid grid-cols-[auto_auto] gap-6 justify-start mx-6 mb-10">
-            {["A1", "A2", "B1", "B2", "C1", "C2"].map((level) => (
-              <button key={level} className="flex justify-start">
-                <img
-                  src={`Shop/${level}.svg`}
-                  alt={level}
-                  className="h-8 w-auto object-contain"
-                />
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Price */}
-        <div>
-          <h3 className="text-2xl sm:text-xl font-semibold text-gray-900 mb-2">Price</h3>
-          <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-            <span>₹0</span>
-            <span className="font-semibold text-gray-900">₹{maxPrice}</span>
-            <span>₹{actualMaxPrice}</span>
-          </div>
+        {/* Min Price Slider */}
+        <div className='mb-2'> {/* Added margin below min slider */}
+          <label htmlFor="minPriceSlider" className="sr-only">Minimum Price</label>
           <input
+            id="minPriceSlider"
             type="range"
-            className="w-full accent-[rgba(173,21,24,1)]"
-            min="0"
-            max={actualMaxPrice}
-            step="10" // You can adjust the step value as needed
-            value={maxPrice}
-            onChange={(e) => setMaxPrice(Number(e.target.value))}
+            min={actualMinPrice}
+            max={actualMaxPrice} 
+            value={minPrice}
+            onChange={handleMinChange} // Use specific handler
+            step={10} 
+            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-600 range-thumb:bg-red-700"
           />
         </div>
-
-        <hr className="border-gray-300" />
-
-        {/* The "Apply Filter" button is no longer needed since the filter applies automatically */}
+        
+        {/* Max Price Slider */}
+        <div>
+           <label htmlFor="maxPriceSlider" className="sr-only">Maximum Price</label>
+           <input
+             id="maxPriceSlider"
+             type="range"
+             min={actualMinPrice} 
+             max={actualMaxPrice}
+             value={maxPrice}
+             onChange={handleMaxChange} // Use specific handler
+             step={10} 
+             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-600 range-thumb:bg-red-700"
+           />
+        </div>
+        
+        {/* Display Actual Range */}
+         <div className="flex items-center justify-between mt-1 text-xs text-gray-400">
+            <span>Min: ₹{actualMinPrice}</span>
+            <span>Max: ₹{actualMaxPrice}</span>
+         </div>
       </div>
-    </aside>
+      {/* --- End Price Range Filter --- */}
+
+
+      {/* Sort Order */}
+      <div> 
+        <h4 className="text-base font-medium text-gray-800 mb-3">Sort By</h4>
+        <select 
+            value={sortOrder} 
+            onChange={(e) => setSortOrder(e.target.value)} 
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-red-500 focus:border-red-500 bg-white" 
+        >
+          <option value="newest">Newest</option>
+          <option value="price-asc">Price: Low to High</option>
+          <option value="price-desc">Price: High to Low</option>
+        </select>
+      </div> 
+    </div>
   );
 }
 

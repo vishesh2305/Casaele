@@ -1,113 +1,195 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react'; // Import useMemo
 import Banner from '../components/Shop/Banner';
 import Filters from '../components/Shop/Filters';
 import ProductGrid from '../components/Shop/ProductGrid';
-import Spinner from '../components/Common/Spinner';
+import Pagination from '../components/Shop/Pagination';
 import { apiGet } from '../utils/api';
-// import Pagination from '../components/Shop/Pagination'; // Uncomment if needed
+import Spinner from '../components/Common/Spinner';
 
 function ProductsPage() {
-  const [products, setProducts] = useState([]);
-  const [loadingProducts, setLoadingProducts] = useState(true);
-  const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [sortOrder, setSortOrder] = useState('newest');
+  const [allProducts, setAllProducts] = useState([]); // Store ALL fetched products
+  const [filteredProducts, setFilteredProducts] = useState([]); // Store products after ALL filters
+  const [loading, setLoading] = useState(true); // Combined loading state
+  
+  // Category State
+  const [allCategories, setAllCategories] = useState([]); 
+  const [categoriesMap, setCategoriesMap] = useState({}); 
+  const [selectedCategory, setSelectedCategory] = useState(''); // '' for 'All'
+  
+  // Price State
+  const [minPrice, setMinPrice] = useState(0); 
+  const [maxPrice, setMaxPrice] = useState(1000); 
+  const [actualMinPrice, setActualMinPrice] = useState(0);
+  const [actualMaxPrice, setActualMaxPrice] = useState(1000); 
 
-  // const [currentPage, setCurrentPage] = useState(1);
-  // const [totalPages, setTotalPages] = useState(1);
-  // const ITEMS_PER_PAGE = 9;
+  // Sort State
+  const [sortOrder, setSortOrder] = useState('newest'); 
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 9;
 
+  // --- Initial Data Fetch ---
   useEffect(() => {
-    fetchCategories();
-    fetchProducts();
-  }, []); // Run once on mount
+    setLoading(true);
+    Promise.all([
+      apiGet('/api/categories'),
+      apiGet('/api/products') // Fetch ALL products
+    ]).then(([categoriesData, allProductsData]) => {
+      
+      const fetchedCategories = categoriesData?.categories || [];
+      setAllCategories(fetchedCategories); 
 
-  const fetchCategories = async () => {
-    try {
-      const data = await apiGet('/api/categories');
-      setCategories(data.categories || []);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
+      const fetchedProducts = Array.isArray(allProductsData?.products) ? allProductsData.products : (Array.isArray(allProductsData) ? allProductsData : []);
+      setAllProducts(fetchedProducts); // Store all raw products
+
+      // --- Calculate Price Range ---
+      let min = Infinity;
+      let max = 0;
+      fetchedProducts.forEach(item => {
+        const price = Number(item.discountPrice || item.price || 0);
+        if (price < min) min = price;
+        if (price > max) max = price;
+      });
+      // Handle case with no products or free products
+      const finalMin = min === Infinity ? 0 : Math.floor(min / 10) * 10; // Round down to nearest 10
+      const finalMax = max === 0 ? 1000 : Math.ceil(max / 10) * 10;   // Round up to nearest 10
+      setActualMinPrice(finalMin);
+      setActualMaxPrice(finalMax);
+      setMinPrice(finalMin); // Initialize filter min
+      setMaxPrice(finalMax); // Initialize filter max
+      // --- End Price Range ---
+
+      // Build Category Map (counts based on ALL products)
+      const categoryMap = {
+        '': fetchedProducts.length, // 'All Products' count
+      };
+      fetchedCategories.forEach(cat => {
+        const count = fetchedProducts.filter(p => p.category === cat.name).length; 
+        if (count > 0) {
+          categoryMap[cat.name] = count;
+        }
+      });
+      setCategoriesMap(categoryMap);
+      
+    }).catch(error => {
+      console.error("Error fetching initial product data:", error);
+      setAllProducts([]);
+      setCategoriesMap({ '': 0 });
+    }).finally(() => {
+      setLoading(false); // Stop loading only after all calculations are done
+    });
+  }, []); // Run only once on mount
+
+  // --- Apply Filters and Sort (Client-Side) ---
+  useEffect(() => {
+    let tempFiltered = [...allProducts];
+
+    // 1. Filter by Category
+    if (selectedCategory) { // Check if category is selected (not '')
+        tempFiltered = tempFiltered.filter(product => product.category === selectedCategory);
     }
+
+    // 2. Filter by Price Range
+    tempFiltered = tempFiltered.filter(product => {
+        const price = Number(product.discountPrice || product.price || 0);
+        return price >= minPrice && price <= maxPrice;
+    });
+
+    // 3. Sort
+    tempFiltered.sort((a, b) => {
+      const priceA = Number(a.discountPrice || a.price || 0);
+      const priceB = Number(b.discountPrice || b.price || 0);
+      switch (sortOrder) {
+        case 'price-asc':
+          return priceA - priceB;
+        case 'price-desc':
+          return priceB - priceA;
+        case 'newest':
+        default:
+           // Assuming createdAt exists, otherwise sort doesn't work for 'newest'
+          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0); 
+      }
+    });
+
+    setFilteredProducts(tempFiltered); // Update the state with fully filtered list
+    setCurrentPage(1); // Reset page whenever filters change
+
+  }, [selectedCategory, minPrice, maxPrice, sortOrder, allProducts]); // Rerun when filters or base data change
+
+
+  // --- Pagination Logic ---
+  const currentItems = useMemo(() => {
+    const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+    const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+    return filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
+  }, [filteredProducts, currentPage, ITEMS_PER_PAGE]);
+
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+
+  // --- Handlers ---
+  // Handlers now just update state, the useEffect above handles the filtering
+  const handleCategoryChange = (category) => setSelectedCategory(category);
+  const handleMinPriceChange = (price) => setMinPrice(price);
+  const handleMaxPriceChange = (price) => setMaxPrice(price);
+  const handleSortChange = (sortValue) => setSortOrder(sortValue);
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo(0, 0); 
   };
-
-  const fetchProducts = async () => {
-    setLoadingProducts(true);
-    try {
-      // const params = new URLSearchParams({ page: currentPage, limit: ITEMS_PER_PAGE });
-      const data = await apiGet('/api/products');
-      setProducts(data.products || data || []);
-      // setTotalPages(data.totalPages || 1);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      setProducts([]);
-      // setTotalPages(1);
-    } finally {
-      setLoadingProducts(false);
-    }
-  };
-
-  const handleCategoryChange = (category) => {
-    setSelectedCategory(category);
-  };
-
-  const handleSortChange = (sortValue) => {
-    setSortOrder(sortValue);
-  };
-
-  // const handlePageChange = (page) => {
-  //   setCurrentPage(page);
-  //   window.scrollTo(0, 0);
-  // };
-
-  if (loadingProducts) {
-    return (
-      <>
-        <Banner />
-        <div className="text-center p-20 font-semibold">
-          <Spinner />
-        </div>
-      </>
-    );
-  }
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      <Banner />
-      <div className="flex flex-col lg:flex-row gap-8 px-4 sm:px-6 lg:px-20 mt-10">
-        {/* Filters Section - Left Side */}
+      <Banner /> 
+      <div className="flex flex-col lg:flex-row gap-8 px-4 sm:px-6 lg:px-20 mt-10 mb-10">
+        
+        {/* Filters Sidebar */}
         <div className="w-full lg:w-1/4 lg:sticky lg:top-24 h-fit">
-          <Filters
-            categories={categories}
-            selectedCategory={selectedCategory}
-            onCategoryChange={handleCategoryChange}
-            sortOrder={sortOrder}
-            onSortChange={handleSortChange}
-          />
-        </div>
-
-        {/* Products Grid Section - Right Side */}
-        <div className="w-full lg:w-3/4">
-          <h2 className="text-3xl font-bold text-gray-900 mb-6">Our Products</h2>
-
-          {loadingProducts ? (
-            <div className="flex justify-center items-center h-64">
-              <Spinner />
-            </div>
-          ) : (
-            <ProductGrid products={products} itemType="product" />
+          {!loading && ( // Render filters only after initial load (to have price range)
+            <Filters
+              categoryData={categoriesMap} 
+              selectedCategory={selectedCategory} 
+              setSelectedCategory={handleCategoryChange} 
+              // Min Price Props
+              minPrice={minPrice}
+              setMinPrice={handleMinPriceChange}
+              actualMinPrice={actualMinPrice}
+              // Max Price Props
+              maxPrice={maxPrice}
+              setMaxPrice={handleMaxPriceChange} 
+              actualMaxPrice={actualMaxPrice}
+              // Sort Props
+              sortOrder={sortOrder}
+              setSortOrder={handleSortChange} 
+              itemType="product" 
+            />
           )}
-
-          {/* Pagination (uncomment if added later)
-          {!loadingProducts && totalPages > 1 && (
-            <div className="mt-10 sm:mt-12">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-              />
-            </div>
-          )} */}
+           {loading && <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-96 animate-pulse"></div>} {/* Placeholder */}
+        </div>
+        
+        {/* Products Grid and Pagination */}
+        <div className="w-full lg:w-3/4">
+          {loading ? (
+             <div className="flex justify-center items-center h-64"><Spinner /></div>
+          ) : (
+            <>
+              {/* Product Grid now receives the paginated items */}
+              <ProductGrid 
+                  products={currentItems} // Pass paginated items
+                  itemType="product" 
+              /> 
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-10 sm:mt-12">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>
