@@ -3,44 +3,38 @@ import ToggleButtons from "../components/Material/MaterialPage/ToggleButtons";
 import SectionHeader from "../components/Material/MaterialPage/SectionHeader";
 import CardSlider from "../components/Material/MaterialPage/CardSlider";
 import SearchBar from "../components/Searchbar/Searchbar";
-import { useLocation } from "react-router-dom";
+// *** CHANGED: Import Link ***
+import { useLocation, Link } from "react-router-dom"; 
 import { apiGet } from "../utils/api";
-import BannerDisplay from "../components/Material/MaterialPage/BannerDisplay"; 
 
 function MaterialPage() {
   const location = useLocation();
+  // *** CHANGED: Removed useNavigate ***
   const [activeButton, setActiveButton] = useState("Explore");
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
   
   const [materials, setMaterials] = useState([]);
-  const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // *** CHANGED: Removed Modal State ***
+  // const [activeBannerUrl, setActiveBannerUrl] = useState(null);
+  // const [showBannerModal, setShowBannerModal] = useState(false);
 
   const cardRef = useRef(null);
   const mostlyRef = useRef(null);
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([
-      apiGet('/api/materials'),
-      apiGet('/api/banners?isActive=true') 
-    ])
-    .then(([materialsData, bannersData]) => {
+    apiGet('/api/materials')
+    .then((materialsData) => {
       setMaterials(Array.isArray(materialsData) ? materialsData : []);
-      setBanners(bannersData?.banners && Array.isArray(bannersData.banners) ? bannersData.banners : []);
     })
     .catch(() => {
       setMaterials([]);
-      setBanners([]);
     })
     .finally(() => setLoading(false));
   }, []);
-
-  // Find banners for each position
-  const heroBanner = useMemo(() => banners.find(b => b.position === 'hero'), [banners]);
-  const middleBanner = useMemo(() => banners.find(b => b.position === 'middle'), [banners]);
-  const bottomBanner = useMemo(() => banners.find(b => b.position === 'bottom'), [banners]); // **THE FIX IS HERE**
 
   const handleScroll = (ref, direction) => {
     const container = ref.current;
@@ -72,13 +66,14 @@ function MaterialPage() {
     }
   }, [location.state]);
 
+  // *** CHANGED: Removed handleCardClick function ***
+
   if (loading) {
     return <div className="text-center p-20 font-semibold">Loading Materials...</div>;
   }
 
   return (
     <div className="w-full px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 pb-10">
-      {heroBanner && !showSearchResults && <BannerDisplay banner={heroBanner} />}
       
       <ToggleButtons activeButton={activeButton} setActiveButton={setActiveButton} />
       <SearchBar activeButton={activeButton} onSearch={handleSearch} />
@@ -91,7 +86,13 @@ function MaterialPage() {
           {searchResults.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {searchResults.map((item) => (
-                <div key={item._id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                // *** CHANGED: Wrapped search result in a Link ***
+                <Link 
+                  key={item._id} 
+                  to={`/material-detail/${item._id}`}
+                  state={{ material: item }}
+                  className="block bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                >
                   <div className="h-48 overflow-hidden">
                     <img
                       src={item.fileUrl || "https://placehold.co/400x300/e5e7eb/4b5563?text=Image"}
@@ -108,7 +109,7 @@ function MaterialPage() {
                       ))}
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           ) : (
@@ -125,10 +126,9 @@ function MaterialPage() {
               onScrollLeft={() => handleScroll(cardRef, "left")}
               onScrollRight={() => handleScroll(cardRef, "right")}
             />
+            {/* *** CHANGED: Removed onCardClick prop *** */}
             <CardSlider ref={cardRef} data={materials} />
           </div>
-
-          {middleBanner && <BannerDisplay banner={middleBanner} />}
 
           <div className="mt-6 sm:mt-8 md:mt-10">
             <SectionHeader
@@ -136,13 +136,13 @@ function MaterialPage() {
               onScrollLeft={() => handleScroll(mostlyRef, "left")}
               onScrollRight={() => handleScroll(mostlyRef, "right")}
             />
+            {/* *** CHANGED: Removed onCardClick prop *** */}
             <CardSlider ref={mostlyRef} data={[...materials].reverse()} />
           </div>
-
-          {/* **THE FIX IS HERE** - Display the bottom banner at the end of the page */}
-          {bottomBanner && <BannerDisplay banner={bottomBanner} />}
         </>
       )}
+
+      {/* *** CHANGED: Removed Banner Modal JSX *** */}
     </div>
   );
 }

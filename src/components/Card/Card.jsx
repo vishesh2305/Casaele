@@ -8,7 +8,7 @@ export default function Card({ fileUrl, image, title, description, tags, price, 
     <div
       onClick={onClick}
       // Added flex properties to ensure consistent height
-      className="bg-white rounded-lg shadow-md w-full overflow-hidden flex flex-col h-full"
+      className="bg-white rounded-lg cursor-pointer shadow-md w-full overflow-hidden flex flex-col h-full"
     >
       <img
         src={displayImage || "https://placehold.co/400x300/e5e7eb/4b5563?text=Image"}

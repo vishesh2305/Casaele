@@ -1,13 +1,23 @@
 import React from "react";
 
 function MaterialHeader({ material }) {
-  const displayImage = material.fileUrl && material.fileUrl.trim() !== '' ? material.fileUrl : (material.image && material.image.trim() !== '' ? material.image : "https://placehold.co/1200x800/e5e7eb/4b5563?text=Image");
+  // *** NEW LOGIC: ***
+  // 1. Try to use the Banner Image (bannerImageUrl) first.
+  // 2. If it's missing, fall back to the Card Image (fileUrl).
+  // 3. If that's missing, use the old 'image' field (as a fallback).
+  // 4. If all are missing, use the placeholder.
+  const displayImage = 
+    (material.bannerImageUrl && material.bannerImageUrl.trim() !== '') 
+    ? material.bannerImageUrl 
+    : (material.fileUrl && material.fileUrl.trim() !== '')
+      ? material.fileUrl
+      : (material.image && material.image.trim() !== '' ? material.image : "https://placehold.co/1200x800/e5e7eb/4b5563?text=Image");
 
   return (
     <div className="w-full pt-12 sm:pt-16">
       <div className="w-full mb-12 sm:mb-16">
         <img
-          src={displayImage}
+          src={displayImage} // This now uses the new logic
           alt={material.title}
           className="w-full h-auto rounded-2xl object-cover"
         />
@@ -18,12 +28,23 @@ function MaterialHeader({ material }) {
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
             {material.title}
           </h2>
+          
+          {/* Created On Date */}
           <p className="text-gray-500 text-sm">
             Created on:{" "}
             {material.createdAt
               ? new Date(material.createdAt).toLocaleDateString()
               : "N/A"}
           </p>
+
+          {/* Updated On Date (This is already correct from our last change) */}
+          {material.updatedAt && material.createdAt !== material.updatedAt && (
+             <p className="text-gray-500 text-sm">
+               Last updated:{" "}
+               {new Date(material.updatedAt).toLocaleDateString()}
+             </p>
+          )}
+
           <p className="text-gray-800 text-lg font-semibold">
             {material.description}
           </p>
@@ -32,7 +53,7 @@ function MaterialHeader({ material }) {
               "Cortometraje animado sobre la migración, construido a partir de testimonios reales de personas migrantes hispanoamericanas, para trabajar la expresión y el léxico relacionado."}
           </p>
 
-          {/* Multiple H5P/AI Embedded Content */}
+          {/* Multiple H5P/AI Embedded Content (No change) */}
           {material.embedIds && material.embedIds.length > 0 && (
             <div className="mt-8 space-y-4">
               <h3 className="text-lg font-semibold text-gray-900">Interactive Content</h3>

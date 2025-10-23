@@ -25,7 +25,7 @@ import dashboardRoutes from './routes/dashboardRoutes.js'
 import orderRoutes from './routes/orderRoutes.js'
 import courseRoutes from './routes/courseRoutes.js'
 import categoryRoutes from './routes/categoryRoutes.js'
-import bannerRoutes from './routes/bannerRoutes.js'
+// import bannerRoutes from './routes/bannerRoutes.js'
 import couponRoutes from './routes/couponRoutes.js'
 import subscriberRoutes from './routes/subscriberRoutes.js'
 import adminRoutes from './routes/adminRoutes.js'
@@ -208,7 +208,7 @@ app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/courses', courseRoutes)
 app.use('/api/categories', categoryRoutes)
-app.use('/api/banners', bannerRoutes)
+// app.use('/api/banners', bannerRoutes)
 app.use('/api/coupons', couponRoutes)
 app.use('/api/subscribers', subscriberRoutes)
 app.use('/api/admins', adminRoutes)
