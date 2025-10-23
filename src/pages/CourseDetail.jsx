@@ -1,111 +1,125 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { apiGet } from '../utils/api';
-import ProductImage from '../components/CourseDetail/ProductImage.jsx';
-import ProductInfo from '../components/CourseDetail/ProductInfo.jsx';
-import DetailedInfo from '../components/CourseDetail/DetailedInfo.jsx';
-import KeyFeatures from '../components/CourseDetail/KeyFeatures.jsx';
-import LikeSection from '../components/CourseDetail/LikeSection.jsx';
-import Reviews from '../components/CourseDetail/Reviews.jsx';
-import reviewsData from '../components/CourseDetail/ReviewsData.js';
+import React, { useState, useEffect } from "react";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
+import ProductImage from "../components/CourseDetail/ProductImage";
+import ProductInfo from "../components/CourseDetail/ProductInfo";
+import DetailedInfo from "../components/CourseDetail/DetailedInfo";
+import Reviews from "../components/CourseDetail/Reviews";
+import LikeSection from "../components/CourseDetail/LikeSection";
+import { apiGet } from "../utils/api";
+import Spinner from "../components/Common/Spinner";
+import { useCart } from "../context/CartContext";
+// *** 1. REMOVE the static import ***
+// import likecards from "../components/CourseDetail/likecards"; 
 
 function CourseDetail() {
+  const { id: courseId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const {id} = useParams();
+  const [course, setCourse] = useState(location.state?.course || null);
+  const [loading, setLoading] = useState(!location.state?.course);
+  
+  // *** 2. ADD new state for recommended courses ***
+  const [recommendedCourses, setRecommendedCourses] = useState([]);
 
-  const [item, setItem] = useState(location.state?.item || null);
-  const [loading, setLoading] = useState(!item); // Start loading if no item is passed
-  const [relatedItems, setRelatedItems] = useState([]);
+  const { addToCart, isItemAdded } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
 
+  useEffect(() => {
+    // This effect runs when the page loads or courseId changes
+    setLoading(true);
+    setCourse(null); // Clear old course data
+    
+    // --- 3. FETCH the main course ---
+    const fetchCourse = apiGet(`/api/courses/${courseId}`);
+    
+    // --- 4. FETCH all other courses for the "LikeSection" ---
+    const fetchAllCourses = apiGet('/api/courses');
 
-
+    Promise.all([fetchCourse, fetchAllCourses])
+      .then(([courseData, allCourses]) => {
+        setCourse(courseData);
+        
+        // --- 5. FILTER the "like" cards ---
+        if (Array.isArray(allCourses)) {
+          // Remove the current course from the "like" list and take the first 4
+          const filtered = allCourses
+            .filter(c => c._id !== courseData._id) // Don't recommend itself
+            .slice(0, 4); // Show a max of 4
+          setRecommendedCourses(filtered);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch course data:", err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+      
+  }, [courseId]); // Rerun when courseId changes
 
   useEffect(() => {
-    const fetchData = async () => {
-      const isProduct = location.pathname.includes('course-detail');
-      const apiUrl = isProduct ? `/api/products/${id}` : `/api/materials/${id}`;
-
-      try {
-        const fetchedItem = await apiGet(apiUrl);
-        // Products use 'name', materials use 'title'. Let's standardize to 'title' for simplicity in ProductInfo.
-        setItem({ ...fetchedItem, title: fetchedItem.name || fetchedItem.title });
-      } catch (error) {
-        console.error("Failed to fetch item:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-        if (!item) {
-      fetchData();
+    if (course) {
+      setAdded(isItemAdded(course._id));
     }
-  }, [id, item, location.pathname]);
+    setQuantity(1);
+  }, [course, isItemAdded]);
 
-
-
-  const handleAddToCart = (productDataWithSelections) => {
-    navigate('/cart-checkout', { state: { item: productDataWithSelections, quantity } });
+  const handleAddToCart = (itemWithOptions) => {
+    addToCart({ ...itemWithOptions, quantity });
+    setAdded(true);
   };
 
-
-
-
   const handleLikeCardClick = (card) => {
-    setItem(card);
-    setQuantity(1);
-    setAdded(false);
-    window.scrollTo(0, 0);
+    // *** 6. UPDATE the click handler to use _id ***
+    // The data is now from the database, so it uses '_id'
+    navigate(`/course-detail/${card._id}`);
   };
 
   if (loading) {
-    return <div className="text-center p-20">Loading...</div>;
+    return (
+      <div className="flex justify-center items-center h-[60vh]">
+        <Spinner />
+      </div>
+    );
   }
 
-  if (!item) {
-    return <div className="text-center p-20">Product not found.</div>;
+  if (!course) {
+    return (
+      <div className="text-center p-20 font-semibold">Course not found.</div>
+    );
   }
 
   return (
-    <div className="bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <section className="py-8 sm:py-12">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-start">
-            <ProductImage item={item} />
-            <ProductInfo
-              item={item}
-              quantity={quantity}
-              setQuantity={setQuantity}
-              added={added}
-              handleAddToCart={handleAddToCart}
-            />
-          </div>
-        </section>
+    <div className="w-full px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 pb-10">
+      <div className="w-full max-w-7xl mx-auto pt-10 pb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+          <ProductImage
+            image={course.imageUrl}
+            title={course.title}
+          />
+          <ProductInfo
+            item={course}
+            quantity={quantity}
+            setQuantity={setQuantity}
+            added={added}
+            handleAddToCart={handleAddToCart}
+          />
+        </div>
 
-        {/* Other sections remain the same... */}
-        <section className="py-8 sm:py-12">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-16">
-            <div className="lg:col-span-2">
-              <DetailedInfo item={item} />
-            </div>
-            <div className="lg:col-span-1">
-              <KeyFeatures />
-            </div>
-          </div>
-        </section>
+        <div className="mt-20">
+          <DetailedInfo
+            description={course.description}
+            instructor={course.instructor}
+          />
+          <Reviews courseId={course._id} />
 
-        <section className="py-8 sm:py-12">
+          {/* --- 7. PASS the new dynamic data to the component --- */}
           <LikeSection
-            likecards={relatedItems}
+            likecards={recommendedCourses} // Use dynamic data
             handleLikeCardClick={handleLikeCardClick}
           />
-        </section>
-
-        <section className="py-8 sm:py-12">
-          <Reviews reviews={reviewsData} />
-        </section>
+        </div>
       </div>
     </div>
   );

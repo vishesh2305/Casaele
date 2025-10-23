@@ -7,7 +7,7 @@ import RelatedMaterials from "../components/Material/MaterialDetail/RelatedMater
 import CommentForm from "../components/Material/MaterialDetail/CommentForm";
 import CommentList from "../components/Material/MaterialDetail/CommentList";
 import DropDown from "../components/Material/MaterialDetail/DropDown";
-import reviewsData from "../components/CourseDetail/ReviewsData.js";
+import reviewsData from "../components/CourseDetail/ReviewsData.jsx";
 
 
 function MaterialDetail() {

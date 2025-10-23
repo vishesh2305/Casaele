@@ -34,6 +34,8 @@ import Stripe from 'stripe'
 import { v2 as cloudinary } from 'cloudinary'
 import postRoutes from './routes/postRoutes.js';
 import pickRoutes from './routes/pickRoutes.js';
+import reviewRoutes from './routes/reviewRoutes.js';
+
 dotenv.config()
 
 console.log("--- Environment Variables ---");
@@ -214,6 +216,7 @@ app.use('/api/subscribers', subscriberRoutes)
 app.use('/api/admins', adminRoutes)
 app.use('/api/posts', postRoutes);
 app.use('/api/picks', pickRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // ✅ Error Handlers
 app.use(notFound)

@@ -12,7 +12,7 @@ const StarRating = ({ rating, setRating }) => {
           <FaStar
             key={starValue}
             size={24}
-            // *** CHANGED: Added onMouseLeave to stop flickering ***
+            onClick={() => setRating(starValue)}
             onMouseOver={() => setRating(starValue)}
             color={starValue <= rating ? "#ffc107" : "#e4e5e9"}
             className="cursor-pointer"
@@ -41,23 +41,9 @@ function Reviews({ courseId }) {
     if (courseId) {
       setLoading(true);
       apiGet(`/api/reviews/approved/${courseId}`)
-        .then(data => {
-          // *** FIX: Ensure the data is an array before setting state ***
-          if (Array.isArray(data)) {
-            setReviews(data);
-          } else {
-            setReviews([]); // Default to empty array if response is not an array
-          }
-        })
-        .catch(err => {
-          console.error("Failed to fetch reviews", err);
-          setReviews([]); // Also default to empty array on error
-        })
+        .then(setReviews)
+        .catch(err => console.error("Failed to fetch reviews", err))
         .finally(() => setLoading(false));
-    } else {
-      // If no courseId is provided, don't load and set empty reviews
-      setLoading(false);
-      setReviews([]);
     }
   }, [courseId]);
 
@@ -81,6 +67,7 @@ function Reviews({ courseId }) {
       };
       const response = await apiSend('/api/reviews', 'POST', payload);
       
+      // Show success message and reset form
       setSuccess(response.message || 'Your review has been submitted for approval!');
       setName("");
       setComment("");
@@ -107,7 +94,6 @@ function Reviews({ courseId }) {
 
           {!loading && reviews.length > 0 && (
             <div className="space-y-6">
-              {/* This .map() is now safe because 'reviews' is guaranteed to be an array */}
               {reviews.map((review) => (
                 <div key={review._id} className="border-b border-gray-100 pb-4">
                   <div className="flex items-center mb-2">

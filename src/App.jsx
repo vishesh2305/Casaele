@@ -44,6 +44,7 @@ import ScrollToTop from "./pages/ScrollToTop";
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import DisableContextMenu from "./components/Common/DisableContextMenu";
+import ReviewsManager from './pages/admin/ReviewsManager'; // <-- 1. IMPORT
 // The Translate import has been removed
 
 // Guard Stripe initialization: require Vite-prefixed key and avoid crashing if missing
@@ -94,6 +95,7 @@ function AppWrapper() {
             <Route path="products" element={<Products />} />
             <Route path="orders" element={<Orders />} />
             <Route path="materials" element={<Materials />} />
+            <Route path="reviews" element={<ReviewsManager />} /> 
             <Route path="courses" element={<Courses />} />
             <Route path="categories" element={<Categories />} />
             <Route path="banners" element={<Banners />} />

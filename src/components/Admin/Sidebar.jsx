@@ -7,6 +7,7 @@ const links = [
   { to: '/admin/products', label: 'Products', icon: FiBox },
   { to: '/admin/orders', label: 'Orders', icon: FiShoppingCart },
   { to: '/admin/materials', label: 'Materials', icon: FiLayers },
+  { to: '/admin/reviews', label: 'Reviews', icon: FiStar },
   { to: '/admin/courses', label: 'Courses', icon: FiFileText },
   { to: '/admin/categories', label: 'Categories', icon: FiTag },
   { to: '/admin/banners', label: 'Banners', icon: FiImage },
