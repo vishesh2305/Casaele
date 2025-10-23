@@ -6,7 +6,6 @@ import RequireAuth from "./components/Admin/RequireAuth";
 import AdminLogin from "./pages/admin/Login";
 import Dashboard from "./pages/admin/Dashboard";
 import UsersPage from "./pages/admin/Users";
-import ContentUpload from "./pages/admin/ContentUpload";
 import Products from "./pages/admin/Products";
 import Orders from "./pages/admin/Orders";
 import Materials from "./pages/admin/Materials";
@@ -45,7 +44,6 @@ import ScrollToTop from "./pages/ScrollToTop";
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import DisableContextMenu from "./components/Common/DisableContextMenu";
-import GardenContent from "./pages/admin/GardenContent";
 // The Translate import has been removed
 
 // Guard Stripe initialization: require Vite-prefixed key and avoid crashing if missing
@@ -93,9 +91,6 @@ function AppWrapper() {
             <Route index element={<Dashboard />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="users" element={<UsersPage />} />
-            <Route path="garden-content" element={<GardenContent />} />
-            <Route path="content-upload" element={<ContentUpload />} />
-            <Route path="content-upload/:id" element={<ContentUpload />} />
             <Route path="products" element={<Products />} />
             <Route path="orders" element={<Orders />} />
             <Route path="materials" element={<Materials />} />

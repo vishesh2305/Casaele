@@ -48,10 +48,6 @@ function MaterialHeader({ material }) {
           <p className="text-gray-800 text-lg font-semibold">
             {material.description}
           </p>
-          <p className="text-gray-700 text-base leading-relaxed">
-            {material.content ||
-              "Cortometraje animado sobre la migración, construido a partir de testimonios reales de personas migrantes hispanoamericanas, para trabajar la expresión y el léxico relacionado."}
-          </p>
 
           {/* Multiple H5P/AI Embedded Content (No change) */}
           {material.embedIds && material.embedIds.length > 0 && (

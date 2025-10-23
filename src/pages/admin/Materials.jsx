@@ -11,7 +11,6 @@ export default function Materials() {
   const [form, setForm] = useState({ 
     title: '', 
     description: '', 
-    content: '', 
     category: '', 
     fileUrl: '', // This will be the Card Image
     tags: '', 
@@ -137,7 +136,6 @@ export default function Materials() {
     setForm({
       title: material.title || '',
       description: material.description || '',
-      content: material.content || '',
       category: material.category || '',
       fileUrl: material.fileUrl || '',
       tags: Array.isArray(material.tags) ? material.tags.join(', ') : '',
@@ -181,7 +179,6 @@ export default function Materials() {
               setForm({ 
                 title: '', 
                 description: '', 
-                content: '', 
                 category: '', 
                 fileUrl: '', 
                 tags: '',
@@ -272,15 +269,6 @@ export default function Materials() {
                 </label>
               ))}
 
-              <label className="block">
-                <span className="text-sm text-gray-700">Main Content (for detail page)</span>
-                <textarea
-                  value={form.content}
-                  onChange={e => setForm({ ...form, content: e.target.value })}
-                  rows={4}
-                  className="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 focus:border-red-500 focus:ring-2 focus:ring-red-400/50 transition duration-150 px-3 py-2 text-sm placeholder-gray-400 hover:border-gray-400"
-                />
-              </label>
               
               {/* *** CHANGED: Removed Display Type radio buttons *** */}
 
