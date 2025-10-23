@@ -32,7 +32,6 @@ import Contact from "./pages/Contact";
 import School from "./pages/School";
 import MaterialPage from "./pages/MaterialPage";
 import MaterialDetail from "./pages/MaterialDetail";
-import Shop from "./pages/Shop";
 import Newsletter from "./components/CommonPage/Newsletter";
 import Footer from "./components/CommonPage/Footer";
 import CourseDetail from "./pages/CourseDetail";
@@ -44,8 +43,11 @@ import ScrollToTop from "./pages/ScrollToTop";
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import DisableContextMenu from "./components/Common/DisableContextMenu";
-import ReviewsManager from './pages/admin/ReviewsManager'; // <-- 1. IMPORT
-// The Translate import has been removed
+import ReviewsManager from './pages/admin/ReviewsManager';
+import CoursesPage from './pages/CoursesPage'; 
+import ProductsPage from './pages/ProductsPage'; 
+import ProductDetail from './pages/ProductDetail';
+
 
 // Guard Stripe initialization: require Vite-prefixed key and avoid crashing if missing
 const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
@@ -76,8 +78,10 @@ function AppWrapper() {
         <Route path="/material" element={<MaterialPage />} />
         <Route path="/material-detail/:id" element={<MaterialDetail />} />
         <Route path="/school" element={<School />} />
-        <Route path="/shop" element={<Shop />} />
+        <Route path="/courses" element={<CoursesPage />} /> 
+        <Route path="/products" element={<ProductsPage />} />
         <Route path="/course-detail/:id" element={<CourseDetail />} />
+        <Route path="/product-detail/:id" element={<ProductDetail />} />
         <Route path="/cart-checkout" element={<CartCheckout />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
@@ -95,7 +99,7 @@ function AppWrapper() {
             <Route path="products" element={<Products />} />
             <Route path="orders" element={<Orders />} />
             <Route path="materials" element={<Materials />} />
-            <Route path="reviews" element={<ReviewsManager />} /> 
+            <Route path="reviews" element={<ReviewsManager />} />
             <Route path="courses" element={<Courses />} />
             <Route path="categories" element={<Categories />} />
             <Route path="banners" element={<Banners />} />

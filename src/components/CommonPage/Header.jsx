@@ -17,7 +17,8 @@ const Header = () => {
   const links = [
     { name: "Material", path: "/material" },
     { name: "School", path: "/school" },
-    { name: "Shop", path: "/shop" },
+    { name: "Courses", path: "/courses" },
+    { name: "Products", path: "/products" },
     { name: "About Ele", path: "/about" },
     { name: "Contact Us", path: "/contact" },
     { name: "Admin Login", path: "/admin/login" },

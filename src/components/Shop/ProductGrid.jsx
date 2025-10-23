@@ -1,73 +1,74 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import Card from "../Card/Card";
-import Pagination from "./Pagination";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { FiShoppingCart } from 'react-icons/fi';
 
-function ProductGrid({
-  currentItems,
-  selectedCategory,
-  indexOfFirstItem,
-  indexOfLastItem,
-  selectedItems,
-  currentPage,
-  setCurrentPage,
-  totalPages,
-}) {
+const DEFAULT_IMAGE = "https://placehold.co/400x300/e5e7eb/4b5563?text=Image";
+
+// *** Add itemType prop ***
+function ProductGrid({ products, itemType }) { 
+  if (!products || products.length === 0) {
+    // Make the message slightly more specific based on type if possible
+    const typeName = itemType === 'course' ? 'courses' : 'products';
+    return <div className="text-center col-span-full py-12 text-gray-500">No {typeName} found.</div>;
+  }
+
   return (
-    <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8 flex flex-col min-h-[80vh]">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6 mt-2 text-center sm:text-left">
-        <h2 className="text-xl sm:text-2xl font-semibold text-black">
-          {selectedCategory || "All Products"}
-        </h2>
-        <p className="text-sm text-gray-500">
-          Showing {indexOfFirstItem + 1}–
-          {Math.min(indexOfLastItem, selectedItems.length)} of{" "}
-          {selectedItems.length} items
-        </p>
-      </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+      {products.map((product) => {
+        // *** Determine the correct link based on itemType ***
+        const detailUrl = itemType === 'course' 
+            ? `/course-detail/${product._id}` 
+            : `/product-detail/${product._id}`; // Assuming a new route for products
 
-      {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-grow lg:min-h-[760px]">
-        {currentItems.map((item) => {
-          // Determine if the item is a course (has 'thumbnail') or a product
-          const isCourse = !!item.thumbnail;
+        // Standardize image source logic (Handles both courses and products)
+         const imageUrl = (product.images && product.images[0]) || product.thumbnail || product.imageUrl || DEFAULT_IMAGE;
+         // Standardize title/name (Handles both)
+         const title = product.title || product.name;
 
-          // Set the correct properties based on the item type
-          const image = isCourse ? item.thumbnail : (item.images && item.images.length > 0 ? item.images[0] : '');
-          const title = isCourse ? item.title : item.name;
-          const linkTo = `/course-detail/${item._id}`;
-
-          return (
-            <Link
-              to={linkTo}
-              state={{ item: item }}
-              key={item._id}
-              className="w-full"
-            >
-              <Card
-                image={image}
-                title={title}
-                description={item.description}
-                price={item.price}
-                discountPrice={item.discountPrice}
+        return (
+          <Link 
+            key={product._id} 
+            to={detailUrl} // Use the dynamic URL
+            className="group block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-300"
+          >
+            <div className="aspect-[4/3] overflow-hidden">
+              <img
+                src={imageUrl} 
+                alt={title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
-            </Link>
-          );
-        })}
-      </div>
-
-      {/* Divider + Pagination */}
-      <div className="mt-auto">
-        <hr className="border border-gray-300 my-8" />
-        {totalPages > 1 && (
-          <Pagination
-            currentPage={currentPage}
-            setCurrentPage={setCurrentPage}
-            totalPages={totalPages}
-          />
-        )}
-      </div>
+            </div>
+            <div className="p-4 sm:p-5">
+              <span className="text-xs font-semibold text-red-600 uppercase tracking-wider mb-1 block">
+                {/* Product might not have category, provide fallback */}
+                {product.category || (itemType === 'course' ? 'Course' : 'Product')} 
+              </span>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-red-700 transition-colors">
+                {title} 
+              </h3>
+              <p className="text-sm text-gray-600 mb-3 line-clamp-3">
+                {product.description}
+              </p>
+              <div className="flex items-center justify-between">
+                <span className="text-xl font-bold text-gray-900">
+                   {/* Handle potential discountPrice in products too */}
+                  ₹{product.discountPrice || product.price || 0}
+                </span>
+                <button 
+                  onClick={(e) => { 
+                    e.preventDefault(); 
+                    console.log("Add to cart clicked for:", title); 
+                  }}
+                  className="p-2 rounded-full bg-red-100 text-red-700 hover:bg-red-600 hover:text-white transition-colors duration-200 opacity-0 group-hover:opacity-100"
+                  aria-label="Add to cart"
+                >
+                  <FiShoppingCart className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </Link>
+        );
+      })}
     </div>
   );
 }

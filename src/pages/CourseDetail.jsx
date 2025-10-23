@@ -1,26 +1,24 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useLocation, useNavigate } from "react-router-dom";
-import ProductImage from "../components/CourseDetail/ProductImage";
-import ProductInfo from "../components/CourseDetail/ProductInfo";
-import DetailedInfo from "../components/CourseDetail/DetailedInfo";
-import Reviews from "../components/CourseDetail/Reviews";
-import LikeSection from "../components/CourseDetail/LikeSection";
-import { apiGet } from "../utils/api";
-import Spinner from "../components/Common/Spinner";
-import { useCart } from "../context/CartContext";
-// *** 1. REMOVE the static import ***
-// import likecards from "../components/CourseDetail/likecards"; 
+import React, { useState, useEffect } from 'react';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import ProductImage from '../components/CourseDetail/ProductImage';
+import ProductInfo from '../components/CourseDetail/ProductInfo';
+import DetailedInfo from '../components/CourseDetail/DetailedInfo';
+// KeyFeatures component is now removed
+import Reviews from '../components/CourseDetail/Reviews';
+import LikeSection from '../components/CourseDetail/LikeSection';
+import { apiGet } from '../utils/api';
+import Spinner from '../components/Common/Spinner';
+import { useCart } from '../context/CartContext'; // We need this for ProductInfo
 
 function CourseDetail() {
   const { id: courseId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const [course, setCourse] = useState(location.state?.course || null);
-  const [loading, setLoading] = useState(!location.state?.course);
-  
-  // *** 2. ADD new state for recommended courses ***
+  const [course, setCourse] = useState(null); // Start as null
+  const [loading, setLoading] = useState(true);
   const [recommendedCourses, setRecommendedCourses] = useState([]);
-
+  
+  // State for Cart/ProductInfo
   const { addToCart, isItemAdded } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
@@ -30,22 +28,21 @@ function CourseDetail() {
     setLoading(true);
     setCourse(null); // Clear old course data
     
-    // --- 3. FETCH the main course ---
+    // 1. Fetch the main course using the correct endpoint
     const fetchCourse = apiGet(`/api/courses/${courseId}`);
     
-    // --- 4. FETCH all other courses for the "LikeSection" ---
+    // 2. Fetch all courses for the "LikeSection"
     const fetchAllCourses = apiGet('/api/courses');
 
     Promise.all([fetchCourse, fetchAllCourses])
       .then(([courseData, allCourses]) => {
-        setCourse(courseData);
+        setCourse(courseData); // This object has the 'images' array
         
-        // --- 5. FILTER the "like" cards ---
+        // Filter out the current course for the "like" list
         if (Array.isArray(allCourses)) {
-          // Remove the current course from the "like" list and take the first 4
           const filtered = allCourses
-            .filter(c => c._id !== courseData._id) // Don't recommend itself
-            .slice(0, 4); // Show a max of 4
+            .filter(c => c._id !== courseData._id)
+            .slice(0, 4);
           setRecommendedCourses(filtered);
         }
       })
@@ -56,23 +53,24 @@ function CourseDetail() {
         setLoading(false);
       });
       
-  }, [courseId]); // Rerun when courseId changes
+  }, [courseId]); // Rerun when courseId in the URL changes
 
   useEffect(() => {
+    // This effect runs when the course data is successfully loaded
     if (course) {
       setAdded(isItemAdded(course._id));
     }
     setQuantity(1);
   }, [course, isItemAdded]);
 
+  // Handler for the "Add to Cart" button
   const handleAddToCart = (itemWithOptions) => {
     addToCart({ ...itemWithOptions, quantity });
     setAdded(true);
   };
 
+  // Handler for the "You might also like" cards
   const handleLikeCardClick = (card) => {
-    // *** 6. UPDATE the click handler to use _id ***
-    // The data is now from the database, so it uses '_id'
     navigate(`/course-detail/${card._id}`);
   };
 
@@ -94,10 +92,13 @@ function CourseDetail() {
     <div className="w-full px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 pb-10">
       <div className="w-full max-w-7xl mx-auto pt-10 pb-20">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
-          <ProductImage
-            image={course.imageUrl}
-            title={course.title}
-          />
+          
+          {/* *** THIS IS THE FIX ***
+            We pass the entire 'course' object to the 'item' prop.
+            ProductImage.jsx will handle the 'course.images' array.
+          */}
+          <ProductImage item={course} />
+
           <ProductInfo
             item={course}
             quantity={quantity}
@@ -112,11 +113,10 @@ function CourseDetail() {
             description={course.description}
             instructor={course.instructor}
           />
+          {/* KeyFeatures component is removed */}
           <Reviews courseId={course._id} />
-
-          {/* --- 7. PASS the new dynamic data to the component --- */}
           <LikeSection
-            likecards={recommendedCourses} // Use dynamic data
+            likecards={recommendedCourses}
             handleLikeCardClick={handleLikeCardClick}
           />
         </div>
