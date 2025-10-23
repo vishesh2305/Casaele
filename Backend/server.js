@@ -29,7 +29,6 @@ import couponRoutes from './routes/couponRoutes.js'
 import subscriberRoutes from './routes/subscriberRoutes.js'
 import adminRoutes from './routes/adminRoutes.js'
 import Razorpay from 'razorpay'
-import Stripe from 'stripe'
 import { v2 as cloudinary } from 'cloudinary'
 import postRoutes from './routes/postRoutes.js';
 import pickRoutes from './routes/pickRoutes.js';
@@ -46,7 +45,6 @@ console.log("CLOUDINARY_API_KEY:", process.env.CLOUDINARY_API_KEY ? "Loaded" : "
 console.log("CLOUDINARY_API_SECRET:", process.env.CLOUDINARY_API_SECRET ? "Loaded" : "Missing");
 console.log("RAZORPAY_KEY_ID:", process.env.RAZORPAY_KEY_ID ? "Loaded" : "Missing");
 console.log("RAZORPAYSECRETKEY or RAZORPAY_KEY_SECRET:", (process.env.RAZORPAYSECRETKEY || process.env.RAZORPAY_KEY_SECRET) ? "Loaded" : "Missing");
-console.log("STRIPESECRETKEY or STRIPE_SECRET_KEY:", (process.env.STRIPESECRETKEY || process.env.STRIPE_SECRET_KEY) ? "Loaded" : "Missing");
 console.log("FIREBASE_SERVICE_ACCOUNT_PATH:", process.env.FIREBASE_SERVICE_ACCOUNT_PATH ? "Loaded" : "Missing");
 console.log("FIREBASE_SERVICE_ACCOUNT:", process.env.FIREBASE_SERVICE_ACCOUNT ? "Loaded" : "Missing");
 console.log("--------------------------");
@@ -145,19 +143,6 @@ app.post('/create-razorpay-order', async (req, res) => {
   }
 })
 
-// ✅ Stripe Integration
-const stripeSecret = process.env.STRIPESECRETKEY || process.env.STRIPE_SECRET_KEY
-let stripe = null
-if (stripeSecret) {
-  try {
-    stripe = new Stripe(stripeSecret)
-    console.log('Stripe initialized')
-  } catch (err) {
-    console.warn('Failed to initialize Stripe:', err?.message || err)
-  }
-} else {
-  console.warn('Stripe key missing - Stripe routes will be disabled')
-}
 
 app.post('/create-payment-intent', async (req, res) => {
   if (!stripe) {
