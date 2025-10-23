@@ -1,255 +1,371 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { FiPlus, FiSearch, FiEdit, FiTrash2, FiImage, FiSave, FiX, FiRefreshCw, FiDollarSign, FiBookOpen } from 'react-icons/fi'; // Added icons
 import { apiGet, apiSend } from '../../utils/api';
+import Spinner from '../../components/Common/Spinner'; // Assuming Spinner path
 
-export default function Products() {
-  const [rows, setRows] = useState([]);
+const Products = () => {
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]); // Products might use categories
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState({ key: 'name', dir: 'asc' });
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ name: '', price: '', discountPrice: '', productType: 'Digital', description: '', images: [], stock: '', imageSource: '' });
-  const [imgMode, setImgMode] = useState('local');
-  const [pinUrl, setPinUrl] = useState('');
-  const [pinPreview, setPinPreview] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [showModal, setShowModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
+  
+  // *** ADDED availableLevels to default state ***
+  const [formData, setFormData] = useState({
+    name: '', // Products use 'name'
+    description: '',
+    category: '',
+    imageUrl: '', // Single image URL for product
+    price: 0,
+    discountPrice: 0,
+    availableLevels: [], // Initialize as empty array
+    productType: 'Digital',
+  });
+  
+  const [uploading, setUploading] = useState(false); // For single image upload
+
+   // *** Define possible levels for checkboxes ***
+  const ALL_POSSIBLE_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
+
+  // --- Fetching ---
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: currentPage,
+        limit: 10,
+        ...(searchTerm && { search: searchTerm }), // Assuming API supports search on 'name'
+        ...(categoryFilter && { category: categoryFilter })
+      });
+      // Use the products endpoint
+      const data = await apiGet(`/api/products?${params}`); 
+      setProducts(data.products || []); // Adjust based on API response
+      setTotalPages(data.totalPages || 1);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      setProducts([]);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const data = await apiGet('/api/categories');
+      setCategories(data.categories || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      setCategories([]);
+    }
+  };
 
   useEffect(() => {
-    apiGet('/api/products')
-      .then(data => setRows(data))
-      .catch(() => setRows([]))
-      .finally(() => setLoading(false));
-  }, []);
+    fetchProducts();
+    fetchCategories(); // Fetch categories if products use them
+  }, [currentPage, searchTerm, categoryFilter]);
 
+  // --- Image Upload (Simplified for single image) ---
   const handleFileChange = async (e) => {
-    const files = e.target.files;
-    if (!files) return;
+    const file = e.target.files[0];
+    if (!file) return;
     setUploading(true);
-    const uploadedImageUrls = [];
     try {
-      for (const file of files) {
-        const { timestamp, signature } = await apiGet('/api/cloudinary-signature');
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('api_key', import.meta.env.VITE_CLOUDINARY_API_KEY);
-        formData.append('timestamp', timestamp);
-        formData.append('signature', signature);
-        formData.append('upload_preset', 'casadeele_materials');
-        const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-        const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
-          method: 'POST',
-          body: formData,
-        });
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error.message || 'Cloudinary upload failed');
-        }
-        const data = await response.json();
-        uploadedImageUrls.push(data.secure_url);
-      }
-      setForm({ ...form, images: [...form.images, ...uploadedImageUrls], imageSource: 'local' });
+      const { timestamp, signature } = await apiGet('/api/cloudinary-signature');
+      const cloudFormData = new FormData();
+      cloudFormData.append('file', file);
+      cloudFormData.append('api_key', import.meta.env.VITE_CLOUDINARY_API_KEY);
+      cloudFormData.append('timestamp', timestamp);
+      cloudFormData.append('signature', signature);
+      cloudFormData.append('upload_preset', 'casadeele_materials'); // Use appropriate preset
+
+      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { // Use image endpoint
+        method: 'POST',
+        body: cloudFormData,
+      });
+      if (!response.ok) throw new Error('Cloudinary upload failed');
+      const data = await response.json();
+      setFormData(prev => ({ ...prev, imageUrl: data.secure_url })); // Set single imageUrl
     } catch (error) {
-      console.error('Upload failed:', error);
       alert(`File upload failed: ${error.message}`);
     } finally {
       setUploading(false);
     }
   };
 
-  async function fetchPinterest() {
-    try {
-      setUploading(true);
-      const res = await apiSend('/api/pinterest/fetch', 'POST', { url: pinUrl });
-      const ok = res && (res.success === true) && res.data;
-      const data = ok ? res.data : res;
-      setPinPreview(data);
-      setForm({ ...form, images: [...form.images, data.imageUrl || data.image || ''], imageSource: 'pinterest' });
-    } catch (e) {
-      alert(e?.message || 'Failed to fetch Pinterest data');
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  const sorted = useMemo(() => {
-    const list = [...rows];
-    list.sort((a, b) => {
-      const va = (a[sortBy.key] || '').toString().toLowerCase();
-      const vb = (b[sortBy.key] || '').toString().toLowerCase();
-      if (va < vb) return sortBy.dir === 'asc' ? -1 : 1;
-      if (va > vb) return sortBy.dir === 'asc' ? 1 : -1;
-      return 0;
+  // --- Checkbox Handler ---
+  const handleLevelCheckboxChange = (level) => {
+    setFormData(prevForm => {
+        const currentLevels = prevForm.availableLevels || [];
+        if (currentLevels.includes(level)) {
+            return { ...prevForm, availableLevels: currentLevels.filter(l => l !== level) };
+        } else {
+            return { ...prevForm, availableLevels: [...currentLevels, level] };
+        }
     });
-    return list;
-  }, [rows, sortBy]);
+  };
 
-  function setSort(key) {
-    setSortBy(prev => prev.key === key ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' });
-  }
-
-  function openCreate() { setEditing(null); setForm({ name: '', price: '', discountPrice: '', productType: 'Digital', description: '', images: [], stock: '' }); setModalOpen(true); }
-  function openEdit(item) { setEditing(item); setForm({ name: item.name, price: item.price, discountPrice: item.discountPrice || '', productType: item.productType || 'Digital', description: item.description || '', images: item.images || [], stock: item.stock || 0 }); setModalOpen(true); }
-
-  async function saveItem() {
+  // --- Submit Handler ---
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
     try {
-      setErrorMsg('');
-      setSaving(true);
-      if (form.images.length === 0) { setErrorMsg('Please upload at least one image.'); setSaving(false); return; }
-      const nonNegativeStock = Math.max(0, Number(form.stock || 0));
-      const payload = { ...form, price: Number(form.price), discountPrice: Number(form.discountPrice) || null, stock: nonNegativeStock, imageSource: form.imageSource || (imgMode === 'pinterest' ? 'pinterest' : 'local') };
-      const saved = editing
-        ? await apiSend(`/api/products/${editing._id}`, 'PUT', payload)
-        : await apiSend('/api/products', 'POST', payload);
-      if (editing) setRows(rows.map(r => r._id === saved._id ? saved : r));
-      else setRows([saved, ...rows]);
-      setModalOpen(false);
-    } catch (err) {
-      const msg = err?.message || 'Failed to save product';
-      setErrorMsg(msg);
-      alert(msg);
+      // Basic validation
+      if (!formData.imageUrl) { 
+        alert('Please upload an image for the product.');
+        setIsSaving(false);
+        return;
+      }
+       if (formData.availableLevels.length === 0) { // Require at least one level
+        alert('Please select at least one available level.');
+        setIsSaving(false);
+        return;
+      }
+
+      // *** ADD availableLevels to payload ***
+      const payload = {
+        ...formData,
+        availableLevels: formData.availableLevels || [] // Ensure array
+      };
+      
+      // Use products endpoint
+      const url = editingProduct ? `/api/products/${editingProduct._id}` : '/api/products'; 
+      const method = editingProduct ? 'PUT' : 'POST';
+      const savedProduct = await apiSend(url, method, payload);
+
+      if (editingProduct) {
+        setProducts(prev => prev.map(p => (p._id === savedProduct._id ? savedProduct : p)));
+      } else {
+        setProducts(prev => [savedProduct, ...prev.slice(0, 9)]);
+        if (products.length >= 10) fetchProducts(); // Refresh if page might overflow
+      }
+      setShowModal(false);
+      setSuccessMsg(editingProduct ? 'Product updated!' : 'Product created!');
+      setTimeout(() => setSuccessMsg(''), 3000);
+
+    } catch (error) {
+      console.error("Failed to save product:", error);
+      alert('Failed to save product. Check console for details.');
     } finally {
-      setSaving(false);
+      setIsSaving(false);
     }
-  }
+  };
 
-  async function removeItem(id) {
-    await apiSend(`/api/products/${id}`, 'DELETE');
-    setRows(rows.filter(r => r._id !== id));
-  }
+  // --- Edit Handler ---
+  const handleEdit = (product) => {
+    setEditingProduct(product);
+    setFormData({
+      name: product.name || '', // Use 'name'
+      description: product.description || '',
+      category: product.category || '',
+      imageUrl: product.imageUrl || '', // Use 'imageUrl'
+      price: product.price || 0,
+      discountPrice: product.discountPrice || 0,
+      availableLevels: product.availableLevels || [], // *** LOAD availableLevels ***
+      productType: product.productType || 'Digital',
+    });
+    setShowModal(true);
+  };
 
+  // --- Delete Handler ---
+  const handleDelete = async (productId) => {
+    if (window.confirm('Are you sure you want to delete this product?')) {
+      try {
+        await apiSend(`/api/products/${productId}`, 'DELETE'); // Use products endpoint
+        setProducts(prev => prev.filter(p => p._id !== productId));
+        setSuccessMsg('Product deleted successfully');
+        setTimeout(() => setSuccessMsg(''), 3000);
+      } catch (error) {
+        console.error('Error deleting product:', error);
+        alert('Failed to delete product.');
+      }
+    }
+  };
+
+
+  // --- JSX ---
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Products</h1>
-      <div className="rounded-xl bg-white shadow-sm border border-gray-200 overflow-hidden">
-        <div className="p-3 border-b flex justify-between items-center">
-          <div className="text-sm text-gray-600">Manage your products</div>
-          <button onClick={openCreate} className="px-3 py-1.5 rounded-md bg-red-700 text-white hover:bg-red-800">Add Product</button>
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="max-w-7xl mx-auto">
+        {successMsg && (
+          <div className="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-800">
+            {successMsg}
+          </div>
+        )}
+        {/* Header */}
+        <div className="mb-8">
+           <div className="flex items-center justify-between">
+             <div>
+               <h1 className="text-3xl font-bold text-gray-900 mb-2">Products Management</h1>
+               <p className="text-gray-600">Create and manage your shop products</p>
+             </div>
+             <button
+               onClick={() => {
+                 setEditingProduct(null);
+                 // *** Reset availableLevels ***
+                 setFormData({
+                   name: '', description: '', category: '', imageUrl: '', 
+                   price: 0, discountPrice: 0, availableLevels: [], productType: 'Digital'
+                 });
+                 setShowModal(true);
+               }}
+               className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+             >
+               <FiPlus className="w-5 h-5" /> Add Product
+             </button>
+           </div>
         </div>
-        <div className="overflow-x-auto max-w-full">
-          <table className="min-w-full text-left">
-            <thead className="bg-gray-50 text-gray-600 text-sm sticky top-0 z-10">
-              <tr>
-                <th className="px-4 py-3 cursor-pointer" onClick={() => setSort('name')}>Product Name</th>
-                <th className="px-4 py-3 cursor-pointer" onClick={() => setSort('price')}>Price</th>
-                <th className="px-4 py-3 cursor-pointer" onClick={() => setSort('stock')}>Stock</th>
-                <th className="px-4 py-3 cursor-pointer" onClick={() => setSort('category')}>Category</th>
-                <th className="px-4 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {loading ? Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i}>
-                  <td className="px-4 py-3"><div className="h-4 w-40 bg-gray-100 animate-pulse rounded" /></td>
-                  <td className="px-4 py-3"><div className="h-4 w-20 bg-gray-100 animate-pulse rounded" /></td>
-                  <td className="px-4 py-3"><div className="h-4 w-16 bg-gray-100 animate-pulse rounded" /></td>
-                  <td className="px-4 py-3"><div className="h-4 w-24 bg-gray-100 animate-pulse rounded" /></td>
-                  <td className="px-4 py-3"><div className="h-8 w-24 bg-gray-100 animate-pulse rounded" /></td>
-                </tr>
-              )) : sorted.map((r, i) => (
-                <tr key={i} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-800">{r.name}</td>
-                  <td className="px-4 py-3 text-gray-700">{typeof r.price === 'number' ? `₹${r.price.toFixed(2)}` : r.price}</td>
-                  <td className="px-4 py-3 text-gray-700">{r.stock}</td>
-                  <td className="px-4 py-3 text-gray-700">{r.category}</td>
-                  <td className="px-4 py-3 space-x-2">
-                    <button onClick={() => openEdit(r)} className="px-3 py-1 rounded bg-red-50 text-red-700 hover:bg-red-100 transition">Edit</button>
-                    <button onClick={() => removeItem(r._id)} className="px-3 py-1 rounded bg-gray-100 text-gray-800 hover:bg-gray-200 transition">Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
 
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-black/50 animate-fadeIn">
-          <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
-            <div className="flex justify-between items-center px-6 py-4 border-b bg-gradient-to-r from-gray-50 to-gray-100">
-              <h2 className="text-lg font-semibold text-gray-800">{editing ? '✏️ Edit Product' : '➕ Add New Product'}</h2>
-              <button onClick={() => setModalOpen(false)} className="text-gray-500 hover:text-gray-700 transition">✖</button>
+        {/* Filters and Search (Optional for products) */}
+         {/* You can add filters similar to Courses.jsx if needed */}
+
+        {/* Products Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {loading ? (
+             <div className="col-span-full flex items-center justify-center py-12"><Spinner /> Loading products...</div>
+          ) : products.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <FiImage className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+              <p className="text-gray-500">Get started by creating your first product.</p>
             </div>
-            <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
-              {errorMsg && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{errorMsg}</div>}
-              <div className="space-y-3">
-                <h3 className="text-sm font-medium text-gray-600 uppercase tracking-wide">Basic Information</h3>
-                <label className="block">
-                  <span className="text-sm text-gray-700">Product Name</span>
-                  <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Enter product name" className="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none transition" />
-                </label>
-                <div className="grid grid-cols-2 gap-4">
-                  <label className="block">
-                    <span className="text-sm text-gray-700">Price (₹)</span>
-                    <input type="number" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} placeholder="e.g., 999" className="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none transition" />
-                  </label>
-                  <label className="block">
-                    <span className="text-sm text-gray-700">Discount Price (₹)</span>
-                    <input type="number" value={form.discountPrice} onChange={e => setForm({ ...form, discountPrice: e.target.value })} placeholder="Optional" className="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none transition" />
-                  </label>
-                </div>
-                <label className="block">
-                  <span className="text-sm text-gray-700">Product Type</span>
-                  <select value={form.productType} onChange={e => setForm({ ...form, productType: e.target.value })} className="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none transition">
-                    <option value="Digital">Digital</option>
-                    <option value="Physical">Physical</option>
-                    <option value="Both">Both</option>
-                  </select>
-                </label>
-                <label className="block">
-                  <span className="text-sm text-gray-700">Description</span>
-                  <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows="3" placeholder="Brief product description..." className="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none transition" />
-                </label>
-              </div>
-              <div className="pt-3 border-t border-gray-200 space-y-3">
-                <h3 className="text-sm font-medium text-gray-600 uppercase tracking-wide">Product Images</h3>
-                <div className="flex items-center gap-4 text-sm">
-                  <label className="inline-flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="imgMode" checked={imgMode === 'local'} onChange={() => setImgMode('local')} /> Local Upload
-                  </label>
-                  <label className="inline-flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="imgMode" checked={imgMode === 'pinterest'} onChange={() => setImgMode('pinterest')} /> Pinterest URL
-                  </label>
-                </div>
-                {imgMode === 'local' ? (
-                  <label className="block">
-                    <span className="text-sm text-gray-700">Upload Images</span>
-                    <input type="file" multiple onChange={handleFileChange} className="mt-2 block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-100 file:text-red-700 hover:file:bg-red-200 focus:outline-none" />
-                    {uploading && <div className="text-sm text-gray-500 mt-2 animate-pulse">Uploading...</div>}
-                  </label>
-                ) : (
-                  <div className="grid gap-2">
-                    <label className="block">
-                      <span className="text-sm text-gray-700">Pinterest Link</span>
-                      <input value={pinUrl} onChange={e => setPinUrl(e.target.value)} placeholder="https://www.pinterest.com/..." className="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none transition" />
-                    </label>
-                    <button type="button" onClick={fetchPinterest} disabled={uploading || !pinUrl} className="w-fit px-4 py-2 rounded-lg bg-gray-900 text-white hover:bg-black transition disabled:opacity-50">Fetch Image</button>
+          ) : (
+            products.map((product) => (
+              <div key={product._id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                {/* Product Card Content */}
+                 {product.imageUrl ? (
+                  <div className="h-48 bg-gray-200">
+                    <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover"/>
                   </div>
+                ) : (
+                  <div className="h-48 bg-gray-200 flex items-center justify-center"><FiImage className="w-12 h-12 text-gray-400" /></div>
                 )}
-                <div className="grid grid-cols-3 gap-2 mt-3">
-                  {form.images.map((image, index) => (
-                    <div key={index} className="relative group">
-                      <img src={image} alt="preview" className="h-24 w-full object-cover rounded-lg border" />
-                      <button type="button" onClick={() => setForm({ ...form, images: form.images.filter((_, i) => i !== index) })} className="absolute top-1 right-1 bg-red-600 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition">×</button>
-                    </div>
-                  ))}
+                <div className="p-6">
+                   <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 mb-2">{product.name}</h3>
+                   <p className="text-gray-600 text-sm mb-4 line-clamp-3">{product.description}</p>
+                   {/* Display available levels */}
+                   {product.availableLevels && product.availableLevels.length > 0 && (
+                        <div className="mb-4 flex flex-wrap gap-1">
+                            {product.availableLevels.map(lvl => (
+                                <span key={lvl} className="px-2 py-0.5 text-xs bg-gray-200 text-gray-700 rounded-full">{lvl}</span>
+                            ))}
+                        </div>
+                    )}
+                   <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                     {product.category && <span className="flex items-center gap-1"><FiBookOpen className="w-4 h-4" />{product.category}</span>}
+                     <span className="flex items-center gap-1"><FiDollarSign className="w-4 h-4" />₹{product.discountPrice || product.price || 0}</span>
+                   </div>
+                   <div className="flex items-center justify-between">
+                     <div className="flex items-center gap-2">
+                       <button onClick={() => handleEdit(product)} className="text-blue-600 hover:text-blue-900 p-2 rounded hover:bg-blue-50"><FiEdit className="w-4 h-4" /></button>
+                       <button onClick={() => handleDelete(product._id)} className="text-red-600 hover:text-red-900 p-2 rounded hover:bg-red-50"><FiTrash2 className="w-4 h-4" /></button>
+                     </div>
+                     <span className="text-xs text-gray-500">{new Date(product.createdAt).toLocaleDateString()}</span>
+                   </div>
                 </div>
               </div>
-              <div className="pt-3 border-t border-gray-200 space-y-2">
-                <h3 className="text-sm font-medium text-gray-600 uppercase tracking-wide">Inventory</h3>
-                <label className="block">
-                  <span className="text-sm text-gray-700">Stock Quantity</span>
-                  <input type="number" value={form.stock} onChange={e => setForm({ ...form, stock: e.target.value })} placeholder="e.g., 100" className="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 focus:ring-2 focus:ring-red-100 focus:border-red-500 outline-none transition" />
-                </label>
+            ))
+          )}
+        </div>
+
+        {/* Pagination */}
+        {/* Add Pagination component usage here if needed */}
+         {!loading && totalPages > 1 && (
+           <div className="mt-8 flex justify-center">
+             {/* Pagination UI similar to Courses.jsx */}
+           </div>
+         )}
+
+        {/* Product Modal */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"> {/* Adjusted max-width */}
+              {/* Modal Header */}
+              <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">{editingProduct ? 'Edit Product' : 'Add New Product'}</h3>
+                <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600"><FiX className="w-6 h-6" /></button>
               </div>
-            </div>
-            <div className="flex justify-end items-center gap-3 px-6 py-4 border-t bg-gray-50">
-              <button onClick={() => setModalOpen(false)} className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition">Cancel</button>
-              <button onClick={saveItem} disabled={uploading || saving} className="px-5 py-2 rounded-lg text-white font-medium bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 disabled:opacity-60 transition">{saving ? 'Saving…' : uploading ? 'Uploading...' : 'Save Product'}</button>
+              {/* Modal Form */}
+              <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                
+                {/* Name, Category */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div><label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label><input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required /></div>
+                  <div><label className="block text-sm font-medium text-gray-700 mb-1">Category *</label><select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-red-500 focus:border-red-500" required><option value="">Select Category</option>{categories.map(category => (<option key={category._id} value={category.name}>{category.name}</option>))}</select></div>
+                </div>
+                {/* Description */}
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Description *</label><textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={4} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required /></div>
+                
+                {/* Image Uploader (Single Image) */}
+                 <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Image *</label>
+                    <div className="mt-1 p-4 border-2 border-dashed border-gray-300 rounded-lg">
+                       <input type="file" accept="image/*" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"/>
+                       {uploading && <div className="text-sm text-gray-500 mt-2">Uploading...</div>}
+                       {/* Image Preview */}
+                       {formData.imageUrl && !uploading && (
+                         <div className="mt-4 relative w-32 h-32"> {/* Fixed size preview */}
+                            <img src={formData.imageUrl} alt="preview" className="h-full w-full object-cover rounded-md border" />
+                            <button type="button" onClick={() => setFormData(prev => ({ ...prev, imageUrl: '' }))} className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs shadow">&times;</button>
+                         </div>
+                       )}
+                    </div>
+                 </div>
+
+                {/* Price, Discount Price */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Price (₹) *</label><input type="number" min="0" step="0.01" value={formData.price} onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Discount Price (₹, optional)</label><input type="number" min="0" step="0.01" value={formData.discountPrice} onChange={(e) => setFormData({ ...formData, discountPrice: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" /></div>
+                </div>
+                
+                {/* --- AVAILABLE LEVELS CHECKBOXES --- */}
+                <div className="block">
+                    <span className="text-sm font-medium text-gray-700">Available Levels *</span>
+                    <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                        {ALL_POSSIBLE_LEVELS.map(level => (
+                            <label key={level} className="flex items-center gap-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer has-[:checked]:bg-red-50 has-[:checked]:border-red-300">
+                                <input
+                                    type="checkbox"
+                                    value={level}
+                                    checked={formData.availableLevels.includes(level)}
+                                    onChange={() => handleLevelCheckboxChange(level)}
+                                    className="rounded accent-red-600 focus:ring-red-500"
+                                />
+                                <span className="text-sm">{level}</span>
+                            </label>
+                        ))}
+                    </div>
+                     {/* Add validation message */}
+                    {formData.availableLevels.length === 0 && <p className="text-xs text-red-600 mt-1">Please select at least one level.</p>}
+                </div>
+                {/* --- END AVAILABLE LEVELS --- */}
+
+                {/* Product Type */}
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Product Type</label><select value={formData.productType} onChange={(e) => setFormData({ ...formData, productType: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-red-500 focus:border-red-500"><option value="Digital">Digital</option><option value="Physical">Physical</option><option value="Both">Both</option></select></div>
+
+                {/* Modal Footer */}
+                <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
+                  <button type="button" onClick={() => setShowModal(false)} className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
+                  <button type="submit" disabled={isSaving || uploading} className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 disabled:opacity-60">
+                    <FiSave className={`w-4 h-4 ${isSaving ? 'animate-spin' : ''}`} /> 
+                    {isSaving ? 'Saving…' : (uploading ? 'Uploading...' : (editingProduct ? 'Update Product' : 'Create Product'))}
+                  </button>
+                </div>
+
+              </form>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
-}
+};
+
+export default Products;

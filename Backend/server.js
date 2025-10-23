@@ -22,7 +22,6 @@ import teacherRoutes from './routes/teacherRoutes.js'
 import suggestionRoutes from './routes/suggestionRoutes.js'
 import pinterestRoutes from './routes/pinterestRoutes.js'
 import dashboardRoutes from './routes/dashboardRoutes.js'
-import orderRoutes from './routes/orderRoutes.js'
 import courseRoutes from './routes/courseRoutes.js'
 import categoryRoutes from './routes/categoryRoutes.js'
 // import bannerRoutes from './routes/bannerRoutes.js'
@@ -35,6 +34,7 @@ import { v2 as cloudinary } from 'cloudinary'
 import postRoutes from './routes/postRoutes.js';
 import pickRoutes from './routes/pickRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
+import orderRoutes from './routes/orderRoutes.js';
 
 dotenv.config()
 

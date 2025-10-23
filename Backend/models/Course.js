@@ -3,32 +3,17 @@ import mongoose from 'mongoose';
 const courseSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
+  price: { type: Number, required: true },
+  discountPrice: { type: Number, default: 0 },
   category: { type: String, required: true },
-  images: [{ type: String }], // Changed 'thumbnail' to 'images' array
-  imageSource: { type: String, enum: ['local', 'pinterest', ''], default: '' },
-  modules: [{ 
-    title: String, 
-    description: String, 
-    duration: String,
-    order: Number 
-  }],
-  price: { type: Number, default: 0 },
-  isActive: { type: Boolean, default: true },
-  instructor: { type: String, default: 'CasaDeELE Team' },
-  level: { 
-    type: String, 
-    enum: ['beginner', 'intermediate', 'advanced'], 
-    default: 'beginner' 
-  },
-  language: { type: String, default: 'Spanish' },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-});
+  instructor: { type: String, default: '' },
+  thumbnail: { type: String, default: '' },
+  images: [{ type: String }], // Array for multiple images
+  level: { type: String }, // Keep this if you use it for a default/main level
+  // *** NEW FIELD ***
+  availableLevels: [{ type: String }], // Array of available levels like ['A1', 'B2']
+  // *** END NEW FIELD ***
+  productType: { type: String, enum: ['Digital', 'Physical', 'Both'], default: 'Digital' },
+}, { timestamps: true });
 
-courseSchema.pre('save', function(next) {
-  this.updatedAt = Date.now();
-  next();
-});
-
-const Course = mongoose.model('Course', courseSchema);
-export default Course;
+export default mongoose.models.Course || mongoose.model('Course', courseSchema);

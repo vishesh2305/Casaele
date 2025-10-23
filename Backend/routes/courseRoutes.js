@@ -5,12 +5,12 @@ import { getCourses, getCourseById, createCourse, updateCourse, deleteCourse } f
 const router = express.Router();
 
 router.route('/')
-  .get(getCourses) // Make this route public
-  .post(verifyFirebaseToken, createCourse);
+  .get(getCourses) // Public
+  .post(verifyFirebaseToken, createCourse); // Admin protected
 
 router.route('/:id')
-  .get(getCourseById) // Make this route public
-  .put(verifyFirebaseToken, updateCourse)
-  .delete(verifyFirebaseToken, deleteCourse);
+  .get(getCourseById) // Public
+  .put(verifyFirebaseToken, updateCourse) // Admin protected
+  .delete(verifyFirebaseToken, deleteCourse); // Admin protected
 
-export default router;
+export default router

@@ -1,56 +1,17 @@
-import { Router } from 'express'
-import Product from '../models/Product.js'
-import { verifyFirebaseToken } from '../middleware/auth.js'
+import express from 'express';
+import { verifyFirebaseToken } from '../middleware/auth.js';
+// Import controller functions (assuming they exist)
+import { getProducts, getProductById, createProduct, updateProduct, deleteProduct } from '../controllers/productController.js'; 
 
-const router = Router()
+const router = express.Router();
 
-// Create (admin)
-router.post('/', verifyFirebaseToken, async (req, res) => {
-  try {
-    const { name, price, discountPrice, productType, description, images, stock, imageSource } = req.body
-    if (!name || price == null) return res.status(400).json({ message: 'name and price are required' })
-    const normalizedStock = Number.isFinite(Number(stock)) && Number(stock) > 0 ? Number(stock) : 0
-    const product = await Product.create({ name, price, discountPrice, productType, description, images, stock: normalizedStock, imageSource: imageSource || '' })
-    res.status(201).json(product)
-  } catch (e) {
-    res.status(500).json({ message: 'Failed to create product' })
-  }
-})
+router.route('/')
+  .get(getProducts) // Public
+  .post(verifyFirebaseToken, createProduct); // Admin protected
 
-// Read all (public)
-router.get('/', async (req, res) => {
-  const items = await Product.find().sort({ createdAt: -1 })
-  res.json(items)
-})
+router.route('/:id')
+  .get(getProductById) // Public
+  .put(verifyFirebaseToken, updateProduct) // Admin protected
+  .delete(verifyFirebaseToken, deleteProduct); // Admin protected
 
-// Read one (public)
-router.get('/:id', async (req, res) => {
-  const item = await Product.findById(req.params.id)
-  if (!item) return res.status(404).json({ message: 'Not found' })
-  res.json(item)
-})
-
-// Update (admin)
-router.put('/:id', verifyFirebaseToken, async (req, res) => {
-  try {
-    const { name, price, discountPrice, productType, description, images, stock } = req.body
-    const updated = await Product.findByIdAndUpdate(
-      req.params.id,
-      { name, price, discountPrice, productType, description, images, stock },
-      { new: true, runValidators: true }
-    )
-    if (!updated) return res.status(404).json({ message: 'Not found' })
-    res.json(updated)
-  } catch (e) {
-    res.status(500).json({ message: 'Failed to update product' })
-  }
-})
-
-// Delete (admin)
-router.delete('/:id', verifyFirebaseToken, async (req, res) => {
-  const deleted = await Product.findByIdAndDelete(req.params.id)
-  if (!deleted) return res.status(404).json({ message: 'Not found' })
-  res.json({ success: true })
-})
-
-export default router
+export default router;

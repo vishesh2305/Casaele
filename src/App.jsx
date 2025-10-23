@@ -47,7 +47,7 @@ import ReviewsManager from './pages/admin/ReviewsManager';
 import CoursesPage from './pages/CoursesPage'; 
 import ProductsPage from './pages/ProductsPage'; 
 import ProductDetail from './pages/ProductDetail';
-
+import OrderSuccess from './pages/OrderSuccess'; // Import the new page
 
 // Guard Stripe initialization: require Vite-prefixed key and avoid crashing if missing
 const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
@@ -83,6 +83,7 @@ function AppWrapper() {
         <Route path="/course-detail/:id" element={<CourseDetail />} />
         <Route path="/product-detail/:id" element={<ProductDetail />} />
         <Route path="/cart-checkout" element={<CartCheckout />} />
+        <Route path="/order-success" element={<OrderSuccess />} /> 
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />

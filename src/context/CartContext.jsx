@@ -1,19 +1,22 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-// Create the context
 const CartContext = createContext();
 
-// Create a custom hook to use the context easily
 export const useCart = () => {
   return useContext(CartContext);
 };
 
-// Create the provider component
+// Helper to generate a unique ID based on item properties
+const generateUniqueId = (item) => {
+  // Use _id, selectedLevel (or 'none'), selectedFormat (or 'none')
+  return `${item._id}-${item.selectedLevel || 'none'}-${item.selectedFormat || 'none'}`;
+};
+
 export const CartProvider = ({ children }) => {
-  // Load initial cart from local storage
   const [cartItems, setCartItems] = useState(() => {
     try {
       const localData = localStorage.getItem('cartItems');
+      console.log("Loading cart from localStorage:", localData); // Debug log
       return localData ? JSON.parse(localData) : [];
     } catch (error) {
       console.error("Failed to parse cart from local storage", error);
@@ -23,72 +26,81 @@ export const CartProvider = ({ children }) => {
 
   // Save to local storage whenever cart changes
   useEffect(() => {
-    localStorage.setItem('cartItems', JSON.stringify(cartItems));
+    try {
+       console.log("Saving cart to localStorage:", cartItems); // Debug log
+       localStorage.setItem('cartItems', JSON.stringify(cartItems));
+    } catch (error) {
+        console.error("Failed to save cart to local storage", error);
+    }
   }, [cartItems]);
 
-  // Add item to cart
   const addToCart = (item) => {
-    setCartItems((prevItems) => {
-      // Check if item (with same id, level, and format) is already in cart
-      const existingItem = prevItems.find(
-        (i) => i._id === item._id &&
-               i.selectedLevel === item.selectedLevel &&
-               i.selectedFormat === item.selectedFormat
-      );
+    // Ensure item has at least a quantity of 1
+    const quantityToAdd = Math.max(1, item.quantity || 1);
 
-      if (existingItem) {
-        // If it exists, update the quantity
-        return prevItems.map((i) =>
-          i._id === existingItem._id &&
-          i.selectedLevel === existingItem.selectedLevel &&
-          i.selectedFormat === existingItem.selectedFormat
-            ? { ...i, quantity: i.quantity + item.quantity }
-            : i
-        );
+    setCartItems((prevItems) => {
+      const uniqueId = generateUniqueId(item);
+      const existingItemIndex = prevItems.findIndex((i) => i.uniqueId === uniqueId);
+
+      if (existingItemIndex > -1) {
+        // Item exists, update quantity
+        const updatedItems = [...prevItems];
+        updatedItems[existingItemIndex] = {
+          ...updatedItems[existingItemIndex],
+          // Add quantityToAdd to existing quantity
+          quantity: (updatedItems[existingItemIndex].quantity || 0) + quantityToAdd
+        };
+        console.log("Updating item quantity in cart:", uniqueId, updatedItems[existingItemIndex].quantity); // Debug log
+        return updatedItems;
       } else {
-        // Otherwise, add it as a new item
-        return [...prevItems, item];
+        // Add new item with uniqueId and ensure quantity
+        const newItem = { ...item, quantity: quantityToAdd, uniqueId };
+        console.log("Adding new item to cart:", newItem); // Debug log
+        return [...prevItems, newItem];
       }
     });
   };
 
-  // Remove item from cart
   const removeFromCart = (uniqueId) => {
+    console.log("Removing item from cart:", uniqueId); // Debug log
     setCartItems((prevItems) => prevItems.filter(item => item.uniqueId !== uniqueId));
   };
-  
-  // Update item quantity
+
   const updateQuantity = (uniqueId, newQuantity) => {
-    if (newQuantity < 1) {
+    const quantity = parseInt(newQuantity, 10);
+    console.log("Attempting to update quantity:", uniqueId, quantity); // Debug log
+
+    if (isNaN(quantity) || quantity < 1) {
       removeFromCart(uniqueId);
       return;
     }
     setCartItems((prevItems) =>
       prevItems.map((item) =>
-        item.uniqueId === uniqueId ? { ...item, quantity: newQuantity } : item
+        item.uniqueId === uniqueId ? { ...item, quantity: quantity } : item
       )
     );
   };
 
-  // Check if an item is added (by its base ID, for the "Added" button)
+  // Check if item added (using base _id for button state)
   const isItemAdded = (id) => {
+     // Check if *any* variant (level/format) of this item ID is in the cart
     return cartItems.some((item) => item._id === id);
   };
 
-  // Clear the entire cart
   const clearCart = () => {
+    console.log("Clearing cart"); // Debug log
     setCartItems([]);
   };
 
   // Calculate totals
-  const totalItems = cartItems.reduce((total, item) => total + item.quantity, 0);
-  
+  const totalItems = cartItems.reduce((total, item) => total + (item.quantity || 0), 0);
   const totalPrice = cartItems.reduce((total, item) => {
-    const price = item.discountPrice || item.price;
-    return total + price * item.quantity;
+    const price = Number(item.discountPrice || item.price || 0);
+    const quantity = Number(item.quantity || 0);
+    return total + price * quantity;
   }, 0);
 
-  // The value to be provided to all children
+  // Expose cart state and actions
   const value = {
     cartItems,
     addToCart,

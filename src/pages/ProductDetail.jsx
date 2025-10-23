@@ -3,125 +3,157 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import ProductImage from '../components/CourseDetail/ProductImage'; // Reusing component
 import ProductInfo from '../components/CourseDetail/ProductInfo';   // Reusing component
 import DetailedInfo from '../components/CourseDetail/DetailedInfo'; // Reusing component
+// KeyFeatures is removed
 import Reviews from '../components/CourseDetail/Reviews';           // Reusing component (needs modification later for product reviews)
 import LikeSection from '../components/CourseDetail/LikeSection';   // Reusing component (needs modification later for related products)
 import { apiGet } from '../utils/api';
 import Spinner from '../components/Common/Spinner';
-import { useCart } from '../context/CartContext'; 
+import { useCart } from '../context/CartContext'; // Import cart context
 
 function ProductDetail() {
-  const { id: productId } = useParams(); // Get ID from URL
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [product, setProduct] = useState(null); // State for product data
+  const { id: productId } = useParams(); // Get product ID from URL parameter
+  const location = useLocation(); // To potentially get initial state
+  const navigate = useNavigate(); // For navigation actions
+
+  // State for the main product being displayed
+  const [product, setProduct] = useState(null); // Initialize as null
   const [loading, setLoading] = useState(true);
-  const [recommendedProducts, setRecommendedProducts] = useState([]); // State for related products
 
-  // Cart state
+  // State for recommended products ("You might also like")
+  const [recommendedProducts, setRecommendedProducts] = useState([]);
+
+  // State related to cart interaction
   const { addToCart, isItemAdded } = useCart();
-  const [quantity, setQuantity] = useState(1);
-  const [added, setAdded] = useState(false);
+  const [quantity, setQuantity] = useState(1); // Quantity selector state
+  const [added, setAdded] = useState(false); // State for the "Add/Added" button
 
+  // Effect to fetch product data when the component mounts or the productId changes
   useEffect(() => {
-    // Fetch data when productId changes
-    setLoading(true);
-    setProduct(null); // Clear old data
+    setLoading(true); // Start loading indicator
+    setProduct(null); // Clear previous product data
+    setRecommendedProducts([]); // Clear previous recommendations
 
-    // Fetch the specific product
-    const fetchProduct = apiGet(`/api/products/${productId}`); 
-    // Fetch other products for recommendations
-    const fetchAllProducts = apiGet('/api/products'); 
+    // Fetch the specific product for this detail page
+    const fetchProduct = apiGet(`/api/products/${productId}`);
+
+    // Fetch all products to find recommendations
+    const fetchAllProducts = apiGet('/api/products');
 
     Promise.all([fetchProduct, fetchAllProducts])
-      .then(([productData, allProducts]) => {
-        // Standardize 'name' to 'title' if needed by ProductInfo
-        setProduct({ ...productData, title: productData.name || productData.title }); 
-        
-        // Filter related products
-        if (Array.isArray(allProducts)) {
-          const filtered = allProducts
-            .filter(p => p._id !== productData._id)
-            .slice(0, 4); // Show max 4 recommendations
-          setRecommendedProducts(filtered);
+      .then(([productData, allProductsData]) => {
+
+        // Set the main product data
+        // Ensure it has a 'title' prop if ProductInfo expects it (use 'name' as fallback)
+        setProduct({ ...productData, title: productData.name || productData.title });
+
+        // Filter recommendations: exclude current product, take first 4
+        let allProductsList = [];
+         if (Array.isArray(allProductsData?.products)) {
+           allProductsList = allProductsData.products; // Handle { products: [...] } structure
+        } else if (Array.isArray(allProductsData)) {
+           allProductsList = allProductsData; // Handle [...] structure
         }
+
+        const filtered = allProductsList
+          .filter(p => p._id !== productData._id) // Don't recommend the current product
+          .slice(0, 4); // Limit recommendations to 4
+        setRecommendedProducts(filtered);
+
       })
       .catch((err) => {
         console.error("Failed to fetch product data:", err);
+        setProduct(null); // Ensure product is null if fetch fails
       })
       .finally(() => {
-        setLoading(false);
+        setLoading(false); // Stop loading indicator
       });
-      
-  }, [productId]); // Rerun effect if productId changes
 
+  }, [productId]); // Dependency array: rerun this effect if productId changes
+
+  // Effect to update the 'added' state based on CartContext when the product loads
   useEffect(() => {
-    // Update 'added' status when product data loads
     if (product) {
+      // Check if any variant of this product is already in the cart
       setAdded(isItemAdded(product._id));
     }
-    setQuantity(1); // Reset quantity
-  }, [product, isItemAdded]);
+    // Reset quantity whenever the product changes
+    setQuantity(1);
+  }, [product, isItemAdded]); // Dependencies: run when product data or cart status changes
 
-  // Add to cart handler
+  // Function passed to ProductInfo to handle adding the item to the cart
   const handleAddToCart = (itemWithOptions) => {
-    addToCart({ ...itemWithOptions, quantity });
-    setAdded(true);
+    // itemWithOptions includes selectedLevel and selectedFormat from ProductInfo
+    addToCart({ ...itemWithOptions, quantity }); // Add item with selected quantity
+    setAdded(true); // Update button state to "Added!"
+    // No automatic navigation
   };
 
-  // Click handler for recommended products
+  // Function passed to LikeSection to handle clicks on recommended products
   const handleLikeCardClick = (card) => {
-    navigate(`/product-detail/${card._id}`); // Navigate to other product details
+    // Navigate to the detail page of the clicked recommended product
+    navigate(`/product-detail/${card._id}`);
   };
 
+  // --- Render Logic ---
+
+  // Show loading spinner while data is fetching
   if (loading) {
-    return <div className="flex justify-center items-center h-[60vh]"><Spinner /></div>;
+    return (
+      <div className="flex justify-center items-center h-[60vh]">
+        <Spinner />
+      </div>
+    );
   }
 
+  // Show message if the product fetch failed or returned no data
   if (!product) {
-    return <div className="text-center p-20 font-semibold">Product not found.</div>;
+    return (
+      <div className="text-center p-20 font-semibold text-gray-700">
+        Product not found. It might have been removed or the ID is incorrect.
+      </div>
+    );
   }
 
-  // Use the same structure as CourseDetail, passing the product data
+  // Render the main product detail page content
   return (
-    <div className="w-full px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 pb-10 bg-gray-50">
+    <div className="w-full px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 pb-10 bg-gray-50"> {/* Added bg */}
       <div className="w-full max-w-7xl mx-auto pt-10 pb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 bg-white rounded-2xl shadow-sm p-6 sm:p-8 md:p-10">
-          {/* Reuse ProductImage */}
-          <ProductImage item={product} /> 
-          {/* Reuse ProductInfo */}
+        {/* Top section: Image and Info */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 mb-20"> {/* Added mb */}
+          <ProductImage
+             item={product} // Pass the fetched product data (contains imageUrl or images/thumbnail)
+          />
           <ProductInfo
-            item={product}
+            item={product} // Pass the fetched product data (contains availableLevels)
             quantity={quantity}
             setQuantity={setQuantity}
-            added={added}
-            handleAddToCart={handleAddToCart}
+            added={added} // Pass the added state for button display
+            handleAddToCart={handleAddToCart} // Pass the handler function
           />
         </div>
 
-        {/* Detailed info section */}
-        <div className="mt-20 bg-white rounded-2xl shadow-sm p-6 sm:p-8 md:p-10">
+        {/* Bottom section: Details, Reviews, Recommendations */}
+        <div className="space-y-16 md:space-y-20"> {/* Added space-y */}
           <DetailedInfo
             description={product.description}
-            instructor={product.instructor} // Instructor might be undefined for products
+            // Products likely don't have an instructor, pass undefined or null
+            // The DetailedInfo component should handle this gracefully (e.g., hide the instructor part)
+            instructor={product.instructor} 
           />
-        </div>
+          {/* KeyFeatures component remains removed */}
 
-        {/* Reviews section with better separation */}
-        <div className="mt-20 bg-white rounded-2xl shadow-sm p-6 sm:p-8 md:p-10 border border-gray-100">
-          <h2 className="text-2xl font-semibold mb-6 text-gray-800 border-b border-gray-200 pb-3">
-            Customer Reviews
-          </h2>
-          <Reviews courseId={product._id} /> {/* Temporarily using courseId prop */}
-        </div>
+          {/* Note: Reviews component currently uses courseId prop. 
+              This will fetch reviews based on the product's _id.
+              Ensure your Review model/API can handle reviews linked to products.
+              You might need to update the Review backend later.
+          */}
+          <Reviews
+             courseId={product._id} // Pass productId here, component expects 'courseId' prop name
+          />
 
-        {/* Separator before "You might also like" */}
-        <div className="my-16 border-t border-gray-200"></div>
-
-        {/* Recommended products */}
-        <div className="bg-white rounded-2xl shadow-sm p-6 sm:p-8 md:p-10">
           <LikeSection
-            likecards={recommendedProducts}
-            handleLikeCardClick={handleLikeCardClick}
+            likecards={recommendedProducts} // Pass the dynamically fetched recommendations
+            handleLikeCardClick={handleLikeCardClick} // Pass the click handler
           />
         </div>
       </div>
