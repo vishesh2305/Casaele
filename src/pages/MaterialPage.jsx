@@ -15,7 +15,9 @@ function MaterialPage() {
   const [showSearchResults, setShowSearchResults] = useState(false);
   
   const [materials, setMaterials] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   // *** CHANGED: Removed Modal State ***
   // const [activeBannerUrl, setActiveBannerUrl] = useState(null);
@@ -44,25 +46,60 @@ function MaterialPage() {
     }
   };
 
-  const handleSearch = (query) => {
-    setSearchQuery(query);
-    setShowSearchResults(query.length > 0);
+  // Enhanced search handler that works with both Explore and Keyword modes
+  const handleSearch = async (filters) => {
+    console.log("🔍 Frontend: Starting search with filters:", filters);
+    
+    setSearchLoading(true);
+    setShowSearchResults(true);
+    
+    try {
+      // Build query parameters from filters object
+      const queryParams = new URLSearchParams();
+      
+      // Add all filter parameters to query string
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value.trim()) {
+          queryParams.append(key, value.trim());
+        }
+      });
+      
+      const queryString = queryParams.toString();
+      console.log("🔍 Frontend: API query string:", queryString);
+      
+      // Make API call with filters
+      const response = await apiGet(`/api/materials?${queryString}`);
+      
+      console.log("🔍 Frontend: API response:", response);
+      
+      // Handle both old format (array) and new format (object with materials property)
+      const results = Array.isArray(response) ? response : response.materials || [];
+      setSearchResults(results);
+      
+      console.log("🔍 Frontend: Processed results:", results);
+      
+      // Update search query for display purposes
+      if (filters.keyword) {
+        setSearchQuery(filters.keyword);
+      } else {
+        // Create a display query from selected filters
+        const filterValues = Object.values(filters).filter(v => v && v.trim());
+        setSearchQuery(filterValues.join(", "));
+      }
+      
+    } catch (error) {
+      console.error("Search failed:", error);
+      setSearchResults([]);
+      setSearchQuery("Search failed");
+    } finally {
+      setSearchLoading(false);
+    }
   };
-
-  const searchResults = useMemo(() => {
-    if (!searchQuery) return [];
-    const query = searchQuery.toLowerCase();
-    return materials.filter(item =>
-      item.title.toLowerCase().includes(query) ||
-      (item.description && item.description.toLowerCase().includes(query)) ||
-      (item.category && item.category.toLowerCase().includes(query))
-    );
-  }, [searchQuery, materials]);
 
   useEffect(() => {
     if (location.state?.keyword) {
       setActiveButton("Keyword");
-      handleSearch(location.state.keyword);
+      handleSearch({ keyword: location.state.keyword });
     }
   }, [location.state]);
 
@@ -81,9 +118,16 @@ function MaterialPage() {
       {showSearchResults ? (
         <div className="mt-6 sm:mt-8 md:mt-10">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">Results ({searchResults.length})</h2>
+            <h2 className="text-2xl font-bold text-gray-800">
+              {searchLoading ? "Searching..." : `Results (${searchResults.length})`}
+            </h2>
           </div>
-          {searchResults.length > 0 ? (
+          
+          {searchLoading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+            </div>
+          ) : searchResults.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {searchResults.map((item) => (
                 // *** CHANGED: Wrapped search result in a Link ***
@@ -104,7 +148,7 @@ function MaterialPage() {
                     <h3 className="font-bold text-lg mb-2 text-gray-800">{item.title}</h3>
                     <p className="text-gray-600 text-sm mb-3">{item.description}</p>
                     <div className="flex flex-wrap gap-2">
-                      {item.tags.map((tag, index) => (
+                      {item.tags && item.tags.map((tag, index) => (
                         <span key={index} className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">{tag}</span>
                       ))}
                     </div>

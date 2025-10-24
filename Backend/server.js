@@ -85,7 +85,19 @@ app.use(
   })
 )
 
-app.use(express.json())
+// ✅ Increase body parser limits for file uploads
+app.use(express.json({ limit: '50mb' }))
+app.use(express.urlencoded({ limit: '50mb', extended: true }))
+
+// ✅ Handle request entity too large errors
+app.use((err, req, res, next) => {
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ 
+      message: 'Request entity too large. Please reduce file size or try again.' 
+    })
+  }
+  next(err)
+})
 
 // ✅ Serve static files from public folder
 const __filename = fileURLToPath(import.meta.url)

@@ -21,12 +21,78 @@ export const getProducts = async (req, res) => {
 
         let query = Product.find({}); // Add isActive check if needed: { isActive: true }
 
-        // Filtering (Add more as needed)
-        if (req.query.category) {
-            query = query.where('category').equals(req.query.category);
+        // Enhanced filtering support for Explore/Keyword modes
+        const { 
+            category, 
+            subCategory, 
+            theme, 
+            level, 
+            country, 
+            keyword,
+            search, // Legacy support
+            maxPrice 
+        } = req.query;
+
+        // Category filter (maps to Room/Category)
+        if (category && category !== 'Room/Category') {
+            query = query.where('category').equals(category);
         }
-        if (req.query.maxPrice) {
-            query = query.where('price').lte(parseFloat(req.query.maxPrice));
+        
+        // Sub Category filter (maps to availableLevels or tags)
+        if (subCategory && subCategory !== 'Sub Category') {
+            query = query.where('availableLevels').in([new RegExp(subCategory, 'i')]);
+        }
+        
+        // Theme filter (maps to category or availableLevels)
+        if (theme && theme !== 'Theme/Genre') {
+            query = query.or([
+                { category: { $regex: theme, $options: 'i' } },
+                { availableLevels: { $in: [new RegExp(theme, 'i')] } }
+            ]);
+        }
+        
+        // Level filter (maps to availableLevels)
+        if (level && level !== 'Level') {
+            query = query.where('availableLevels').in([new RegExp(level, 'i')]);
+        }
+        
+        // Country filter (maps to category or availableLevels)
+        if (country && country !== 'Country') {
+            query = query.or([
+                { category: { $regex: country, $options: 'i' } },
+                { availableLevels: { $in: [new RegExp(country, 'i')] } }
+            ]);
+        }
+        
+        // Keyword search (searches across name, description, category, and availableLevels) - EXACT WORD MATCHING
+        if (keyword && keyword.trim()) {
+            const cleanKeyword = keyword.trim();
+            
+            // Create regex that matches whole words only (not partial matches)
+            // \b ensures word boundaries, so "hand" won't match "handsome" or "shorthand"
+            const exactWordRegex = new RegExp(`\\b${cleanKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+            
+            query = query.or([
+                { name: exactWordRegex },
+                { description: exactWordRegex },
+                { category: exactWordRegex },
+                { availableLevels: { $in: [exactWordRegex] } }
+            ]);
+        }
+        
+        // Legacy search support
+        if (search && search.trim()) {
+            const searchRegex = new RegExp(search.trim(), 'i');
+            query = query.or([
+                { name: searchRegex },
+                { description: searchRegex },
+                { category: searchRegex }
+            ]);
+        }
+        
+        // Price filtering
+        if (maxPrice) {
+            query = query.where('price').lte(parseFloat(maxPrice));
         }
 
         // Sorting

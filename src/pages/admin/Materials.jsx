@@ -4,14 +4,19 @@ import { apiGet, apiSend } from '../../utils/api';
 export default function Materials() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   
-  // *** CHANGED: Removed displayType from default form state ***
+  // Form state with all categorization fields
   const [form, setForm] = useState({ 
     title: '', 
     description: '', 
-    category: '', 
+    category: '', // Room/Category
+    subCategory: '', // Sub Category
+    theme: '', // Theme/Genre
+    level: '', // Level
+    country: '', // Country
     fileUrl: '', // This will be the Card Image
     tags: '', 
     imageSource: '', 
@@ -34,9 +39,18 @@ export default function Materials() {
       apiGet('/api/materials'),
       apiGet('/api/embeds')
     ]).then(([materialsData, embedsData]) => {
-      setItems(materialsData)
+      console.log('Materials data received:', materialsData);
+      console.log('Embeds data received:', embedsData);
+      
+      // Handle both old format (array) and new format (object with materials property)
+      const materials = Array.isArray(materialsData) ? materialsData : materialsData.materials || [];
+      console.log('Processed materials:', materials);
+      
+      setItems(materials)
       setEmbeds(embedsData)
-    }).catch(() => {
+    }).catch((error) => {
+      console.error('Error fetching data:', error);
+      setError(error.message || 'Failed to load materials');
       setItems([])
       setEmbeds([])
     }).finally(() => setLoading(false))
@@ -46,6 +60,15 @@ export default function Materials() {
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    
+    // Check file size (limit to 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+    if (file.size > maxSize) {
+      alert(`File size too large. Please select a file smaller than 10MB. Current file size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+      e.target.value = ''; // Clear the input
+      return;
+    }
+    
     setUploading(true);
     try {
       const { timestamp, signature } = await apiGet('/api/cloudinary-signature');
@@ -74,6 +97,15 @@ export default function Materials() {
   const handleBannerFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    
+    // Check file size (limit to 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+    if (file.size > maxSize) {
+      alert(`File size too large. Please select a file smaller than 10MB. Current file size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+      e.target.value = ''; // Clear the input
+      return;
+    }
+    
     setUploadingBanner(true);
     try {
       const { timestamp, signature } = await apiGet('/api/cloudinary-signature');
@@ -122,7 +154,18 @@ export default function Materials() {
       setModalOpen(false);
       setMaterialEmbeds([]); 
     } catch (err) {
-      const msg = err?.message || 'Failed to save material';
+      console.error('Save error:', err);
+      let msg = 'Failed to save material';
+      
+      // Handle specific error types
+      if (err?.message?.includes('request entity too large')) {
+        msg = 'File size too large. Please reduce image sizes and try again.';
+      } else if (err?.message?.includes('413')) {
+        msg = 'Request too large. Please reduce file sizes and try again.';
+      } else if (err?.message) {
+        msg = err.message;
+      }
+      
       setErrorMsg(msg);
       alert(msg);
     } finally {
@@ -198,15 +241,44 @@ export default function Materials() {
           </button>
         </div>
 
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-red-600">Error: {error}</p>
+            <button 
+              onClick={() => {
+                setError(null);
+                setLoading(true);
+                // Retry loading
+                Promise.all([
+                  apiGet('/api/materials'),
+                  apiGet('/api/embeds')
+                ]).then(([materialsData, embedsData]) => {
+                  const materials = Array.isArray(materialsData) ? materialsData : materialsData.materials || [];
+                  setItems(materials)
+                  setEmbeds(embedsData)
+                }).catch((error) => {
+                  setError(error.message || 'Failed to load materials');
+                  setItems([])
+                  setEmbeds([])
+                }).finally(() => setLoading(false))
+              }}
+              className="mt-2 px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
         <table className="min-w-full text-left">
           <thead className="bg-gray-50 text-gray-600 text-sm">
             <tr>
               <th className="px-4 py-3">Title</th>
               <th className="px-4 py-3">Category</th>
-              {/* *** CHANGED: Removed Type column *** */}
+              <th className="px-4 py-3">Sub Category</th>
+              <th className="px-4 py-3">Theme</th>
+              <th className="px-4 py-3">Level</th>
+              <th className="px-4 py-3">Country</th>
               <th className="px-4 py-3">Embeds</th>
-              <th className="px-4 py-3">Card Image URL</th>
-              <th className="px-4 py-3">Banner Image URL</th>
               <th className="px-4 py-3">Actions</th>
             </tr>
           </thead>
@@ -216,25 +288,28 @@ export default function Materials() {
                 <tr key={i}>
                   <td className="px-4 py-3"><div className="h-4 w-56 bg-gray-100 animate-pulse rounded" /></td>
                   <td className="px-4 py-3"><div className="h-4 w-24 bg-gray-100 animate-pulse rounded" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-20 bg-gray-100 animate-pulse rounded" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-20 bg-gray-100 animate-pulse rounded" /></td>
                   <td className="px-4 py-3"><div className="h-4 w-16 bg-gray-100 animate-pulse rounded" /></td>
-                  <td className="px-4 py-3"><div className="h-4 w-40 bg-gray-100 animate-pulse rounded" /></td>
-                  <td className="px-4 py-3"><div className="h-4 w-40 bg-gray-100 animate-pulse rounded" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-20 bg-gray-100 animate-pulse rounded" /></td>
+                  <td className="px-4 py-3"><div className="h-4 w-16 bg-gray-100 animate-pulse rounded" /></td>
                   <td className="px-4 py-3"><div className="h-8 w-24 bg-gray-100 animate-pulse rounded" /></td>
                 </tr>
               ))
-            ) : items.map((m) => (
+            ) : (Array.isArray(items) ? items : []).map((m) => (
               <tr key={m._id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium text-gray-800">{m.title}</td>
                 <td className="px-4 py-3 text-gray-700">{m.category || '-'}</td>
-                {/* *** CHANGED: Removed Type data cell *** */}
+                <td className="px-4 py-3 text-gray-700">{m.subCategory || '-'}</td>
+                <td className="px-4 py-3 text-gray-700">{m.theme || '-'}</td>
+                <td className="px-4 py-3 text-gray-700">{m.level || '-'}</td>
+                <td className="px-4 py-3 text-gray-700">{m.country || '-'}</td>
                 <td className="px-4 py-3 text-gray-700">
                   <div className="flex items-center gap-1">
                     <span className="text-sm font-medium">{m.embedIds?.length || 0}</span>
                     <span className="text-xs text-gray-500">embeds</span>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-gray-700 truncate max-w-xs">{m.fileUrl || '-'}</td>
-                <td className="px-4 py-3 text-gray-700 truncate max-w-xs">{m.bannerImageUrl || '-'}</td>
                 <td className="px-4 py-3 space-x-2">
                   <button onClick={() => openEditModal(m)} className="px-3 py-1 rounded bg-red-50 text-red-700 hover:bg-red-100 transition">Edit</button>
                   <button onClick={async () => { await apiSend(`/api/materials/${m._id}`, 'DELETE'); setItems(items.filter(x => x._id !== m._id)) }} className="px-3 py-1 rounded bg-gray-100 text-gray-800 hover:bg-gray-200 transition">Delete</button>
@@ -255,7 +330,11 @@ export default function Materials() {
               {[
                 { label: 'Title', key: 'title' },
                 { label: 'Short Description (for cards)', key: 'description' },
-                { label: 'Category', key: 'category' },
+                { label: 'Room/Category', key: 'category', placeholder: 'e.g., Grammar, Vocabulary, Conversation' },
+                { label: 'Sub Category', key: 'subCategory', placeholder: 'e.g., Verbs, Nouns, Adjectives' },
+                { label: 'Theme/Genre', key: 'theme', placeholder: 'e.g., Business, Travel, Academic' },
+                { label: 'Level', key: 'level', placeholder: 'e.g., A1, A2, B1, B2, C1, C2' },
+                { label: 'Country', key: 'country', placeholder: 'e.g., Spain, Mexico, Argentina' },
                 { label: 'Tags (comma-separated)', key: 'tags', placeholder: 'e.g., A2, Listening, Culture' }
               ].map(f => (
                 <label key={f.key} className="block">

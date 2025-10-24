@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { apiGet } from "../../utils/api";
 
 function Searchbar({ onSearch, activeButton }) {
   const [openMenu, setOpenMenu] = useState(null);
@@ -11,7 +12,27 @@ function Searchbar({ onSearch, activeButton }) {
     country: "Country",
   });
   const [searchText, setSearchText] = useState("");
+  const [filterOptions, setFilterOptions] = useState({
+    categories: [],
+    subCategories: [],
+    themes: [],
+    levels: [],
+    countries: []
+  });
   const location = useLocation();
+
+  // Fetch filter options from API
+  useEffect(() => {
+    const fetchFilterOptions = async () => {
+      try {
+        const options = await apiGet('/api/materials/filter-options');
+        setFilterOptions(options);
+      } catch (error) {
+        console.error('Failed to fetch filter options:', error);
+      }
+    };
+    fetchFilterOptions();
+  }, []);
 
   // New useEffect hook to handle navigation state
   useEffect(() => {
@@ -32,20 +53,32 @@ function Searchbar({ onSearch, activeButton }) {
 
   const handleSearch = () => {
     if (activeButton === "Explore") {
-      const filters = Object.values(selectedMenu).filter(
-        (value) =>
-          ![
-            "Room/Category",
-            "Sub Category",
-            "Theme/Genre",
-            "Level",
-            "Country",
-          ].includes(value)
+      // In Explore mode, pass filter object with selected values
+      const filters = {
+        category: selectedMenu.room !== "Room/Category" ? selectedMenu.room : null,
+        subCategory: selectedMenu.subcategory !== "Sub Category" ? selectedMenu.subcategory : null,
+        theme: selectedMenu.theme !== "Theme/Genre" ? selectedMenu.theme : null,
+        level: selectedMenu.level !== "Level" ? selectedMenu.level : null,
+        country: selectedMenu.country !== "Country" ? selectedMenu.country : null,
+        keyword: searchText.trim() || null
+      };
+      
+      // Remove null values to clean up the filter object
+      const cleanFilters = Object.fromEntries(
+        Object.entries(filters).filter(([_, value]) => value !== null && value !== "")
       );
-      const fullSearchQuery = [searchText, ...filters].join(" ").trim();
-      onSearch(fullSearchQuery);
+      
+      onSearch(cleanFilters);
     } else {
-      onSearch(searchText.trim());
+      // In Keyword mode, only search if there's actual text
+      const keyword = searchText.trim();
+      if (keyword) {
+        onSearch({ keyword });
+      } else {
+        // If no keyword, don't search (or show message)
+        console.log("No keyword provided for search");
+        return;
+      }
     }
   };
 
@@ -53,28 +86,23 @@ function Searchbar({ onSearch, activeButton }) {
     if (e.key === "Enter") handleSearch();
   };
 
-  const countryItems = [
-    { name: "Argentina", code: "ar" },
-    { name: "Bolivia", code: "bo" },
-    { name: "Chile", code: "cl" },
-    { name: "Colombia", code: "co" },
-    { name: "Costa Rica", code: "cr" },
-    { name: "Cuba", code: "cu" },
-    { name: "Dominican Republic", code: "do" },
-    { name: "Ecuador", code: "ec" },
-    { name: "El Salvador", code: "sv" },
-    { name: "Equatorial Guinea", code: "gq" },
-    { name: "Guatemala", code: "gt" },
-    { name: "Honduras", code: "hn" },
-    { name: "Mexico", code: "mx" },
-    { name: "Nicaragua", code: "ni" },
-    { name: "Panama", code: "pa" },
-    { name: "Paraguay", code: "py" },
-    { name: "Peru", code: "pe" },
-    { name: "Spain", code: "es" },
-    { name: "Uruguay", code: "uy" },
-    { name: "Venezuela", code: "ve" },
-  ];
+  // Dynamic dropdown options from API
+  const getDropdownItems = (type) => {
+    switch (type) {
+      case 'room':
+        return filterOptions.categories || [];
+      case 'subcategory':
+        return filterOptions.subCategories || [];
+      case 'theme':
+        return filterOptions.themes || [];
+      case 'level':
+        return filterOptions.levels || [];
+      case 'country':
+        return filterOptions.countries || [];
+      default:
+        return [];
+    }
+  };
 
   const renderMenuItem = (menuKey, children = null, isLast = false) => (
     <div className="relative h-full flex items-center group">
@@ -174,9 +202,9 @@ function Searchbar({ onSearch, activeButton }) {
             </div>
             {openMenu === "level" && (
               <div className="absolute left-0 top-12 w-full max-h-60 overflow-auto bg-white shadow-lg rounded-lg z-30 p-4 grid grid-cols-3 gap-3">
-                {["A1", "A2", "B1", "B2", "C1", "C2"].map(level => (
+                {getDropdownItems('level').map((level, index) => (
                   <div
-                    key={level}
+                    key={index}
                     className="w-full text-center py-2 rounded-md hover:bg-gray-100 cursor-pointer"
                     onClick={() => handleSelect("level", level)}
                   >
@@ -196,13 +224,13 @@ function Searchbar({ onSearch, activeButton }) {
             </div>
             {openMenu === "country" && (
               <div className="absolute left-0 top-12 w-full max-h-60 overflow-auto bg-white shadow-lg rounded-lg z-30 p-2">
-                {countryItems.map(c => (
+                {getDropdownItems('country').map((country, index) => (
                   <div
-                    key={c.code}
+                    key={index}
                     className="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer"
-                    onClick={() => handleSelect("country", c.name)}
+                    onClick={() => handleSelect("country", country)}
                   >
-                    {c.name}
+                    {country}
                   </div>
                 ))}
               </div>
@@ -242,25 +270,13 @@ function Searchbar({ onSearch, activeButton }) {
             {renderMenuItem(
               "room",
               <div className="absolute top-20 left-0 w-64 bg-white shadow-lg rounded-xl p-4 z-20">
-                {[{ icon: "Frame 1000012101.svg", label: "Music" },
-                  { icon: "Frame 1000012102.svg", label: "Videos" },
-                  { icon: "Frame 1000012103.svg", label: "Podcast" },
-                  { icon: "Frame 1000012104.svg", label: "Resources/Chapters" },
-                  { icon: "Frame 1000012105.svg", label: "Spanish for corporate" },
-                  { icon: "Frame 1000012106.svg", label: "Spanish for health professionals" },
-                  { icon: "Frame 1000012107.svg", label: "Spanish for IB students" }
-                ].map((item) => (
+                {getDropdownItems('room').map((category, index) => (
                   <div
-                    key={item.label}
+                    key={index}
                     className="flex items-center space-x-2 cursor-pointer px-3 py-2 rounded-md hover:bg-gray-100"
-                    onClick={() => handleSelect("room", item.label)}
+                    onClick={() => handleSelect("room", category)}
                   >
-                    <img
-                      src={`/Searchbar/${item.icon}`}
-                      alt={item.label}
-                      className="w-8 h-8"
-                    />
-                    <span className="text-gray-700 font-medium">{item.label}</span>
+                    <span className="text-gray-700 font-medium">{category}</span>
                   </div>
                 ))}
               </div>
@@ -268,9 +284,9 @@ function Searchbar({ onSearch, activeButton }) {
             {renderMenuItem(
               "subcategory",
               <div className="absolute top-20 left-0 w-64 bg-white shadow-lg rounded-xl p-4 z-20">
-                {["Active learning", "For leisure", "Short movies", "Long movies", "Reels / Shorts"].map((item) => (
+                {getDropdownItems('subcategory').map((item, index) => (
                   <div
-                    key={item}
+                    key={index}
                     className="cursor-pointer hover:bg-gray-100 p-2"
                     onClick={() => handleSelect("subcategory", item)}
                   >
@@ -282,9 +298,9 @@ function Searchbar({ onSearch, activeButton }) {
             {renderMenuItem(
               "theme",
               <div className="absolute top-20 left-0 w-40 bg-white shadow-lg rounded-xl p-4 z-20">
-                {["Type 1", "Type 2", "Type 3", "Type 4"].map((item) => (
+                {getDropdownItems('theme').map((item, index) => (
                   <div
-                    key={item}
+                    key={index}
                     className="cursor-pointer hover:bg-gray-100 p-2"
                     onClick={() => handleSelect("theme", item)}
                   >
@@ -296,9 +312,9 @@ function Searchbar({ onSearch, activeButton }) {
             {renderMenuItem(
               "level",
               <div className="absolute grid-cols-2 gap-3 justify-center grid top-20 left-0 w-[166px] bg-white shadow-lg rounded-xl h-[189px] px-7 py-4 z-20">
-                {["A1", "A2", "B1", "B2", "C1", "C2"].map((level) => (
+                {getDropdownItems('level').map((level, index) => (
                   <img
-                    key={level}
+                    key={index}
                     src={`/Searchbar/${level}.svg`}
                     alt={level}
                     className="w-8 h-8 cursor-pointer"
@@ -310,14 +326,13 @@ function Searchbar({ onSearch, activeButton }) {
             {renderMenuItem(
               "country",
               <div className="absolute top-20 left-0 w-[230px] bg-white shadow-lg rounded-xl p-4 z-20">
-                {countryItems.map((country) => (
+                {getDropdownItems('country').map((country, index) => (
                   <div
-                    key={country.code}
+                    key={index}
                     className="flex items-center space-x-3 cursor-pointer hover:bg-gray-100 rounded-md px-3 py-2"
-                    onClick={() => handleSelect("country", country.name)}
+                    onClick={() => handleSelect("country", country)}
                   >
-                    <span className={`fi fi-${country.code} fis`}></span>
-                    <span className="text-gray-700">{country.name}</span>
+                    <span className="text-gray-700">{country}</span>
                   </div>
                 ))}
               </div>,

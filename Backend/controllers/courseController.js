@@ -21,20 +21,78 @@ export const getCourses = async (req, res) => {
 
         let query = Course.find({ isActive: true }); // Default to active courses for public view
 
-        // Filtering
-        if (req.query.category) {
-            query = query.where('category').equals(req.query.category);
+        // Enhanced filtering support for Explore/Keyword modes
+        const { 
+            category, 
+            subCategory, 
+            theme, 
+            level, 
+            country, 
+            keyword,
+            search, // Legacy support
+            maxPrice 
+        } = req.query;
+
+        // Category filter (maps to Room/Category)
+        if (category && category !== 'Room/Category') {
+            query = query.where('category').equals(category);
         }
-        if (req.query.maxPrice) {
-            query = query.where('price').lte(parseFloat(req.query.maxPrice));
-             // Also consider discountPrice if applicable for filtering
-             // query = query.or([{ price: { $lte: parseFloat(req.query.maxPrice) } }, { discountPrice: { $lte: parseFloat(req.query.maxPrice) } }]);
+        
+        // Sub Category filter (maps to availableLevels or tags)
+        if (subCategory && subCategory !== 'Sub Category') {
+            query = query.where('availableLevels').in([new RegExp(subCategory, 'i')]);
         }
-        if (req.query.search) {
-             query = query.where({ $text: { $search: req.query.search } }); // Requires text index on schema
-            // Or use regex for simpler search:
-            // const searchRegex = new RegExp(req.query.search, 'i');
-            // query = query.where({ $or: [{ title: searchRegex }, { description: searchRegex }] });
+        
+        // Theme filter (maps to category or availableLevels)
+        if (theme && theme !== 'Theme/Genre') {
+            query = query.or([
+                { category: { $regex: theme, $options: 'i' } },
+                { availableLevels: { $in: [new RegExp(theme, 'i')] } }
+            ]);
+        }
+        
+        // Level filter (maps to availableLevels)
+        if (level && level !== 'Level') {
+            query = query.where('availableLevels').in([new RegExp(level, 'i')]);
+        }
+        
+        // Country filter (maps to category or availableLevels)
+        if (country && country !== 'Country') {
+            query = query.or([
+                { category: { $regex: country, $options: 'i' } },
+                { availableLevels: { $in: [new RegExp(country, 'i')] } }
+            ]);
+        }
+        
+        // Keyword search (searches across title, description, category, and availableLevels) - EXACT WORD MATCHING
+        if (keyword && keyword.trim()) {
+            const cleanKeyword = keyword.trim();
+            
+            // Create regex that matches whole words only (not partial matches)
+            // \b ensures word boundaries, so "hand" won't match "handsome" or "shorthand"
+            const exactWordRegex = new RegExp(`\\b${cleanKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+            
+            query = query.or([
+                { title: exactWordRegex },
+                { description: exactWordRegex },
+                { category: exactWordRegex },
+                { availableLevels: { $in: [exactWordRegex] } }
+            ]);
+        }
+        
+        // Legacy search support
+        if (search && search.trim()) {
+            const searchRegex = new RegExp(search.trim(), 'i');
+            query = query.or([
+                { title: searchRegex },
+                { description: searchRegex },
+                { category: searchRegex }
+            ]);
+        }
+        
+        // Price filtering
+        if (maxPrice) {
+            query = query.where('price').lte(parseFloat(maxPrice));
         }
 
 
