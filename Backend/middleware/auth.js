@@ -4,9 +4,7 @@ import { auth } from '../config/firebaseAdmin.js'; // <-- Import auth directly
 
 export async function verifyFirebaseToken(req, res, next) {
   try {
-    // Check if Firebase Admin SDK is initialized
     if (!auth) {
-      console.error('verifyFirebaseToken error: Firebase Admin SDK not initialized.');
       return res.status(503).json({ message: 'Authentication service is unavailable.' });
     }
 
@@ -24,7 +22,6 @@ export async function verifyFirebaseToken(req, res, next) {
 
     const decoded = await auth.verifyIdToken(token);
 
-    // Normalize role and elevate if whitelisted
     const claimsRole = decoded?.role || decoded?.roles || decoded?.customClaims?.role;
     const adminEmails = (process.env.ADMIN_EMAILS || '')
       .split(',')

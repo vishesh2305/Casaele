@@ -43,36 +43,24 @@ const Orders = () => {
         ...(paymentFilter && { paymentStatus: paymentFilter })
       });
 
-      console.log(`[DEBUG] fetchOrders: Fetching with URL: /api/orders?${params.toString()}`);
+      // --- FIX #1: Use the full Base URL for robustness ---
+      const url = `${import.meta.env.VITE_API_BASE_URL}/api/orders?${params.toString()}`;
+
+      console.log(`[DEBUG] fetchOrders: Fetching with URL: ${url}`);
       console.log(`[DEBUG] fetchOrders: Auth Token: ${token ? 'Token Found' : 'NO TOKEN!'}`);
 
-      const response = await fetch(`/api/orders?${params}`, {
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache'
         }
       });
 
       console.log(`[DEBUG] fetchOrders: Response status: ${response.status}`);
-
-      // --- DEBUG PATCH START ---
-      // Read the raw text before parsing it, to capture backend errors or HTML
-      const rawText = await response.text();
-      console.log('[DEBUG] fetchOrders: Raw response body:', rawText);
-
-      let data;
-      try {
-        data = JSON.parse(rawText);
-      } catch (parseError) {
-        console.error('[DEBUG] fetchOrders: ❌ Response is NOT valid JSON. Probably HTML or an auth error.');
-        setOrders([]);
-        setLoading(false);
-        return;
-      }
-      // --- DEBUG PATCH END ---
-
+      
+      // --- FIX #2: Correctly handle JSON response ---
       if (response.ok) {
+        // If response is OK, parse it as JSON
+        const data = await response.json();
         console.log('[DEBUG] fetchOrders: Received data (parsed):', data);
 
         if (data && data.orders) {
@@ -95,13 +83,18 @@ const Orders = () => {
         setStats({ completed, pending, failed });
 
       } else {
+        // If response is NOT OK, get the error message as text
+        const errorBody = await response.text();
         console.error(`[DEBUG] fetchOrders: ❌ FAILED! Response not OK (${response.status}).`);
-        console.error('[DEBUG] fetchOrders: Error body:', data);
+        console.error('[DEBUG] fetchOrders: Error body:', errorBody);
         setOrders([]);
+        // Optionally, throw an error to be caught by the catch block
+        throw new Error(`Server responded with ${response.status}: ${errorBody}`);
       }
+      // --- END OF FIXES ---
 
     } catch (error) {
-      console.error('[DEBUG] fetchOrders: 💥 CATCH BLOCK ERROR (frontend JS error):', error);
+      console.error('[DEBUG] fetchOrders: 💥 CATCH BLOCK ERROR (e.g., network error or thrown error):', error);
       setOrders([]);
     } finally {
       setLoading(false);
@@ -124,7 +117,7 @@ const Orders = () => {
   const handleStatusChange = async (orderId, newStatus) => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`/api/orders/${orderId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -142,7 +135,7 @@ const Orders = () => {
     if (window.confirm('Are you sure you want to delete this order?')) {
       try {
         const token = localStorage.getItem('authToken');
-        const response = await fetch(`/api/orders/${orderId}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/orders/${orderId}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${token}` }
         });

@@ -269,6 +269,7 @@ export const getOrders = async (req, res) => {
     };
 
     console.log(`[DEBUG] Sending response with ${orders.length} orders.`);
+    console.log(`[DEBUG] getOrders: Sending response:`, JSON.stringify(responseJson, null, 2));
     res.status(200).json(responseJson);
   } catch (error) {
     console.error('--- [DEBUG] ERROR IN getOrders CATCH BLOCK ---');
