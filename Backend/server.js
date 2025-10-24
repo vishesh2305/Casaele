@@ -8,7 +8,6 @@ import connectDB from './config/db.js'
 import healthRoutes from './routes/healthRoutes.js'
 import userRoutes from './routes/userRoutes.js'
 import { notFound, errorHandler } from './middleware/errorMiddleware.js'
-import dummyApi from './routes/dummyApi.js'
 import productRoutes from './routes/productRoutes.js'
 import materialCrudRoutes from './routes/materialRoutes.js'
 import materialsRoutes from './routes/materials.js'
@@ -191,7 +190,6 @@ app.use('/api', (req, res, next) => {
 // ✅ Routes
 app.use('/', healthRoutes)
 app.use('/api/users', userRoutes)
-app.use('/api', dummyApi)
 app.use('/api/products', productRoutes)
 app.use('/api/materials', materialCrudRoutes)
 app.use('/api/debug', debugRoutes)

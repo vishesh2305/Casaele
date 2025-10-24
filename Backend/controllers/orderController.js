@@ -33,7 +33,7 @@ const handleValidationError = (error, res) => {
 };
 
 /* -------------------------------------------------------------------------- */
-/*                               CREATE ORDER                                 */
+/* CREATE ORDER                                 */
 /* -------------------------------------------------------------------------- */
 // @desc    Create Razorpay Order
 // @route   POST /api/orders
@@ -79,7 +79,7 @@ export const createOrder = async (req, res) => {
 };
 
 /* -------------------------------------------------------------------------- */
-/*                             VERIFY PAYMENT                                 */
+/* VERIFY PAYMENT                                 */
 /* -------------------------------------------------------------------------- */
 // @desc    Verify Razorpay Payment and Create Order in DB
 // @route   POST /api/orders/verify
@@ -187,6 +187,7 @@ export const verifyPayment = async (req, res) => {
         isPaid: true,
         paidAt: new Date(),
         razorpayOrderId: razorpay_order_id,
+        orderStatus: 'Processing', // <-- THIS IS THE ADDED LINE
       });
 
       const savedOrder = await newOrder.save();
@@ -210,7 +211,7 @@ export const verifyPayment = async (req, res) => {
 };
 
 /* -------------------------------------------------------------------------- */
-/*                                GET ORDERS                                  */
+/* GET ORDERS                                  */
 /* -------------------------------------------------------------------------- */
 // @desc    Get all orders (admin) or user orders
 // @route   GET /api/orders
@@ -282,7 +283,7 @@ export const getOrders = async (req, res) => {
 };
 
 /* -------------------------------------------------------------------------- */
-/*                             GET ORDER BY ID                                */
+/* GET ORDER BY ID                                */
 /* -------------------------------------------------------------------------- */
 // @desc    Get single order by ID
 // @route   GET /api/orders/:id
@@ -305,7 +306,7 @@ export const getOrderById = async (req, res) => {
 };
 
 /* -------------------------------------------------------------------------- */
-/*                              UPDATE ORDER                                  */
+/* UPDATE ORDER                                  */
 /* -------------------------------------------------------------------------- */
 // @desc    Update order status
 // @route   PUT /api/orders/:id
@@ -354,7 +355,7 @@ export const updateOrder = async (req, res) => {
 };
 
 /* -------------------------------------------------------------------------- */
-/*                              DELETE ORDER                                  */
+/* DELETE ORDER                                  */
 /* -------------------------------------------------------------------------- */
 // @desc    Delete an order
 // @route   DELETE /api/orders/:id
@@ -369,7 +370,7 @@ export const deleteOrder = async (req, res) => {
       console.log("Backend: Order deleted:", req.params.id);
       res.json({ success: true, message: 'Order removed' });
     } else {
-      res.status(404).json({ success: false, message: 'Order not found' });
+      res.status(4404).json({ success: false, message: 'Order not found' });
     }
   } catch (error) {
     console.error('Backend: Error deleting order:', error);

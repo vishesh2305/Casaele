@@ -17,7 +17,7 @@ const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('Processing'); // <-- THIS IS THE CHANGED LINE
   const [paymentFilter, setPaymentFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -31,7 +31,6 @@ const Orders = () => {
   // =====================================================================
   const fetchOrders = async () => {
     setLoading(true);
-    console.log('--- [DEBUG] fetchOrders: STARTING FETCH ---');
 
     try {
       const token = localStorage.getItem('authToken');
@@ -46,8 +45,6 @@ const Orders = () => {
       // --- FIX #1: Use the full Base URL for robustness ---
       const url = `${import.meta.env.VITE_API_BASE_URL}/api/orders?${params.toString()}`;
 
-      console.log(`[DEBUG] fetchOrders: Fetching with URL: ${url}`);
-      console.log(`[DEBUG] fetchOrders: Auth Token: ${token ? 'Token Found' : 'NO TOKEN!'}`);
 
       const response = await fetch(url, {
         headers: {
@@ -55,13 +52,11 @@ const Orders = () => {
         }
       });
 
-      console.log(`[DEBUG] fetchOrders: Response status: ${response.status}`);
       
       // --- FIX #2: Correctly handle JSON response ---
       if (response.ok) {
         // If response is OK, parse it as JSON
         const data = await response.json();
-        console.log('[DEBUG] fetchOrders: Received data (parsed):', data);
 
         if (data && data.orders) {
           console.log(`[DEBUG] fetchOrders: ✅ SUCCESS! Found ${data.orders.length} orders.`);
