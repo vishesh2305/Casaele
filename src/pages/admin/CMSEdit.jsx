@@ -2,20 +2,66 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { apiGet, apiSend } from '../../utils/api'
 import { Editor } from '@tinymce/tinymce-react'
+import { storage } from '../../firebase'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 
 export default function CMSEdit() {
   const { id } = useParams()
   const navigate = useNavigate()
   const isNew = !id || id === 'new'
 
-  const [form, setForm] = useState({ title: '', slug: '', content: '' })
+  const [form, setForm] = useState({ title: '', slug: '', content: '', imageUrl: '' })
   const [saving, setSaving] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
 
   useEffect(() => {
     if (!isNew && id) {
       apiGet(`/api/cms/${id}`).then(setForm).catch(() => {})
     }
   }, [id, isNew])
+
+  // Handle image upload to Firebase Storage
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    // Check file size (limit to 5MB)
+    const maxSize = 5 * 1024 * 1024 // 5MB in bytes
+    if (file.size > maxSize) {
+      alert(`File size too large. Please select a file smaller than 5MB. Current file size: ${(file.size / 1024 / 1024).toFixed(2)}MB`)
+      e.target.value = '' // Clear the input
+      return
+    }
+
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file (JPG, PNG, GIF, etc.)')
+      e.target.value = '' // Clear the input
+      return
+    }
+
+    setUploadingImage(true)
+    try {
+      // Create a unique filename
+      const timestamp = Date.now()
+      const filename = `cms-images/${timestamp}-${file.name}`
+      
+      // Upload to Firebase Storage
+      const storageRef = ref(storage, filename)
+      const snapshot = await uploadBytes(storageRef, file)
+      const downloadURL = await getDownloadURL(snapshot.ref)
+      
+      // Update form with the new image URL
+      setForm({ ...form, imageUrl: downloadURL })
+      
+      console.log('Image uploaded successfully:', downloadURL)
+    } catch (error) {
+      console.error('Error uploading image:', error)
+      alert('Failed to upload image. Please try again.')
+    } finally {
+      setUploadingImage(false)
+    }
+  }
 
   async function save() {
     setSaving(true)
@@ -60,6 +106,49 @@ export default function CMSEdit() {
           />
         </label>
 
+        {/* Image Upload */}
+        <label className="block">
+          <span className="text-sm font-medium text-gray-700">Page Image (Optional)</span>
+          <div className="mt-2 space-y-3">
+            {/* Current Image Preview */}
+            {form.imageUrl && (
+              <div className="border border-gray-200 rounded-lg p-4">
+                <p className="text-sm text-gray-600 mb-2">Current Image:</p>
+                <img 
+                  src={form.imageUrl} 
+                  alt="Current page image" 
+                  className="max-w-xs max-h-48 object-contain rounded-md border border-gray-200"
+                />
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, imageUrl: '' })}
+                  className="mt-2 text-sm text-red-600 hover:text-red-800"
+                >
+                  Remove Image
+                </button>
+              </div>
+            )}
+            
+            {/* File Upload Input */}
+            <div className="flex items-center gap-3">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={uploadingImage}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer transition disabled:opacity-50"
+              />
+              {uploadingImage && (
+                <div className="flex items-center gap-2 text-sm text-blue-600">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  Uploading...
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-gray-500">Upload an image for this page (max 5MB, JPG/PNG/GIF)</p>
+          </div>
+        </label>
+
         {/* Content Editor */}
         <label className="block">
           <span className="text-sm font-medium text-gray-700">Content</span>
@@ -91,11 +180,11 @@ export default function CMSEdit() {
           </button>
           <button
             onClick={save}
-            disabled={saving}
+            disabled={saving || uploadingImage}
             className="px-4 py-2 rounded-md bg-red-700 text-white hover:bg-red-800 
                        disabled:opacity-60 transition"
           >
-            {saving ? 'Saving...' : 'Save'}
+            {saving ? 'Saving...' : uploadingImage ? 'Uploading Image...' : 'Save'}
           </button>
         </div>
       </div>
