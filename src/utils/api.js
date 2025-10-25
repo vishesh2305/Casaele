@@ -14,9 +14,29 @@ export async function apiGet(path) {
 
 export async function apiSend(path, method, body) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-  const headers = { 'Content-Type': 'application/json' };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(`${API_BASE}${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  
+  const headers = {};
+  let payload = body;
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  // Check if the body is NOT a FormData instance (i.e., it's a regular JSON payload)
+  if (!(body instanceof FormData)) {
+    // For JSON payloads, set Content-Type and stringify the body
+    headers['Content-Type'] = 'application/json';
+    payload = body ? JSON.stringify(body) : undefined;
+  } 
+  // If it is FormData (for file uploads), the browser automatically sets the correct 
+  // 'Content-Type: multipart/form-data' header with the necessary boundary.
+  
+  const res = await fetch(`${API_BASE}${path}`, { 
+    method, 
+    headers, 
+    body: payload 
+  });
+  
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     throw new Error(`Request failed ${res.status}: ${text || res.statusText}`);

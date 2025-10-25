@@ -33,6 +33,7 @@ import postRoutes from './routes/postRoutes.js';
 import pickRoutes from './routes/pickRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
 
 dotenv.config()
 
@@ -212,6 +213,7 @@ app.use('/api/admins', adminRoutes)
 app.use('/api/posts', postRoutes);
 app.use('/api/picks', pickRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // ✅ Error Handlers
 app.use(notFound)

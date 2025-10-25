@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { apiGet, apiSend } from '../../utils/api'
 import { Editor } from '@tinymce/tinymce-react'
-import { storage } from '../../firebase'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+// Removed Firebase imports to switch to backend/Cloudinary upload flow
 
 export default function CMSEdit() {
   const { id } = useParams()
@@ -20,7 +19,7 @@ export default function CMSEdit() {
     }
   }, [id, isNew])
 
-  // Handle image upload to Firebase Storage
+  // Handle image upload to Backend/Cloudinary
   const handleImageUpload = async (e) => {
     const file = e.target.files[0]
     if (!file) return
@@ -41,15 +40,19 @@ export default function CMSEdit() {
     }
 
     setUploadingImage(true)
+    
+    // Create FormData object to package the file for the backend
+    const formData = new FormData()
+    // 'image' must match the key expected by Multer on the backend (upload.single('image'))
+    formData.append('image', file) 
+    
     try {
-      // Create a unique filename
-      const timestamp = Date.now()
-      const filename = `cms-images/${timestamp}-${file.name}`
+      // Send the file via the modified apiSend utility
+      // The backend endpoint is /api/upload/cms-image
+      const response = await apiSend('/api/upload/cms-image', 'POST', formData) 
       
-      // Upload to Firebase Storage
-      const storageRef = ref(storage, filename)
-      const snapshot = await uploadBytes(storageRef, file)
-      const downloadURL = await getDownloadURL(snapshot.ref)
+      // Assuming the backend returns the Cloudinary URL in response.url
+      const downloadURL = response.url
       
       // Update form with the new image URL
       setForm({ ...form, imageUrl: downloadURL })
@@ -57,9 +60,10 @@ export default function CMSEdit() {
       console.log('Image uploaded successfully:', downloadURL)
     } catch (error) {
       console.error('Error uploading image:', error)
-      alert('Failed to upload image. Please try again.')
+      alert('Failed to upload image. Please check console for details.')
     } finally {
       setUploadingImage(false)
+      e.target.value = '' // Clear the input after upload attempt
     }
   }
 

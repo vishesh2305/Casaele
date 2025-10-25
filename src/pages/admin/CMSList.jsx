@@ -1,7 +1,9 @@
+// src/pages/admin/CMSList.jsx
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiGet, apiSend } from '../../utils/api';
-import { FiFileText, FiEdit, FiRefreshCw, FiHome, FiShield, FiBriefcase, FiMail, FiLayout, FiShoppingBag } from 'react-icons/fi';
+import { FiFileText, FiEdit, FiRefreshCw, FiHome, FiShield, FiBriefcase, FiMail, FiLayout, FiShoppingBag, FiMap, FiFeather } from 'react-icons/fi'; // Added FiMap, FiFeather for icons
 
 // A structured list of all editable content blocks on the website.
 const editablePages = [
@@ -27,7 +29,11 @@ const editablePages = [
   { group: 'Contact Page', name: 'Contact Intro', slug: 'contact-intro-p', description: 'The introductory paragraph on the Contact Us page.' },
 
   // Standalone Pages
-  { group: 'Standalone Pages', name: 'About Us Page', slug: 'about-us', description: 'The main content section for the /about page.' },
+  { group: 'Standalone Pages', name: 'About Us Page (Text/Main Image)', slug: 'about-us', description: 'The main content and mascot image for the /about page.' },
+  // *** NEW ENTRIES FOR ABOUT PAGE IMAGES ***
+  { group: 'Standalone Pages', name: 'About - Where Ele Is Now Image', slug: 'about-where-ele-map-image', description: 'The map image on the "Where is Ele Now?" section. Set an Image URL only.' },
+  { group: 'Standalone Pages', name: 'About - Garden Section (Image/Text)', slug: 'about-garden-section-content', description: 'The content block and image for the "El jardín de ideas" section.' },
+  // *** END NEW ENTRIES ***
   { group: 'Standalone Pages', name: 'Privacy Policy Page', slug: 'privacy-policy', description: 'Full content for the /privacy-policy page.' },
   { group: 'Standalone Pages', name: 'Terms & Conditions Page', slug: 'terms-and-conditions', description: 'Full content for the /terms-and-conditions page.' },
 ];
@@ -58,7 +64,7 @@ export default function CMSList() {
         const newEntry = await apiSend('/api/cms', 'POST', {
           title: page.name,
           slug: page.slug,
-          content: `<p>Start editing the ${page.name} content here.</p>`,
+          content: `<h1 class="text-3xl font-bold">Default Title</h1><p>Start editing the ${page.name} content here.</p>`,
         });
         navigate(`/admin/cms/edit/${newEntry._id}`);
       } catch (error) {
@@ -78,6 +84,7 @@ export default function CMSList() {
     if (groupName.includes('School')) return <FiBriefcase className="w-5 h-5" />;
     if (groupName.includes('Shop')) return <FiShoppingBag className="w-5 h-5" />;
     if (groupName.includes('Contact')) return <FiMail className="w-5 h-5" />;
+    if (groupName.includes('Standalone')) return <FiLayout className="w-5 h-5" />;
     return <FiFileText className="w-5 h-5" />;
   }
 
