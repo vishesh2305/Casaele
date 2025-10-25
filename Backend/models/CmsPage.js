@@ -15,6 +15,7 @@ const cmsPageSchema = new mongoose.Schema(
     title: { type: String, required: true, trim: true },
     slug: { type: String, required: true, unique: true, trim: true },
     content: { type: String, default: '' },
+    imageUrl: { type: String, default: '' }, // Optional field for storing uploaded image URL
   },
   { timestamps: true }
 )

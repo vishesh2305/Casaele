@@ -2,9 +2,9 @@ import CmsPage from '../models/CmsPage.js'
 
 export async function createCmsPage(req, res) {
   try {
-    const { title, slug, content } = req.body
+    const { title, slug, content, imageUrl } = req.body
     if (!title) return res.status(400).json({ message: 'title is required' })
-    const page = await CmsPage.create({ title, slug, content })
+    const page = await CmsPage.create({ title, slug, content, imageUrl })
     res.status(201).json(page)
   } catch (err) {
     res.status(500).json({ message: 'Failed to create CMS page' })
@@ -42,10 +42,10 @@ export async function getCmsPageBySlug(req, res) {
 
 export async function updateCmsPage(req, res) {
   try {
-    const { title, slug, content } = req.body
+    const { title, slug, content, imageUrl } = req.body
     const updated = await CmsPage.findByIdAndUpdate(
       req.params.id,
-      { title, slug, content },
+      { title, slug, content, imageUrl },
       { new: true, runValidators: true }
     )
     if (!updated) return res.status(404).json({ message: 'Not found' })
