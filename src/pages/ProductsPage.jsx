@@ -25,6 +25,9 @@ function ProductsPage() {
   // Sort State
   const [sortOrder, setSortOrder] = useState('newest'); 
   
+  // Level State
+  const [selectedLevels, setSelectedLevels] = useState([]); // Array of selected levels
+  
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 9;
@@ -96,7 +99,15 @@ function ProductsPage() {
         return price >= minPrice && price <= maxPrice;
     });
 
-    // 3. Sort
+    // 3. Filter by Level
+    if (selectedLevels.length > 0) {
+        tempFiltered = tempFiltered.filter(product => {
+            const productLevels = product.availableLevels || [];
+            return selectedLevels.some(level => productLevels.includes(level));
+        });
+    }
+
+    // 4. Sort
     tempFiltered.sort((a, b) => {
       const priceA = Number(a.discountPrice || a.price || 0);
       const priceB = Number(b.discountPrice || b.price || 0);
@@ -115,7 +126,7 @@ function ProductsPage() {
     setFilteredProducts(tempFiltered); // Update the state with fully filtered list
     setCurrentPage(1); // Reset page whenever filters change
 
-  }, [selectedCategory, minPrice, maxPrice, sortOrder, allProducts]); // Rerun when filters or base data change
+  }, [selectedCategory, minPrice, maxPrice, sortOrder, selectedLevels, allProducts]); // Rerun when filters or base data change
 
 
   // --- Pagination Logic ---
@@ -133,6 +144,7 @@ function ProductsPage() {
   const handleMinPriceChange = (price) => setMinPrice(price);
   const handleMaxPriceChange = (price) => setMaxPrice(price);
   const handleSortChange = (sortValue) => setSortOrder(sortValue);
+  const handleLevelChange = (levels) => setSelectedLevels(levels);
   const handlePageChange = (page) => {
     setCurrentPage(page);
     window.scrollTo(0, 0); 
@@ -161,6 +173,10 @@ function ProductsPage() {
               // Sort Props
               sortOrder={sortOrder}
               setSortOrder={handleSortChange} 
+              // Level Props
+              selectedLevels={selectedLevels}
+              setSelectedLevels={handleLevelChange}
+              allProducts={allProducts}
               itemType="product" 
             />
           )}

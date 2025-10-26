@@ -17,6 +17,10 @@ function Filters({
     // Sort
     sortOrder,          
     setSortOrder,       
+    // Level
+    selectedLevels = [],
+    setSelectedLevels,
+    allProducts = [],
     itemType            
 }) {
   
@@ -45,6 +49,37 @@ function Filters({
     }
   };
 
+  // Extract available levels from all products
+  const availableLevels = React.useMemo(() => {
+    const levelSet = new Set();
+    allProducts.forEach(product => {
+      if (product.availableLevels && Array.isArray(product.availableLevels)) {
+        product.availableLevels.forEach(level => levelSet.add(level));
+      }
+    });
+    return Array.from(levelSet).sort();
+  }, [allProducts]);
+
+  // Count products for each level
+  const levelCounts = React.useMemo(() => {
+    const counts = {};
+    availableLevels.forEach(level => {
+      counts[level] = allProducts.filter(product => 
+        product.availableLevels && product.availableLevels.includes(level)
+      ).length;
+    });
+    return counts;
+  }, [availableLevels, allProducts]);
+
+  // Handle level toggle
+  const handleLevelToggle = (level) => {
+    setSelectedLevels(prev => 
+      prev.includes(level) 
+        ? prev.filter(l => l !== level)
+        : [...prev, level]
+    );
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
@@ -59,6 +94,7 @@ function Filters({
              setMinPrice(actualMinPrice); // Reset min price
              setMaxPrice(actualMaxPrice); // Reset max price
              setSortOrder('newest'); 
+             setSelectedLevels([]); // Clear selected levels
             }} 
            className="text-sm text-red-600 hover:text-red-800"
          >
@@ -94,6 +130,38 @@ function Filters({
             })}
         </ul>
       </div>
+
+      {/* Level Filter */}
+      {availableLevels.length > 0 && (
+        <div className="mb-6">
+          <h4 className="text-base font-medium text-gray-800 mb-3">Level</h4>
+          <div className="flex flex-wrap gap-2">
+            {availableLevels.map((level) => (
+              <label
+                key={level}
+                className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors cursor-pointer text-sm ${
+                  selectedLevels.includes(level)
+                    ? 'bg-red-50 text-red-700 border-red-300'
+                    : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedLevels.includes(level)}
+                  onChange={() => handleLevelToggle(level)}
+                  className="rounded accent-red-600 focus:ring-red-500"
+                />
+                <span className="font-medium">{level}</span>
+                <span className={`text-xs px-1.5 py-0.5 rounded ${
+                  selectedLevels.includes(level) ? 'bg-red-200' : 'bg-gray-200 text-gray-500'
+                }`}>
+                  {levelCounts[level] || 0}
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* --- Combined Price Range Filter --- */}
       <div className="mb-6">
