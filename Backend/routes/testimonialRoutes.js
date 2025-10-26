@@ -7,8 +7,19 @@ const router = express.Router()
 // Public: submit testimonial
 router.post('/add', async (req, res) => {
   try {
-    let { name, message, rating } = req.body
-    if (!name || !message) return res.status(400).json({ message: 'name and message are required' })
+    let { name, email, country, profession, level, message, rating, videoUrl } = req.body
+    
+    // Validate required fields
+    if (!name || !email || !country || !profession || !level || !message) {
+      return res.status(400).json({ message: 'name, email, country, profession, level, and message are required' })
+    }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: 'Please provide a valid email address' })
+    }
+    
     // Normalize rating to decimal (0-5), optional
     if (rating !== undefined && rating !== null && rating !== '') {
       const parsed = Number(rating)
@@ -19,7 +30,18 @@ router.post('/add', async (req, res) => {
     } else {
       rating = undefined
     }
-    const created = await Testimonial.create({ name, message, rating, status: 'pending' })
+    
+    const created = await Testimonial.create({ 
+      name: name.trim(), 
+      email: email.trim(), 
+      country: country.trim(), 
+      profession: profession.trim(), 
+      level: level.trim(), 
+      message: message.trim(), 
+      rating, 
+      videoUrl: videoUrl || '',
+      status: 'pending' 
+    })
     res.status(201).json(created)
   } catch (e) {
     console.error('Testimonial submit error:', e?.message || e)
