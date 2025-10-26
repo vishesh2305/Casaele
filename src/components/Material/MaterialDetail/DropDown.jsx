@@ -1,20 +1,24 @@
+// src/components/Material/MaterialDetail/DropDown.jsx
 import React, { useState } from "react";
 import { FaAngleDown } from "react-icons/fa";
 
-function DropDown({ exercises = [] }) {
+// Accept 'title' as a prop
+function DropDown({ title = "Ejercicios", exercises = [] }) { // Default title if prop not passed
   const [active, setActive] = useState(null);
 
   return (
     <div className="w-full">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
+        {/* Use the title prop here */}
         <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 sm:mb-0">
-          Ejercicios
+          {title} {/* <-- Display the title */}
         </h1>
       </div>
 
       <div className="space-y-4">
         {exercises.map((item, i) => (
-          <div key={item._id || i} className="border border-gray-200 rounded-xl p-4 sm:p-5">
+          // ... rest of the dropdown item mapping ...
+             <div key={item._id || i} className="border border-gray-200 rounded-xl p-4 sm:p-5">
             <div
               className="flex items-center justify-between cursor-pointer gap-4"
               onClick={() => setActive(active === i ? null : i)}

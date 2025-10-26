@@ -23,6 +23,7 @@ export default function Materials() {
     imageSource: '', 
     embedIds: [],
     bannerImageUrl: '', // This will be the Banner Image
+    dropdownTitle: '', // <-- ADDED: For custom dropdown title
   })
   
   const [embeds, setEmbeds] = useState([])
@@ -141,8 +142,8 @@ export default function Materials() {
         tags: form.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
         imageSource: form.imageSource || (imgMode === 'pinterest' ? 'pinterest' : 'local'),
         embeds: materialEmbeds.filter(embed => embed.title.trim() && embed.embedCode.trim()),
-        // *** CHANGED: Removed displayType from payload ***
         bannerImageUrl: form.bannerImageUrl, 
+        dropdownTitle: form.dropdownTitle || 'Ejercicios', // <-- ADDED: Send to backend, default if empty
       };
 
       const saved = editing
@@ -176,17 +177,21 @@ export default function Materials() {
 
   const openEditModal = (material) => {
     setEditing(material);
-    // *** CHANGED: Removed displayType from form loading ***
     setForm({
       title: material.title || '',
       author: material.author || '',
       description: material.description || '',
       category: material.category || '',
+      subCategory: material.subCategory || '', // <-- Make sure all fields are loaded
+      theme: material.theme || '',
+      level: material.level || '',
+      country: material.country || '',
       fileUrl: material.fileUrl || '',
       tags: Array.isArray(material.tags) ? material.tags.join(', ') : '',
       embedIds: material.embedIds?.map(e => e._id) || [],
       imageSource: material.imageSource || '',
       bannerImageUrl: material.bannerImageUrl || '', 
+      dropdownTitle: material.dropdownTitle || '', // <-- ADDED: Load existing title
     });
     
     const existingEmbeds = material.embedIds?.map(embed => ({
@@ -226,11 +231,16 @@ export default function Materials() {
                 author: '',
                 description: '', 
                 category: '', 
+                subCategory: '', // <-- Reset
+                theme: '', // <-- Reset
+                level: '', // <-- Reset
+                country: '', // <-- Reset
                 fileUrl: '', 
                 tags: '',
                 embedIds: [],
                 imageSource: '',
                 bannerImageUrl: '', // Reset
+                dropdownTitle: '', // <-- ADDED: Reset
               }); 
               setImgMode('local');
               setPinUrl('');
@@ -355,8 +365,6 @@ export default function Materials() {
               ))}
 
               
-              {/* *** CHANGED: Removed Display Type radio buttons *** */}
-
               {/* Multiple Embeds Section (No change) */}
               <div className="block">
                 <div className="flex items-center justify-between mb-2">
@@ -373,7 +381,48 @@ export default function Materials() {
                   <div className="space-y-3 max-h-64 overflow-y-auto border rounded-lg p-3">
                     {materialEmbeds.map((embed, index) => (
                       <div key={index} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                        {/* ... embed inputs ... (no change here) */}
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-semibold text-gray-600">Embed #{index + 1}</span>
+                            <button
+                            type="button"
+                            onClick={() => removeMaterialEmbed(index)}
+                            className="text-xs text-red-600 hover:text-red-800"
+                            >
+                            Remove
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label className="block">
+                            <span className="text-sm text-gray-700">Title</span>
+                            <input
+                                value={embed.title}
+                                onChange={e => updateMaterialEmbed(index, 'title', e.target.value)}
+                                placeholder="e.g., Exercise 1"
+                                className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-red-500 focus:ring-2 focus:ring-red-400/50 transition duration-150 px-3 py-2 text-sm placeholder-gray-400"
+                            />
+                            </label>
+                            <label className="block">
+                            <span className="text-sm text-gray-700">Type</span>
+                            <select
+                                value={embed.type}
+                                onChange={e => updateMaterialEmbed(index, 'type', e.target.value)}
+                                className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-red-500 focus:ring-2 focus:ring-red-400/50 transition duration-150 px-3 py-2 text-sm"
+                            >
+                                <option value="AI">AI Content</option>
+                                <option value="H5P">H5P Content</option>
+                            </select>
+                            </label>
+                        </div>
+                        <label className="block mt-3">
+                            <span className="text-sm text-gray-700">Embed Code</span>
+                            <textarea
+                            value={embed.embedCode}
+                            onChange={e => updateMaterialEmbed(index, 'embedCode', e.target.value)}
+                            placeholder="Paste your <iframe> or <script> code here"
+                            rows="4"
+                            className="mt-1 w-full rounded-lg border border-gray-300 bg-white focus:border-red-500 focus:ring-2 focus:ring-red-400/50 transition duration-150 px-3 py-2 text-sm placeholder-gray-400"
+                            />
+                        </label>
                       </div>
                     ))}
                   </div>
@@ -382,18 +431,51 @@ export default function Materials() {
 
               {/* Legacy Embed Selection (No change) */}
               <div className="block">
-                {/* ... legacy embed selection ... (no change here) */}
+                <span className="text-sm text-gray-700">Select Legacy Embeds (from /embeds)</span>
+                 <div className="mt-2 grid grid-cols-3 gap-2 border rounded-lg p-2 max-h-40 overflow-y-auto">
+                  {embeds.map(embed => (
+                    <label key={embed._id} className="flex items-center gap-2 p-2 rounded-md hover:bg-gray-100">
+                      <input 
+                        type="checkbox"
+                        checked={form.embedIds.includes(embed._id)}
+                        onChange={() => handleEmbedSelection(embed._id)}
+                        className="rounded text-red-600 focus:ring-red-500"
+                      />
+                      <span className="text-sm text-gray-800">{embed.title}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
+
+              {/* ADDED: Dropdown Title Input */}
+              <label className="block">
+                <span className="text-sm text-gray-700">Dropdown Title</span>
+                <input
+                  value={form.dropdownTitle}
+                  onChange={e => setForm({ ...form, dropdownTitle: e.target.value })}
+                  placeholder="e.g., Ejercicios, Activities"
+                  className="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 focus:border-red-500 focus:ring-2 focus:ring-red-400/50 transition duration-150 px-3 py-2 text-sm placeholder-gray-400 hover:border-gray-400"
+                />
+                <p className="text-xs text-gray-500 mt-1">Title for the exercises dropdown on the detail page. Defaults to 'Ejercicios' if left empty.</p>
+              </label>
 
               {/* Card Image Section */}
               <div className="block">
                 <span className="text-sm text-gray-700">Card Image Source</span>
-                {/* ... imgMode radio buttons ... (no change here) */}
+                <div className="mt-2 flex gap-4">
+                  <label className="flex items-center gap-2">
+                    <input type="radio" name="imgMode" value="local" checked={imgMode === 'local'} onChange={() => setImgMode('local')} className="text-red-600"/>
+                    <span className="text-sm">Upload</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input type="radio" name="imgMode" value="pinterest" checked={imgMode === 'pinterest'} onChange={() => setImgMode('pinterest')} className="text-red-600"/>
+                    <span className="text-sm">Pinterest URL</span>
+                  </label>
+                </div>
               </div>
 
               {imgMode === 'local' ? (
                 <label className="block">
-                  {/* *** CHANGED: Relabeled *** */}
                   <span className="text-sm text-gray-700">Card Image Upload (for material list)</span>
                   <input
                     type="file"
@@ -406,7 +488,16 @@ export default function Materials() {
                 </label>
               ) : (
                 <div className="grid gap-2">
-                  {/* ... pinterest inputs ... (no change here) */}
+                  <label className="block">
+                    <span className="text-sm text-gray-700">Pinterest URL</span>
+                    <input
+                      value={pinUrl}
+                      onChange={e => setPinUrl(e.target.value)}
+                      placeholder="https://www.pinterest.com/pin/..."
+                      className="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 focus:border-red-500 focus:ring-2 focus:ring-red-400/50 transition duration-150 px-3 py-2 text-sm placeholder-gray-400 hover:border-gray-400"
+                    />
+                  </label>
+                  {/* ... (Pinterest preview logic, etc.) ... */}
                 </div>
               )}
 
@@ -419,7 +510,6 @@ export default function Materials() {
 
               {/* Banner Image Uploader */}
               <label className="block">
-                {/* *** CHANGED: Relabeled *** */}
                 <span className="text-sm text-gray-700">Banner Image Upload (for detail page)</span>
                 <input
                   type="file"

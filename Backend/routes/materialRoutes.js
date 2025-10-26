@@ -23,7 +23,8 @@ router.post('/', verifyFirebaseToken, async (req, res) => {
       tags, 
       embedIds, 
       embeds, 
-      bannerImageUrl 
+      bannerImageUrl,
+      dropdownTitle
     } = req.body
     if (!title) return res.status(400).json({ message: 'title is required' })
     
@@ -61,7 +62,8 @@ router.post('/', verifyFirebaseToken, async (req, res) => {
       imageSource: imageSource || '',
       tags: Array.isArray(tags) ? tags : [],
       embedIds: finalEmbedIds,
-      bannerImageUrl: bannerImageUrl || ''
+      bannerImageUrl: bannerImageUrl || '',
+      dropdownTitle: dropdownTitle || 'Ejercicios'
     }).then(doc => doc.populate('embedIds'))
     
     res.status(201).json(material)
@@ -268,7 +270,8 @@ router.put('/:id', verifyFirebaseToken, async (req, res) => {
       description, 
       tags, 
       imageSource, 
-      bannerImageUrl 
+      bannerImageUrl,
+      dropdownTitle
     } = req.body
     
     let finalEmbedIds = embedIds || []
@@ -306,7 +309,8 @@ router.put('/:id', verifyFirebaseToken, async (req, res) => {
       description,
       tags: Array.isArray(tags) ? tags : [],
       imageSource,
-      bannerImageUrl
+      bannerImageUrl,
+      dropdownTitle
     }
 
     const updated = await Material.findByIdAndUpdate(

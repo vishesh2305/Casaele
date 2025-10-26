@@ -16,6 +16,7 @@ const materialSchema = new mongoose.Schema({
   theme: { type: String, default: '' }, // Theme/Genre (e.g., "Business", "Travel", "Academic")
   level: { type: String, default: '' }, // Level (e.g., "A1", "A2", "B1", "B2", "C1", "C2")
   country: { type: String, default: '' }, // Country (e.g., "Spain", "Mexico", "Argentina")
+  dropdownTitle: { type: String, default: 'Ejercicios' },
   
   // *** EXISTING FIELDS ***
   fileUrl: { type: String, default: '' }, // Main image/file for the card
