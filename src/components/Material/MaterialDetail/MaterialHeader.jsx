@@ -45,6 +45,13 @@ function MaterialHeader({ material }) {
              </p>
           )}
 
+          {/* Author */}
+          {material.author && (
+            <p className="text-gray-500 text-sm">
+              Author: {material.author}
+            </p>
+          )}
+
           <p className="text-gray-800 text-lg font-semibold">
             {material.description}
           </p>

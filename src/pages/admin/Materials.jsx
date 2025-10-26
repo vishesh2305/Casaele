@@ -11,6 +11,7 @@ export default function Materials() {
   // Form state with all categorization fields
   const [form, setForm] = useState({ 
     title: '', 
+    author: '',
     description: '', 
     category: '', // Room/Category
     subCategory: '', // Sub Category
@@ -178,6 +179,7 @@ export default function Materials() {
     // *** CHANGED: Removed displayType from form loading ***
     setForm({
       title: material.title || '',
+      author: material.author || '',
       description: material.description || '',
       category: material.category || '',
       fileUrl: material.fileUrl || '',
@@ -221,6 +223,7 @@ export default function Materials() {
               setEditing(null); 
               setForm({ 
                 title: '', 
+                author: '',
                 description: '', 
                 category: '', 
                 fileUrl: '', 
@@ -273,6 +276,7 @@ export default function Materials() {
           <thead className="bg-gray-50 text-gray-600 text-sm">
             <tr>
               <th className="px-4 py-3">Title</th>
+              <th className="px-4 py-3">Author</th>
               <th className="px-4 py-3">Category</th>
               <th className="px-4 py-3">Sub Category</th>
               <th className="px-4 py-3">Theme</th>
@@ -299,6 +303,7 @@ export default function Materials() {
             ) : (Array.isArray(items) ? items : []).map((m) => (
               <tr key={m._id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium text-gray-800">{m.title}</td>
+                <td className="px-4 py-3 text-gray-700">{m.author || '-'}</td>
                 <td className="px-4 py-3 text-gray-700">{m.category || '-'}</td>
                 <td className="px-4 py-3 text-gray-700">{m.subCategory || '-'}</td>
                 <td className="px-4 py-3 text-gray-700">{m.theme || '-'}</td>
@@ -329,6 +334,7 @@ export default function Materials() {
             <div className="grid grid-cols-1 gap-3">
               {[
                 { label: 'Title', key: 'title' },
+                { label: 'Author', key: 'author', placeholder: 'e.g., Dr. Maria Rodriguez, CasaDeELE Team' },
                 { label: 'Short Description (for cards)', key: 'description' },
                 { label: 'Room/Category', key: 'category', placeholder: 'e.g., Grammar, Vocabulary, Conversation' },
                 { label: 'Sub Category', key: 'subCategory', placeholder: 'e.g., Verbs, Nouns, Adjectives' },

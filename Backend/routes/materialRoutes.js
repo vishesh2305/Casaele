@@ -11,6 +11,7 @@ router.post('/', verifyFirebaseToken, async (req, res) => {
     // Extract all fields including new categorization fields
     const { 
       title, 
+      author,
       category, 
       subCategory, 
       theme, 
@@ -49,6 +50,7 @@ router.post('/', verifyFirebaseToken, async (req, res) => {
     
     const material = await Material.create({ 
       title, 
+      author: author || '',
       description: description || '',
       category: category || '', 
       subCategory: subCategory || '',
@@ -254,6 +256,7 @@ router.put('/:id', verifyFirebaseToken, async (req, res) => {
     // Extract all fields including new categorization fields
     const { 
       title, 
+      author,
       category, 
       subCategory, 
       theme, 
@@ -292,6 +295,7 @@ router.put('/:id', verifyFirebaseToken, async (req, res) => {
     // updateData object with all categorization fields
     const updateData = { 
       title, 
+      author: author || '',
       category, 
       subCategory,
       theme,

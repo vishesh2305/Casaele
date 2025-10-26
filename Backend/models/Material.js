@@ -7,6 +7,9 @@ const materialSchema = new mongoose.Schema({
   content: { type: String, default: '' },
   tags: [{ type: String }],
   
+  // *** AUTHOR FIELD ***
+  author: { type: String, default: '' }, // Author name for the material
+  
   // *** ADMIN-DEFINED CATEGORIZATION FIELDS ***
   category: { type: String, default: '' }, // Room/Category (e.g., "Grammar", "Vocabulary", "Conversation")
   subCategory: { type: String, default: '' }, // Sub Category (e.g., "Verbs", "Nouns", "Adjectives")
