@@ -48,12 +48,12 @@ function MaterialDetail() {
 
     return (
         <div className="w-full bg-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className=" max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <section>
                     <MaterialHeader material={material} />
                 </section>
-                <section className="py-12 sm:py-16"><DropDown exercises={material.embedIds || []} /></section>
-                <section className="py-12 sm:py-16">
+                <section className="py-12  sm:py-16"><DropDown exercises={material.embedIds || []} /></section>
+                <section className="py-12  sm:py-16">
                     <RelatedMaterials materials={related} onCardClick={setMaterial} />
                 </section>
                 <section className="py-12 sm:py-16">

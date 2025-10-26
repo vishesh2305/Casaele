@@ -57,30 +57,7 @@ function MaterialHeader({ material }) {
           </p>
 
           {/* Multiple H5P/AI Embedded Content (No change) */}
-          {material.embedIds && material.embedIds.length > 0 && (
-            <div className="mt-8 space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Interactive Content</h3>
-              {material.embedIds.map((embed, index) => (
-                <div key={embed._id || index} className="rounded-lg border border-gray-200 p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <img 
-                      src={embed.type === 'AI' ? "/Material/cartoon1.svg" : "/Material/cartoon2.svg"} 
-                      alt={`${embed.type} icon`} 
-                      className="w-6 h-6 rounded-full object-cover" 
-                    />
-                    <h4 className="text-base font-medium text-gray-800">{embed.title}</h4>
-                    <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
-                      {embed.type}
-                    </span>
-                  </div>
-                  <div 
-                    className="embed-container w-full min-h-[300px]" 
-                    dangerouslySetInnerHTML={{ __html: embed.embedCode }} 
-                  />
-                </div>
-              ))}
-            </div>
-          )}
+
         </div>
 
         <div className="w-full border-4 border-dashed border-red-300 p-6 rounded-2xl bg-white self-start">

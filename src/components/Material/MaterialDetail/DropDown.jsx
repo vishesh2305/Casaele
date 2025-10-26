@@ -10,9 +10,6 @@ function DropDown({ exercises = [] }) {
         <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 sm:mb-0">
           Ejercicios
         </h1>
-        <button className="bg-black text-white px-5 py-2 rounded-lg font-semibold text-sm hover:bg-gray-800 transition-colors">
-          + ABRIR TODO
-        </button>
       </div>
 
       <div className="space-y-4">
