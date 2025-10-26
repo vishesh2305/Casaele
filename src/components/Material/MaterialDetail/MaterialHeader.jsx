@@ -76,7 +76,7 @@ function MaterialHeader({ material }) {
           )}
         </div>
 
-        <div className="w-full h-full border-4 border-dashed border-red-300 p-6 rounded-2xl bg-white">
+        <div className="w-full border-4 border-dashed border-red-300 p-6 rounded-2xl bg-white self-start">
           <h3 className="text-xl font-bold text-gray-800 mb-3">
             Ideas y sugerencias para la clase
           </h3>
