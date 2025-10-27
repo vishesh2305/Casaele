@@ -5,7 +5,6 @@ import HowWeHelp from "../components/Home/HowWeHelp";
 import Testimonials from "../components/Home/Testimonials";
 import TestimonialForm from "../components/Home/TestimonialForm";
 import ExperienceSpanish from "../components/Home/ExperienceSpanish";
-import SuggestionsSection from "../components/Home/SuggestionsSection";
 
 function Home() {
   return (
@@ -17,7 +16,6 @@ function Home() {
       <ExperienceSpanish />
       <Testimonials />
       <TestimonialForm />
-      <SuggestionsSection />
     </>
   );
 }

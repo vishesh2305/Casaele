@@ -2,7 +2,6 @@ import React from "react";
 import CmsContent from "../components/CmsContent";
 import WhereEle from "../components/About/WhereEle";
 import GardenSection from "../components/About/GardenSection";
-import SuggestionsSection from "../components/Home/SuggestionsSection";
 
 export default function About() {
   return (
@@ -30,7 +29,6 @@ export default function About() {
 
       <WhereEle />
       <GardenSection />
-      <SuggestionsSection />
     </>
   );
 }

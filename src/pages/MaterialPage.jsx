@@ -158,7 +158,7 @@ function MaterialPage() {
             </div>
           ) : (
             <div className="text-center flex justify-center py-12 -mt-11">
-              <img src="/Material/errrorpage.svg" alt="No results" />
+              <img src="/Material/errrorpage.jpg" alt="No results" />
             </div>
           )}
         </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Link } from 'react-router-dom'; // 1. Import Link
 import { apiGet, apiSend } from "../utils/api";
 import { FiTrash2 } from 'react-icons/fi';
+import SuggestionsSection from "../components/Home/SuggestionsSection";
 
 function Garden() {
   const [posts, setPosts] = useState([]);
@@ -48,7 +49,7 @@ function Garden() {
 
 return (
     <div className="font-sans text-gray-800">
-      <section className="flex justify-center items-center w-full bg-white py-16">
+      {/* <section className="border border-black flex justify-center items-center w-full bg-white py-16">
         <div className="w-full max-w-6xl text-center px-6">
           <h1 className="text-4xl font-bold text-black py-16">
             El jardín de ideas
@@ -91,7 +92,9 @@ return (
             </div>
           )}
         </div>
-      </section>
+      </section> */}
+            <SuggestionsSection />
+
     </div>
   );
 }

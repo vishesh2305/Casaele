@@ -26,7 +26,7 @@ function ExperienceSpanish() {
         {/* Right Image */}
         <div className="w-full md:w-1/3 flex justify-center">
           <img
-            src="/Home/a-side-by-side-comic-style-illustration--on-the-le 1.svg"
+            src="/Home/a-side-by-side-comic-style-illustration--on-the-le 1.jpg"
             alt="Spanish journey"
             className="w-full max-w-[434px] h-auto rounded-md object-contain"
           />
