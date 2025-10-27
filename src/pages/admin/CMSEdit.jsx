@@ -86,16 +86,42 @@ export default function CMSEdit() {
   }
 
   async function save() {
+    // Validate required fields
+    if (!form.title.trim()) {
+      alert('Please enter a title')
+      setSaving(false)
+      return
+    }
+
+    if (!form.slug.trim()) {
+      alert('Please enter a slug. The slug is required for CMS pages.')
+      setSaving(false)
+      return
+    }
+
     setSaving(true)
     // ++ Ensure 'secondSectionEmbed' sends null if empty string ++
     const payload = { 
-      ...form, 
+      title: form.title.trim(),
+      slug: form.slug.trim(),
+      content: form.content || '',
+      imageUrl: form.imageUrl || '',
       secondSectionEmbed: form.secondSectionEmbed || null 
     };
+    
+    console.log('💾 Saving CMS page with payload:', payload);
+    console.log('🔗 Embed ID being saved:', payload.secondSectionEmbed);
+    
     try {
       if (isNew) await apiSend('/api/cms', 'POST', payload)
       else await apiSend(`/api/cms/${id}`, 'PUT', payload)
+      
+      console.log('✅ CMS page saved successfully!');
+      alert('CMS page saved successfully!')
       navigate('/admin/cms')
+    } catch (error) {
+      console.error('❌ Error saving CMS page:', error)
+      alert(`Failed to save: ${error.message}`)
     } finally {
       setSaving(false)
     }
@@ -108,28 +134,43 @@ export default function CMSEdit() {
         
         {/* Title */}
         <label className="block">
-          <span className="text-sm font-medium text-gray-700">Title</span>
+          <span className="text-sm font-medium text-gray-700">Title <span className="text-red-600">*</span></span>
           <input
             value={form.title}
-            onChange={e => setForm({ ...form, title: e.target.value })}
+            onChange={e => {
+              setForm({ ...form, title: e.target.value })
+              // Auto-generate slug if slug is empty
+              if (!form.slug) {
+                const autoSlug = e.target.value
+                  .toLowerCase()
+                  .replace(/[^a-z0-9\s-]/g, '')
+                  .replace(/\s+/g, '-')
+                  .replace(/-+/g, '-')
+                  .trim()
+                setForm(prev => ({ ...prev, title: e.target.value, slug: autoSlug }))
+              }
+            }}
             placeholder="Enter page title..."
             className="mt-2 w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 
                        text-gray-800 focus:outline-none focus:border-red-600 focus:ring-2 
                        focus:ring-red-100 transition-all duration-200"
+            required
           />
         </label>
 
         {/* Slug */}
         <label className="block">
-          <span className="text-sm font-medium text-gray-700">Slug (optional)</span>
+          <span className="text-sm font-medium text-gray-700">Slug <span className="text-red-600">*</span></span>
           <input
             value={form.slug || ''}
             onChange={e => setForm({ ...form, slug: e.target.value })}
-            placeholder="e.g. about-us"
+            placeholder="e.g. about-us (required for URL routing)"
             className="mt-2 w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 
                        text-gray-800 focus:outline-none focus:border-red-600 focus:ring-2 
                        focus:ring-red-100 transition-all duration-200"
+            required
           />
+          <p className="text-xs text-gray-500 mt-1">URL-friendly identifier for this page. This is required.</p>
         </label>
 
         {/* Image Upload (for first image) */}

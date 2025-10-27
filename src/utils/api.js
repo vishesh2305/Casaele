@@ -4,12 +4,22 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://amrit-project-lms
 export async function apiGet(path) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  const res = await fetch(`${API_BASE}${path}`, { headers });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`Request failed ${res.status}: ${text || res.statusText}`);
+  
+  try {
+    const res = await fetch(`${API_BASE}${path}`, { headers });
+    if (!res.ok) {
+      // Silently handle 404s for CMS content (fallback content will be used)
+      if (res.status === 404 && path.includes('/api/cms/slug/')) {
+        throw new Error('NOT_FOUND');
+      }
+      const text = await res.text().catch(() => '');
+      throw new Error(`Request failed ${res.status}: ${text || res.statusText}`);
+    }
+    return res.json();
+  } catch (error) {
+    // Re-throw the error for handling by the component
+    throw error;
   }
-  return res.json();
 }
 
 export async function apiSend(path, method, body) {

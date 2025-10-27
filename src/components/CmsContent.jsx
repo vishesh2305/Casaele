@@ -28,9 +28,14 @@ function CmsContent({ slug, as: Component = 'div', prose = true, className = '',
         const result = await apiGet(`/api/cms/slug/${slug}`);
         setData(result);
       } catch (err) {
-        // If content is not found (404), we'll just use the fallback children.
-        // We don't need to show an error on the public page.
-        setData(null);
+        // Silently handle 404s (NOT_FOUND errors) - fallback content will be used
+        if (err.message === 'NOT_FOUND') {
+          setData(null);
+        } else {
+          // Only log unexpected errors
+          console.error(`Error fetching CMS content for ${slug}:`, err.message);
+          setData(null);
+        }
       } finally {
         setLoading(false);
       }
