@@ -15,10 +15,16 @@ export async function createEmbed(req, res) {
 
 export async function getEmbeds(req, res) {
   try {
-    const items = await Embed.find().sort({ createdAt: -1 })
-    return res.json(items)
+    const { pageContext } = req.query; // Get context from query param
+    const filter = {};
+    if (pageContext) {
+      filter.pageContext = pageContext;
+    }
+    // Add pageContext to find query
+    const items = await Embed.find(filter).sort({ createdAt: -1 });
+    return res.json(items);
   } catch (err) {
-    return res.status(500).json({ message: err?.message || 'Server Error' })
+    return res.status(500).json({ message: err?.message || 'Server Error' });
   }
 }
 

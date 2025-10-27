@@ -15,7 +15,15 @@ const cmsPageSchema = new mongoose.Schema(
     title: { type: String, required: true, trim: true },
     slug: { type: String, required: true, unique: true, trim: true },
     content: { type: String, default: '' },
-    imageUrl: { type: String, default: '' }, // Optional field for storing uploaded image URL
+    imageUrl: { type: String, default: '' }, // For the first image
+    
+    // ++ ADD THIS FIELD ++
+    // Reference to an Embed document for the second section
+    secondSectionEmbed: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'Embed', // Must match the Embed model name
+      default: null 
+    }, 
   },
   { timestamps: true }
 )
@@ -26,5 +34,3 @@ cmsPageSchema.pre('validate', function (next) {
 })
 
 export default mongoose.models.CmsPage || mongoose.model('CmsPage', cmsPageSchema)
-
-

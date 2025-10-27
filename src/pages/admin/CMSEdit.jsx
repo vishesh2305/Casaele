@@ -2,74 +2,96 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { apiGet, apiSend } from '../../utils/api'
 import { Editor } from '@tinymce/tinymce-react'
-// Removed Firebase imports to switch to backend/Cloudinary upload flow
 
 export default function CMSEdit() {
   const { id } = useParams()
   const navigate = useNavigate()
   const isNew = !id || id === 'new'
 
-  const [form, setForm] = useState({ title: '', slug: '', content: '', imageUrl: '' })
+  // ++ ADD 'secondSectionEmbed' to state ++
+  const [form, setForm] = useState({ title: '', slug: '', content: '', imageUrl: '', secondSectionEmbed: null })
   const [saving, setSaving] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
+  // ++ ADD state for embeds list ++
+  const [availableEmbeds, setAvailableEmbeds] = useState([]);
 
   useEffect(() => {
+    // ++ Fetch embeds when the component mounts ++
+    apiGet('/api/embeds')
+      .then(setAvailableEmbeds)
+      .catch(() => console.error("Failed to load embeds list"));
+
     if (!isNew && id) {
-      apiGet(`/api/cms/${id}`).then(setForm).catch(() => {})
+      apiGet(`/api/cms/${id}`).then(data => {
+        // ++ Ensure the embed ID is loaded correctly ++
+        setForm({
+          title: data.title || '',
+          slug: data.slug || '',
+          content: data.content || '',
+          imageUrl: data.imageUrl || '',
+          // Store just the ID from the populated object, or null
+          secondSectionEmbed: data.secondSectionEmbed?._id || null 
+        });
+      }).catch(() => {});
     }
   }, [id, isNew])
 
   // Handle image upload to Backend/Cloudinary
   const handleImageUpload = async (e) => {
-    const file = e.target.files[0]
-    if (!file) return
+    // ... (this function remains the same)
+     const file = e.target.files[0]
+        if (!file) return
 
-    // Check file size (limit to 5MB)
-    const maxSize = 5 * 1024 * 1024 // 5MB in bytes
-    if (file.size > maxSize) {
-      alert(`File size too large. Please select a file smaller than 5MB. Current file size: ${(file.size / 1024 / 1024).toFixed(2)}MB`)
-      e.target.value = '' // Clear the input
-      return
-    }
+        // Check file size (limit to 5MB)
+        const maxSize = 5 * 1024 * 1024 // 5MB in bytes
+        if (file.size > maxSize) {
+          alert(`File size too large. Please select a file smaller than 5MB. Current file size: ${(file.size / 1024 / 1024).toFixed(2)}MB`)
+          e.target.value = '' // Clear the input
+          return
+        }
 
-    // Check file type
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file (JPG, PNG, GIF, etc.)')
-      e.target.value = '' // Clear the input
-      return
-    }
+        // Check file type
+        if (!file.type.startsWith('image/')) {
+          alert('Please select an image file (JPG, PNG, GIF, etc.)')
+          e.target.value = '' // Clear the input
+          return
+        }
 
-    setUploadingImage(true)
-    
-    // Create FormData object to package the file for the backend
-    const formData = new FormData()
-    // 'image' must match the key expected by Multer on the backend (upload.single('image'))
-    formData.append('image', file) 
-    
-    try {
-      // Send the file via the modified apiSend utility
-      // The backend endpoint is /api/upload/cms-image
-      const response = await apiSend('/api/upload/cms-image', 'POST', formData) 
-      
-      // Assuming the backend returns the Cloudinary URL in response.url
-      const downloadURL = response.url
-      
-      // Update form with the new image URL
-      setForm({ ...form, imageUrl: downloadURL })
-      
-      console.log('Image uploaded successfully:', downloadURL)
-    } catch (error) {
-      console.error('Error uploading image:', error)
-      alert('Failed to upload image. Please check console for details.')
-    } finally {
-      setUploadingImage(false)
-      e.target.value = '' // Clear the input after upload attempt
-    }
+        setUploadingImage(true)
+        
+        // Create FormData object to package the file for the backend
+        const formData = new FormData()
+        // 'image' must match the key expected by Multer on the backend (upload.single('image'))
+        formData.append('image', file) 
+        
+        try {
+          // Send the file via the modified apiSend utility
+          // The backend endpoint is /api/upload/cms-image
+          const response = await apiSend('/api/upload/cms-image', 'POST', formData) 
+          
+          // Assuming the backend returns the Cloudinary URL in response.url
+          const downloadURL = response.url
+          
+          // Update form with the new image URL
+          setForm({ ...form, imageUrl: downloadURL })
+          
+          console.log('Image uploaded successfully:', downloadURL)
+        } catch (error) {
+          console.error('Error uploading image:', error)
+          alert('Failed to upload image. Please check console for details.')
+        } finally {
+          setUploadingImage(false)
+          e.target.value = '' // Clear the input after upload attempt
+        }
   }
 
   async function save() {
     setSaving(true)
-    const payload = form
+    // ++ Ensure 'secondSectionEmbed' sends null if empty string ++
+    const payload = { 
+      ...form, 
+      secondSectionEmbed: form.secondSectionEmbed || null 
+    };
     try {
       if (isNew) await apiSend('/api/cms', 'POST', payload)
       else await apiSend(`/api/cms/${id}`, 'PUT', payload)
@@ -110,9 +132,9 @@ export default function CMSEdit() {
           />
         </label>
 
-        {/* Image Upload */}
+        {/* Image Upload (for first image) */}
         <label className="block">
-          <span className="text-sm font-medium text-gray-700">Page Image (Optional)</span>
+          <span className="text-sm font-medium text-gray-700">Page Image (Optional - First Section)</span>
           <div className="mt-2 space-y-3">
             {/* Current Image Preview */}
             {form.imageUrl && (
@@ -151,6 +173,26 @@ export default function CMSEdit() {
             </div>
             <p className="text-xs text-gray-500">Upload an image for this page (max 5MB, JPG/PNG/GIF)</p>
           </div>
+        </label>
+
+        {/* ++ ADD EMBED SELECTION DROPDOWN ++ */}
+        <label className="block">
+          <span className="text-sm font-medium text-gray-700">Second Section Embed (AI/H5P)</span>
+          <select
+            value={form.secondSectionEmbed || ''} // Use empty string for the "None" option
+            onChange={e => setForm({ ...form, secondSectionEmbed: e.target.value || null })}
+            className="mt-2 w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 
+                       text-gray-800 focus:outline-none focus:border-red-600 focus:ring-2 
+                       focus:ring-red-100 transition-all duration-200"
+          >
+            <option value="">-- None (Show only text/image) --</option>
+            {availableEmbeds.map(embed => (
+              <option key={embed._id} value={embed._id}>
+                {embed.title} ({embed.type})
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-500 mt-1">Select an AI or H5P embed to display in the first section. This will replace the "Page Image" above.</p>
         </label>
 
         {/* Content Editor */}
