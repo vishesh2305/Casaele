@@ -48,7 +48,11 @@ import CoursesPage from './pages/CoursesPage';
 import ProductsPage from './pages/ProductsPage'; 
 import ProductDetail from './pages/ProductDetail';
 import OrderSuccess from './pages/OrderSuccess'; // Import the new page
-
+import Garden from "./pages/GardenOfIdeas";
+import GardenPostsList from "./pages/admin/GardenPostsList";
+import ContentUpload from "./pages/admin/ContentUpload";
+import GardenContent from "./pages/admin/GardenContent";
+import PostDetail from "./pages/PostDetail";
 // Guard Stripe initialization: require Vite-prefixed key and avoid crashing if missing
 const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 const stripePromise = publishableKey ? loadStripe(publishableKey) : null;
@@ -88,7 +92,10 @@ function AppWrapper() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+        <Route path="/garden-of-ideas" element={<Garden />} />
+        <Route path="/garden-of-ideas/:id" element={<PostDetail />} />
         <Route path="/page/:slug" element={<CmsPage />} />
+
 
         {/* Admin routes */}
         <Route path="/admin/login" element={<AdminLogin />} />
@@ -118,6 +125,10 @@ function AppWrapper() {
             <Route path="pinterest" element={<PinterestManager />} />
             <Route path="picks" element={<PicksManager />} />
             <Route path="*" element={<AdminNotFound />} />
+            <Route path="garden-suggestions" element={<GardenContent />} />
+            <Route path="garden-posts" element={<GardenPostsList />} />  
+            <Route path="garden-upload" element={<ContentUpload />} />    
+            <Route path="garden-edit/:id" element={<ContentUpload />} />
           </Route>
         </Route>
       </Routes>

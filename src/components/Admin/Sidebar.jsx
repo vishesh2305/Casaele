@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { FiHome, FiUsers, FiUpload, FiBox, FiShoppingCart, FiSettings, FiFileText, FiTag, FiMail, FiGlobe, FiImage, FiLayers, FiCpu, FiShare2, FiStar } from 'react-icons/fi'
+import { FiHome, FiUsers, FiUpload, FiBox, FiShoppingCart, FiSettings, FiFileText, FiTag, FiMail, FiGlobe, FiImage, FiLayers, FiCpu, FiShare2, FiStar,FiGitBranch } from 'react-icons/fi'
 
 const links = [
   { to: '/admin', label: 'Dashboard', icon: FiHome },
@@ -13,6 +13,8 @@ const links = [
   { to: '/admin/banners', label: 'Banners', icon: FiImage },
   { to: '/admin/cms', label: 'CMS Pages', icon: FiFileText },
   { to: '/admin/forms', label: 'Forms', icon: FiMail },
+  { to: '/admin/garden-suggestions', label: 'Garden Suggestions', icon: FiMail }, 
+  { to: '/admin/garden-posts', label: 'Garden Posts', icon: FiGitBranch },
   { to: '/admin/coupons', label: 'Coupons', icon: FiTag },
   { to: '/admin/manage-admins', label: 'Manage Admins', icon: FiUsers },
   { to: '/admin/subscribers', label: 'Subscribers', icon: FiMail },

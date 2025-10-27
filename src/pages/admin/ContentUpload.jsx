@@ -46,7 +46,7 @@ export default function ContentUpload() {
       const method = isEditing ? "PUT" : "POST";
       await apiSend(url, method, payload);
       setMsg(`Content ${isEditing ? "updated" : "submitted"} successfully!`);
-      setTimeout(() => navigate("/admin/garden-content"), 1500);
+      setTimeout(() => navigate("/admin/garden-posts"), 1500);
     } catch (error) {
       setErr(`Submission failed: ${error.message}`);
     } finally {
@@ -179,7 +179,7 @@ export default function ContentUpload() {
 
         <button
           type="button"
-          onClick={() => navigate("/admin/garden-content")}
+          onClick={() => navigate("/admin/garden-posts")}
           className="px-4 py-2 rounded-md border hover:bg-gray-50"
         >
           Cancel
