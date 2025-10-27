@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiGet, apiSend } from '../../utils/api';
-import { FiFileText, FiEdit, FiRefreshCw, FiHome, FiShield, FiBriefcase, FiMail, FiLayout, FiShoppingBag, FiMap, FiFeather } from 'react-icons/fi'; // Added FiMap, FiFeather for icons
+import { FiFileText, FiEdit, FiRefreshCw, FiHome, FiShield, FiBriefcase, FiMail, FiLayout, FiShoppingBag, FiMap, FiFeather, FiBookOpen } from 'react-icons/fi'; // <-- Added FiBookOpen for Material icon
 
 // A structured list of all editable content blocks on the website.
 const editablePages = [
@@ -27,6 +27,23 @@ const editablePages = [
 
   // Contact Page
   { group: 'Contact Page', name: 'Contact Intro', slug: 'contact-intro-p', description: 'The introductory paragraph on the Contact Us page.' },
+
+  // --- NEW ENTRIES FOR MATERIAL PAGE ---
+  {
+    group: 'Material Page',
+    name: 'Material Sidebar Title',
+    slug: 'material-sidebar-title',
+    description: 'The title in the sidebar box on the material detail page.',
+    editorType: "text" // Use plain text editor
+  },
+  {
+    group: 'Material Page',
+    name: 'Material Sidebar Content',
+    slug: 'material-sidebar-content',
+    description: 'The content in the sidebar box on the material detail page.',
+    editorType: "rich" // Use rich text editor
+  },
+  // --- END NEW ENTRIES ---
 
   // Standalone Pages
   { group: 'Standalone Pages', name: 'About Us Page (Text/Main Image)', slug: 'about-us', description: 'The main content and mascot image for the /about page.' },
@@ -58,7 +75,8 @@ export default function CMSList() {
   const handleEditClick = async (page) => {
     const existingEntry = cmsEntries.find(entry => entry.slug === page.slug);
     if (existingEntry) {
-      navigate(`/admin/cms/edit/${existingEntry._id}`);
+      // Pass editorType to the edit page via state
+      navigate(`/admin/cms/edit/${existingEntry._id}`, { state: { editorType: page.editorType } });
     } else {
       try {
         const newEntry = await apiSend('/api/cms', 'POST', {
@@ -66,7 +84,8 @@ export default function CMSList() {
           slug: page.slug,
           content: `<h1 class="text-3xl font-bold">Default Title</h1><p>Start editing the ${page.name} content here.</p>`,
         });
-        navigate(`/admin/cms/edit/${newEntry._id}`);
+        // Pass editorType to the edit page via state
+        navigate(`/admin/cms/edit/${newEntry._id}`, { state: { editorType: page.editorType } });
       } catch (error) {
         alert("Could not create the page for editing. Please try again.");
       }
@@ -85,6 +104,7 @@ export default function CMSList() {
     if (groupName.includes('Shop')) return <FiShoppingBag className="w-5 h-5" />;
     if (groupName.includes('Contact')) return <FiMail className="w-5 h-5" />;
     if (groupName.includes('Standalone')) return <FiLayout className="w-5 h-5" />;
+    if (groupName.includes('Material')) return <FiBookOpen className="w-5 h-5" />; // <-- Added icon for Material
     return <FiFileText className="w-5 h-5" />;
   }
 
@@ -105,7 +125,7 @@ export default function CMSList() {
         <div className="text-center py-10 text-gray-500">Loading content list...</div>
       ) : (
         <div className="space-y-8">
-          {Object.entries(groupedPages).map(([groupName, pages]) => (
+          {Object.entries(groupedPages).sort(([groupA], [groupB]) => groupA.localeCompare(groupB)).map(([groupName, pages]) => ( // Added sort to keep groups alpha
             <div key={groupName}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-gray-100 p-2 rounded-md text-gray-600">{getGroupIcon(groupName)}</div>
