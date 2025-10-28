@@ -2,11 +2,10 @@ import React from "react";
 
 function WaitlistSection() {
   const cards = [
-    { img: "School/image 8.png", title: "Conversational Group" },
-    { img: "School/image 9.png", title: "1 to 1 corporate batches" },
-    { img: "School/image 10.png", title: "Group corporate batches" },
+    { img: "School/image 8.png", title: "Conversational Group", link: "https://docs.google.com/forms/d/e/1FAIpQLSdlVcX3JEIW0ZIMWvIyanqa3bc3H17ee5gyKhjUkU9MdjM9yg/viewform" },
+    { img: "School/image 9.png", title: "1 to 1 corporate batches", link: "https://docs.google.com/forms/d/e/1FAIpQLSfvcjPs3JxRhQLMIoxdZ1kROgQ8vEUXr7CPXEoMXsaWInUsvw/viewform?usp=sharing&ouid=112274896336544812917" },
+    { img: "School/image 10.png", title: "Group corporate batches", link: "https://docs.google.com/forms/d/e/1FAIpQLSfIGmqGZU7D3mwvOGJxv2QqtBaBw6frYPCZWAg9-CX2pJbFzQ/viewform?usp=sharing&ouid=112274896336544812917" },
   ];
-
   return (
     <div className="text-center bg-[#FDF2F2] py-12">
       <h1 className="text-4xl md:text-5xl font-semibold mb-10 px-4">
@@ -31,9 +30,14 @@ function WaitlistSection() {
               <p className="text-black font-light text-base mb-6 text-left">
                 Ipsum is simply dummy text of the printing and
               </p>
-              <button className="bg-[rgba(173,21,24,1)] text-white py-2 px-6 rounded-lg w-full hover:bg-red-700 transition text-xl mt-auto">
+              <a
+                href={card.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-[rgba(173,21,24,1)] text-white py-2 px-6 rounded-lg w-full hover:bg-red-700 transition text-xl mt-auto text-center"
+              >
                 Join the waitlist!
-              </button>
+              </a>
             </div>
           </div>
         ))}

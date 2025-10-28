@@ -55,7 +55,7 @@ const Footer = () => {
         </div>
 
         {/* Right Side - Explore + Learning + Support */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+        <div className="grid m-auto grid-cols-1 sm:grid-cols-3 gap-8">
           {/* Explore */}
           <div>
             <h3 className="font-bold mb-3">Explore</h3>
@@ -68,17 +68,7 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Learning */}
-          <div>
-            <h3 className="font-bold mb-3">Learning</h3>
-            <ul className="space-y-2">
-              <li>Engineers & IT</li>
-              <li>Teacher Forum</li>
-              <li>IB Spanish</li>
-              <li>Music</li>
-              <li>Movies</li>
-            </ul>
-          </div>
+
 
           {/* Support */}
           <div>
