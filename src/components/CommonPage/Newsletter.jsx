@@ -12,7 +12,7 @@ const Newsletter = () => {
   const [submitting, setSubmitting] = useState(false);
 
   return (
-    <section className="py-20 px-8 bg-[#FDF2F2] text-center">
+    <section id="newsletter" className="py-20 px-8 bg-[#FDF2F2] text-center">
       <div className="max-w-3xl mx-auto">
         <h2 className="text-4xl md:text-4xl font-bold text-gray-800 mb-4">
           Stay Updated with Ele’s Newsletters

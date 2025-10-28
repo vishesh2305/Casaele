@@ -48,7 +48,7 @@ const Footer = () => {
               <i className="fab fa-pinterest"></i>
             </a>
             {/* Spotify added */}
-            <a href="https://open.spotify.com/user/spotify_username_here" target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-400 hover:bg-red-600 hover:text-white transition">
+            <a href="https://open.spotify.com/show/1mFJ1S3vUJ8ekIMwkNhdy4?si=5fe4e841eded4695" target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-full border border-gray-400 hover:bg-red-600 hover:text-white transition">
               <i className="fab fa-spotify"></i>
             </a>
           </div>
@@ -60,11 +60,11 @@ const Footer = () => {
           <div>
             <h3 className="font-bold mb-3">Explore</h3>
             <ul className="space-y-2">
-              <li>All Rooms</li>
-              <li><a href="/material">Courses</a></li>
+              <li><a href="/material">All Rooms</a></li>
+              <li><a href="/courses">Courses</a></li>
               <li><a href="/about">About Ele</a></li>
-              <li><a href="/shop">Shop</a></li>
-              <li>Newsletter</li>
+              <li><a href="/products">Shop</a></li>
+              <li><a href="#newsletter">Newsletter</a></li>
             </ul>
           </div>
 
@@ -85,9 +85,9 @@ const Footer = () => {
             <h3 className="font-bold mb-3">Support</h3>
             <ul className="space-y-2">
               <li><Link to="/contact">Contact Us</Link></li>
-              <li><Link to="/page/privacy-policy">Privacy Policy</Link></li>
-              <li>How to use</li>
-              <li><Link to="/page/terms-and-conditions">Terms & Conditions</Link></li>
+              <li><Link to="/privacy-policy">Privacy Policy</Link></li>
+              <li><Link to="/">How to use</Link></li>
+              <li><Link to="/terms-and-conditions">Terms & Conditions</Link></li>
             </ul>
           </div>
         </div>
