@@ -6,7 +6,6 @@ import fs from 'fs';
 import path from 'path';
 
 let app;
-let serviceAccount;
 
 function initialize() {
   // Prevent re-initialization
@@ -15,71 +14,59 @@ function initialize() {
     return;
   }
 
-  // --- STRATEGY 1: Production (Render, Vercel, etc.) ---
-  // Try to load from a single environment variable (pasted JSON)
-  if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-    try {
-      console.log('Initializing Firebase Admin with FIREBASE_SERVICE_ACCOUNT_JSON env var...');
-      serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
-    } catch (e) {
-      console.error('CRITICAL: Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON.', e.message);
-    }
-  }
+  try {
+    let serviceAccount;
 
-  // --- STRATEGY 2: Production (Alternative) ---
-  // Try to load from individual environment variables
-  if (
-    !serviceAccount &&
-    process.env.FIREBASE_PROJECT_ID &&
-    process.env.FIREBASE_PRIVATE_KEY &&
-    process.env.FIREBASE_CLIENT_EMAIL
-  ) {
-    console.log('Initializing Firebase Admin with individual env vars (PROJECT_ID, PRIVATE_KEY, CLIENT_EMAIL)...');
-    serviceAccount = {
-      project_id: process.env.FIREBASE_PROJECT_ID,
-      // Replace "\\n" (escaped newlines) with actual newlines
-      private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-      client_email: process.env.FIREBASE_CLIENT_EMAIL,
-    };
-  }
+    // --- Preferred method: Load from environment variable ---
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+      try {
+        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        console.log("🔹 Loaded Firebase credentials from environment variable.");
+      } catch (parseError) {
+        console.error("❌ Failed to parse FIREBASE_SERVICE_ACCOUNT:", parseError.message);
+        throw parseError;
+      }
+    } 
+    
+    // --- Fallback: Load from local file (useful for local dev) ---
+    else if (process.env.FIREBASE_SERVICE_ACCOUNT_PATH) {
+      const absolutePath = path.resolve(process.cwd(), process.env.FIREBASE_SERVICE_ACCOUNT_PATH);
 
-  // --- STRATEGY 3: Local Development (File Path) ---
-  // Try to load from a file path (your original method)
-  const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
-  if (!serviceAccount && serviceAccountPath) {
-    console.log(`Initializing Firebase Admin with file path: ${serviceAccountPath}`);
-    try {
-      const absolutePath = path.resolve(process.cwd(), serviceAccountPath);
       if (!fs.existsSync(absolutePath)) {
         throw new Error(`Service account file not found at path: ${absolutePath}`);
       }
+
       serviceAccount = JSON.parse(fs.readFileSync(absolutePath, 'utf8'));
-    } catch (e) {
-      console.error('CRITICAL: Failed to initialize Firebase Admin with file path.', e.message);
+      console.log(`🔹 Loaded Firebase credentials from file: ${absolutePath}`);
+    } 
+    
+    // --- If neither is set ---
+    else {
+      throw new Error("No Firebase service account found. Please set FIREBASE_SERVICE_ACCOUNT or FIREBASE_SERVICE_ACCOUNT_PATH.");
     }
-  }
 
-  // --- Final Initialization & Error ---
-  if (!serviceAccount) {
-    console.error('CRITICAL: Firebase Admin credentials are not set.');
-    console.error('Please set FIREBASE_SERVICE_ACCOUNT_JSON (for production) or FIREBASE_SERVICE_ACCOUNT_PATH (for local dev).');
-    process.exit(1);
-  }
-
-  try {
+    // --- Initialize Firebase Admin ---
     app = admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
-    console.log('Firebase Admin SDK initialized successfully.');
+
+    console.log("✅ Firebase Admin SDK initialized successfully.");
+
   } catch (error) {
-    console.error('CRITICAL: Failed to initialize Firebase Admin SDK with credentials.');
-    console.error(error.message);
-    process.exit(1);
+    console.error("🔥 CRITICAL: Failed to initialize Firebase Admin SDK.");
+    console.error("Reason:", error.message);
+    // Optional: don't crash in production, but warn instead
+    if (process.env.NODE_ENV === 'production') {
+      console.error("⚠️ Continuing without Firebase Admin (local DB fallback will be used).");
+    } else {
+      process.exit(1);
+    }
   }
 }
 
-// Run the initialization
+// Initialize once
 initialize();
 
-// Export the auth service, checking if the app was initialized
+// Export safely
 export const auth = app ? admin.auth() : null;
+export default admin;
