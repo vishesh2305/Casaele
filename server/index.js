@@ -1,37 +1,85 @@
+// server/index.js (REPLACE your old file with this)
+
+// 1. Load Environment Variables FIRST
+// This reads your server/.env file
+const dotenv = require('dotenv');
+dotenv.config({ path: './server/.env' });
+
+// 2. Import Modules
+const express = require('express');
 const mongoose = require('mongoose');
-const securityHeaders = require('./config/security');
 const cors = require('cors');
+const securityHeaders = require('./config/security'); //
 
-const categorySchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: true,
-        trim: true,
-        unique: true
-    },
-    description: {
-        type: String,
-        required: true
-    }
-}, { timestamps: true });
+// 3. Initialize App and Set Port
+const app = express();
+const PORT = process.env.PORT || 5000;
+const MONGO_URI = process.env.MONGO_URI;
+const CORS_ORIGIN = process.env.CORS_ORIGIN || "http://localhost:5173";
 
-// CORS configuration
+// 4. Connect to MongoDB
+mongoose.connect(MONGO_URI)
+  .then(() => console.log('MongoDB Connected successfully.'))
+  .catch(err => console.error('MongoDB Connection Error:', err));
+
+// 5. Standard Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// 6. Security & CORS Middleware (THE FIX IS HERE)
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || 'https://your-production-domain.com',
+    origin: CORS_ORIGIN,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
 
-// Security headers middleware
 app.use((req, res, next) => {
-    Object.keys(securityHeaders).forEach(headerKey => {
-        res.setHeader(headerKey, securityHeaders[headerKey]);
-    });
-    res.setHeader('Content-Security-Policy', "default-src 'self'; font-src 'self' https: data:; img-src 'self' https: data:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:;");
+    // *** THIS IS THE FIX for the "Cross-Origin-Opener-Policy" error ***
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+
+    // Other headers, including Content-Security-Policy
+    const csp = [
+      "default-src 'self';",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://js.stripe.com https://checkout.razorpay.com;",
+      "frame-src 'self' https://apis.google.com https://www.google.com https://js.stripe.com https://api.razorpay.com;",
+      "connect-src 'self' " + CORS_ORIGIN + " http://localhost:" + PORT + " https://*.firebaseio.com wss://*.firebaseio.com https://www.googleapis.com;",
+      "font-src 'self' https: data:;",
+      "img-src 'self' https: data:;",
+      "style-src 'self' 'unsafe-inline' https:;"
+    ].join(' ');
+    
+    res.setHeader('Content-Security-Policy', csp);
+    
+    // Other security headers
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    
     next();
 });
 
-// Error handling middleware
+// 7. Import and Use API Routes
+// (Import all your other route files from the *first* batch you sent)
+const categoryRoutes = require('./routes/Category');
+// const userRoutes = require('./routes/userRoutes');
+// const courseRoutes = require('./routes/courseRoutes');
+// const orderRoutes = require('./routes/orderRoutes');
+// ... etc.
+
+// Example route
+app.get('/api', (req, res) => {
+  res.send('API is running...');
+});
+
+// Use the category routes
+app.use('/api/categories', categoryRoutes);
+// (Add all your other routes here)
+// app.use('/api/users', userRoutes);
+// app.use('/api/courses', courseRoutes);
+// app.use('/api/orders', orderRoutes);
+// ... etc.
+
+
+// 8. Global Error Handling Middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({
@@ -41,4 +89,7 @@ app.use((err, req, res, next) => {
     });
 });
 
-module.exports = mongoose.model("Category", categorySchema);
+// 9. Start the Server
+app.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
+});

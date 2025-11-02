@@ -1,11 +1,13 @@
+// pages/admin/Products.jsx
+
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiSearch, FiEdit, FiTrash2, FiImage, FiSave, FiX, FiRefreshCw, FiDollarSign, FiBookOpen } from 'react-icons/fi'; // Added icons
+import { FiPlus, FiSearch, FiEdit, FiTrash2, FiImage, FiSave, FiX, FiRefreshCw, FiDollarSign, FiBookOpen } from 'react-icons/fi'; 
 import { apiGet, apiSend } from '../../utils/api';
-import Spinner from '../../components/Common/Spinner'; // Assuming Spinner path
+import Spinner from '../../components/Common/Spinner'; 
 
 const Products = () => {
   const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]); // Products might use categories
+  const [categories, setCategories] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -16,21 +18,19 @@ const Products = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   
-  // *** ADDED availableLevels to default state ***
   const [formData, setFormData] = useState({
-    name: '', // Products use 'name'
+    name: '',
     description: '',
     category: '',
-    imageUrl: '', // Single image URL for product
+    imageUrl: '', 
     price: 0,
     discountPrice: 0,
-    availableLevels: [], // Initialize as empty array
+    availableLevels: [], 
     productType: 'Digital',
   });
   
-  const [uploading, setUploading] = useState(false); // For single image upload
+  const [uploading, setUploading] = useState(false); 
 
-   // *** Define possible levels for checkboxes ***
   const ALL_POSSIBLE_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
   // --- Fetching ---
@@ -40,12 +40,11 @@ const Products = () => {
       const params = new URLSearchParams({
         page: currentPage,
         limit: 10,
-        ...(searchTerm && { search: searchTerm }), // Assuming API supports search on 'name'
+        ...(searchTerm && { search: searchTerm }), 
         ...(categoryFilter && { category: categoryFilter })
       });
-      // Use the products endpoint
       const data = await apiGet(`/api/products?${params}`); 
-      setProducts(data.products || []); // Adjust based on API response
+      setProducts(data.products || []); 
       setTotalPages(data.totalPages || 1);
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -68,37 +67,60 @@ const Products = () => {
 
   useEffect(() => {
     fetchProducts();
-    fetchCategories(); // Fetch categories if products use them
+    fetchCategories(); 
   }, [currentPage, searchTerm, categoryFilter]);
 
-  // --- Image Upload (Simplified for single image) ---
+  // --- START OF THE FIX ---
+  // This function now performs a simple UNSIGNED upload,
+  // matching the (working) method in PicksManager.jsx.
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
     setUploading(true);
+    console.log('☁️ [DEBUG] Starting unsigned upload...');
+    
     try {
-      const { timestamp, signature } = await apiGet('/api/cloudinary-signature');
+      // 1. Get Cloudinary cloud name from environment
+      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+      const uploadPreset = 'casadeele_materials'; // Your preset
+
+      // 2. Create simple FormData
       const cloudFormData = new FormData();
       cloudFormData.append('file', file);
-      cloudFormData.append('api_key', import.meta.env.VITE_CLOUDINARY_API_KEY);
-      cloudFormData.append('timestamp', timestamp);
-      cloudFormData.append('signature', signature);
-      cloudFormData.append('upload_preset', 'casadeele_materials'); // Use appropriate preset
+      cloudFormData.append('upload_preset', uploadPreset); 
 
-      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { // Use image endpoint
+      console.log(`☁️ [DEBUG] Posting to Cloudinary...`);
+      console.log(`☁️ [DEBUG] Cloud Name: ${cloudName}`);
+      console.log(`☁️ [DEBUG] Upload Preset: ${uploadPreset}`);
+
+      // 3. Post DIRECTLY to Cloudinary
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
         method: 'POST',
         body: cloudFormData,
       });
-      if (!response.ok) throw new Error('Cloudinary upload failed');
+
+      // 4. Check response
+      if (!response.ok) {
+        const errorData = await response.json();
+        // This is where your 400 error was being caught
+        console.error('☁️ [DEBUG] Cloudinary Error Response:', errorData);
+        throw new Error(errorData.error.message || 'Cloudinary upload failed');
+      }
+
+      // 5. Get URL from successful response and set it in the form
       const data = await response.json();
-      setFormData(prev => ({ ...prev, imageUrl: data.secure_url })); // Set single imageUrl
+      console.log('☁️ [DEBUG] Cloudinary Success Response:', data);
+      setFormData(prev => ({ ...prev, imageUrl: data.secure_url }));
+      
     } catch (error) {
+      console.error('☁️ [DEBUG] Full upload error:', error);
       alert(`File upload failed: ${error.message}`);
     } finally {
       setUploading(false);
     }
   };
+  // --- END OF THE FIX ---
 
   // --- Checkbox Handler ---
   const handleLevelCheckboxChange = (level) => {
@@ -117,7 +139,6 @@ const Products = () => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      // Basic validation
       if (!formData.imageUrl) { 
         alert('Please upload an image for the product.');
         setIsSaving(false);
@@ -129,13 +150,11 @@ const Products = () => {
         return;
       }
 
-      // *** ADD availableLevels to payload ***
       const payload = {
         ...formData,
         availableLevels: formData.availableLevels || [] // Ensure array
       };
       
-      // Use products endpoint
       const url = editingProduct ? `/api/products/${editingProduct._id}` : '/api/products'; 
       const method = editingProduct ? 'PUT' : 'POST';
       const savedProduct = await apiSend(url, method, payload);
@@ -144,7 +163,7 @@ const Products = () => {
         setProducts(prev => prev.map(p => (p._id === savedProduct._id ? savedProduct : p)));
       } else {
         setProducts(prev => [savedProduct, ...prev.slice(0, 9)]);
-        if (products.length >= 10) fetchProducts(); // Refresh if page might overflow
+        if (products.length >= 10) fetchProducts(); 
       }
       setShowModal(false);
       setSuccessMsg(editingProduct ? 'Product updated!' : 'Product created!');
@@ -162,13 +181,13 @@ const Products = () => {
   const handleEdit = (product) => {
     setEditingProduct(product);
     setFormData({
-      name: product.name || '', // Use 'name'
+      name: product.name || '', 
       description: product.description || '',
       category: product.category || '',
-      imageUrl: product.imageUrl || '', // Use 'imageUrl'
+      imageUrl: product.imageUrl || '', 
       price: product.price || 0,
       discountPrice: product.discountPrice || 0,
-      availableLevels: product.availableLevels || [], // *** LOAD availableLevels ***
+      availableLevels: product.availableLevels || [], 
       productType: product.productType || 'Digital',
     });
     setShowModal(true);
@@ -178,7 +197,7 @@ const Products = () => {
   const handleDelete = async (productId) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
       try {
-        await apiSend(`/api/products/${productId}`, 'DELETE'); // Use products endpoint
+        await apiSend(`/api/products/${productId}`, 'DELETE'); 
         setProducts(prev => prev.filter(p => p._id !== productId));
         setSuccessMsg('Product deleted successfully');
         setTimeout(() => setSuccessMsg(''), 3000);
@@ -190,7 +209,7 @@ const Products = () => {
   };
 
 
-  // --- JSX ---
+  // --- JSX (No changes below this line) ---
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
@@ -209,7 +228,6 @@ const Products = () => {
              <button
                onClick={() => {
                  setEditingProduct(null);
-                 // *** Reset availableLevels ***
                  setFormData({
                    name: '', description: '', category: '', imageUrl: '', 
                    price: 0, discountPrice: 0, availableLevels: [], productType: 'Digital'
@@ -222,9 +240,6 @@ const Products = () => {
              </button>
            </div>
         </div>
-
-        {/* Filters and Search (Optional for products) */}
-         {/* You can add filters similar to Courses.jsx if needed */}
 
         {/* Products Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -239,7 +254,6 @@ const Products = () => {
           ) : (
             products.map((product) => (
               <div key={product._id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-                {/* Product Card Content */}
                  {product.imageUrl ? (
                   <div className="h-48 bg-gray-200">
                     <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover"/>
@@ -250,7 +264,6 @@ const Products = () => {
                 <div className="p-6">
                    <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 mb-2">{product.name}</h3>
                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">{product.description}</p>
-                   {/* Display available levels */}
                    {product.availableLevels && product.availableLevels.length > 0 && (
                         <div className="mb-4 flex flex-wrap gap-1">
                             {product.availableLevels.map(lvl => (
@@ -275,8 +288,6 @@ const Products = () => {
           )}
         </div>
 
-        {/* Pagination */}
-        {/* Add Pagination component usage here if needed */}
          {!loading && totalPages > 1 && (
            <div className="mt-8 flex justify-center">
              {/* Pagination UI similar to Courses.jsx */}
@@ -286,32 +297,26 @@ const Products = () => {
         {/* Product Modal */}
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"> {/* Adjusted max-width */}
-              {/* Modal Header */}
+            <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6 border-b border-gray-200 flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">{editingProduct ? 'Edit Product' : 'Add New Product'}</h3>
                 <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600"><FiX className="w-6 h-6" /></button>
               </div>
-              {/* Modal Form */}
               <form onSubmit={handleSubmit} className="p-6 space-y-6">
                 
-                {/* Name, Category */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div><label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label><input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required /></div>
                   <div><label className="block text-sm font-medium text-gray-700 mb-1">Category *</label><select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-red-500 focus:border-red-500" required><option value="">Select Category</option>{categories.map(category => (<option key={category._id} value={category.name}>{category.name}</option>))}</select></div>
                 </div>
-                {/* Description */}
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Description *</label><textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={4} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required /></div>
                 
-                {/* Image Uploader (Single Image) */}
                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Image *</label>
                     <div className="mt-1 p-4 border-2 border-dashed border-gray-300 rounded-lg">
                        <input type="file" accept="image/*" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"/>
                        {uploading && <div className="text-sm text-gray-500 mt-2">Uploading...</div>}
-                       {/* Image Preview */}
                        {formData.imageUrl && !uploading && (
-                         <div className="mt-4 relative w-32 h-32"> {/* Fixed size preview */}
+                         <div className="mt-4 relative w-32 h-32">
                             <img src={formData.imageUrl} alt="preview" className="h-full w-full object-cover rounded-md border" />
                             <button type="button" onClick={() => setFormData(prev => ({ ...prev, imageUrl: '' }))} className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs shadow">&times;</button>
                          </div>
@@ -319,13 +324,11 @@ const Products = () => {
                     </div>
                  </div>
 
-                {/* Price, Discount Price */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div><label className="block text-sm font-medium text-gray-700 mb-1">Price (₹) *</label><input type="number" min="0" step="0.01" value={formData.price} onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required/></div>
                     <div><label className="block text-sm font-medium text-gray-700 mb-1">Discount Price (₹, optional)</label><input type="number" min="0" step="0.01" value={formData.discountPrice} onChange={(e) => setFormData({ ...formData, discountPrice: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" /></div>
                 </div>
                 
-                {/* --- AVAILABLE LEVELS CHECKBOXES --- */}
                 <div className="block">
                     <span className="text-sm font-medium text-gray-700">Available Levels *</span>
                     <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
@@ -342,15 +345,11 @@ const Products = () => {
                             </label>
                         ))}
                     </div>
-                     {/* Add validation message */}
                     {formData.availableLevels.length === 0 && <p className="text-xs text-red-600 mt-1">Please select at least one level.</p>}
                 </div>
-                {/* --- END AVAILABLE LEVELS --- */}
 
-                {/* Product Type */}
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Product Type</label><select value={formData.productType} onChange={(e) => setFormData({ ...formData, productType: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-red-500 focus:border-red-500"><option value="Digital">Digital</option><option value="Physical">Physical</option><option value="Both">Both</option></select></div>
 
-                {/* Modal Footer */}
                 <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
                   <button type="button" onClick={() => setShowModal(false)} className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
                   <button type="submit" disabled={isSaving || uploading} className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 disabled:opacity-60">

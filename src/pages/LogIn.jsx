@@ -13,13 +13,15 @@ function AuthForm({ onClose }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  
   async function ensureUserDoc(user, extra = {}) {
     const ref = doc(db, "Users", user.uid);
     const snap = await getDoc(ref);
     if (!snap.exists()) {
+      const userName = (extra.provider === "password" && name) ? name : (user.displayName || "");
       await setDoc(ref, {
         uid: user.uid,
-        name: user.displayName || name || "",
+        name: user.displayName || name || userName || "",
         email: user.email || email,
         role: "user",
         createdAt: serverTimestamp(),

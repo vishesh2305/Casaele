@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
+import cmsRoutes from './routes/cmsRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 
 dotenv.config()
@@ -11,6 +12,7 @@ app.use(cors())
 app.use(express.json())
 
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/cms', cmsRoutes);
 app.get('/', (req, res) => {
   res.send('API is running...')
 })
