@@ -22,14 +22,14 @@ export async function upsertUserOnLogin(req, res) {
   }
 }
 
-export async function getUsers(req, res) {
-  try {
-    const users = await User.find().sort({ createdAt: -1 }).limit(200)
-    res.json(users)
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to fetch users' })
-  }
-}
+// export async function getUsers(req, res) {
+//   try {
+//     const users = await User.find().sort({ createdAt: -1 }).limit(200)
+//     res.json(users)
+//   } catch (err) {
+//     res.status(500).json({ message: 'Failed to fetch users' })
+//   }
+// }
 
 export async function createUser(req, res) {
   try {
