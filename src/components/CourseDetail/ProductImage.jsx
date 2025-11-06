@@ -7,12 +7,20 @@ const ProductImage = ({ item }) => {
   // State to track which image index is currently selected
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Get the list of images from the item
-  // Handles both new 'imageUrls' array and fallback to old 'imageUrl' string
   const getImages = (product) => {
+    // 1. Check for Course model 'images' array
+    if (product.images && product.images.length > 0) {
+      return product.images;
+    }
+    // 2. Check for Product model 'imageUrls' array
     if (product.imageUrls && product.imageUrls.length > 0) {
       return product.imageUrls;
     }
+    // 3. Fallback for Course model 'thumbnail'
+    if (product.thumbnail) {
+      return [product.thumbnail]; // Put single thumbnail in an array
+    }
+    // 4. Legacy fallback
     if (product.imageUrl) {
       return [product.imageUrl]; // Put old single image in an array
     }
@@ -70,7 +78,7 @@ const ProductImage = ({ item }) => {
           >
             <FiChevronLeft className="w-6 h-6" />
           </button>
-          
+
           {/* Right Arrow */}
           <button
             onClick={goToNext}
