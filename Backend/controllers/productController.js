@@ -160,8 +160,11 @@ export const createProduct = async (req, res) => {
             price, 
             discountPrice, 
             category, 
-            imageUrl, 
-            availableLevels, // <-- Destructure new field
+            // --- CHANGE ---
+            // imageUrl, // Old field
+            imageUrls, // New field
+            // --- END CHANGE ---
+            availableLevels,
             productType 
         } = req.body;
 
@@ -175,8 +178,11 @@ export const createProduct = async (req, res) => {
             price,
             discountPrice: discountPrice || 0,
             category,
-            imageUrl: imageUrl || '',
-            availableLevels: Array.isArray(availableLevels) ? availableLevels : [], // <-- Save as array
+            // --- CHANGE ---
+            // imageUrl: imageUrl || '', // Old field
+            imageUrls: Array.isArray(imageUrls) ? imageUrls : [], // New field, ensure it's an array
+            // --- END CHANGE ---
+            availableLevels: Array.isArray(availableLevels) ? availableLevels : [],
             productType: productType || 'Digital'
         });
 
@@ -206,10 +212,13 @@ export const updateProduct = async (req, res) => {
             price, 
             discountPrice, 
             category, 
-            imageUrl, 
-            availableLevels, // <-- Destructure new field
+            // --- CHANGE ---
+            // imageUrl, // Old field
+            imageUrls, // New field
+            // --- END CHANGE ---
+            availableLevels,
             productType,
-            isActive // Allow updating isActive if added to Product model
+            isActive
          } = req.body;
 
         const updateData = {};
@@ -218,12 +227,20 @@ export const updateProduct = async (req, res) => {
         if (price != null) updateData.price = price;
         if (discountPrice != null) updateData.discountPrice = discountPrice;
         if (category) updateData.category = category;
-        if (imageUrl) updateData.imageUrl = imageUrl;
-        if (availableLevels) updateData.availableLevels = Array.isArray(availableLevels) ? availableLevels : []; // <-- Update as array
-        if (productType) updateData.productType = productType;
-        if (typeof isActive === 'boolean') updateData.isActive = isActive; // If Product has isActive
+        
+        // --- CHANGE ---
+        // if (imageUrl) updateData.imageUrl = imageUrl; // Old field
+        // New field: Check if it exists in the request body
+        if (imageUrls) {
+          updateData.imageUrls = Array.isArray(imageUrls) ? imageUrls : []; // Ensure it's an array
+        }
+        // --- END CHANGE ---
 
-        updateData.updatedAt = Date.now(); // If model doesn't use timestamps: true or pre-save hook
+        if (availableLevels) updateData.availableLevels = Array.isArray(availableLevels) ? availableLevels : [];
+        if (productType) updateData.productType = productType;
+        if (typeof isActive === 'boolean') updateData.isActive = isActive;
+
+        updateData.updatedAt = Date.now();
 
         const updatedProduct = await Product.findByIdAndUpdate(
             req.params.id, 

@@ -1,57 +1,102 @@
-import React from 'react';
-import 'react-responsive-carousel/lib/styles/carousel.min.css';
-import { Carousel } from 'react-responsive-carousel';
+// src/components/CourseDetail/ProductImage.jsx
 
-// Default placeholder image
-const PLACEHOLDER_IMAGE = "https://placehold.co/600x500/e5e7eb/4b5563?text=Image";
+import React, { useState, useEffect } from 'react';
+import { FiImage, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
-function ProductImage({ item }) { // Receives either a course or a product object as 'item'
-  let displayImages = [];
+const ProductImage = ({ item }) => {
+  // State to track which image index is currently selected
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-  // --- THIS IS THE FIX ---
-  // Check multiple possible image fields in order of preference:
-  // 1. 'images' array (for Courses with multiple images)
-  // 2. 'imageUrl' string (for Products with a single image)
-  // 3. 'thumbnail' string (fallback for older data, if any)
-  if (item?.images?.length > 0) {
-    displayImages = item.images; // Use the array directly
-  } else if (item?.imageUrl) {
-    displayImages = [item.imageUrl]; // Put the single product image URL into an array
-  } else if (item?.thumbnail) {
-    displayImages = [item.thumbnail]; // Fallback for older data
-  }
-  // --- END OF FIX ---
+  // Get the list of images from the item
+  // Handles both new 'imageUrls' array and fallback to old 'imageUrl' string
+  const getImages = (product) => {
+    if (product.imageUrls && product.imageUrls.length > 0) {
+      return product.imageUrls;
+    }
+    if (product.imageUrl) {
+      return [product.imageUrl]; // Put old single image in an array
+    }
+    return []; // No images
+  };
 
-  // If after checking all fields, we still have no images, use the placeholder
-  if (displayImages.length === 0) {
-    displayImages.push(PLACEHOLDER_IMAGE);
+  const images = getImages(item);
+
+  // When the item (product) changes, reset the index to 0
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [item]);
+
+  // --- Carousel Navigation ---
+  const goToPrevious = () => {
+    const isFirstSlide = currentIndex === 0;
+    const newIndex = isFirstSlide ? images.length - 1 : currentIndex - 1;
+    setCurrentIndex(newIndex);
+  };
+
+  const goToNext = () => {
+    const isLastSlide = currentIndex === images.length - 1;
+    const newIndex = isLastSlide ? 0 : currentIndex + 1;
+    setCurrentIndex(newIndex);
+  };
+
+  // --- Render Logic ---
+
+  if (images.length === 0) {
+    // Placeholder if no images are available
+    return (
+      <div className="w-full aspect-square bg-gray-200 rounded-lg flex items-center justify-center">
+        <FiImage className="w-24 h-24 text-gray-400" />
+      </div>
+    );
   }
 
   return (
-    <div className="w-full">
-      <Carousel
-        showArrows={displayImages.length > 1} // Show arrows only if multiple images
-        infiniteLoop={displayImages.length > 1} // Loop only if multiple images
-        showThumbs={displayImages.length > 1} // Show thumbs only if multiple images
-        thumbWidth={80}
-        className="product-carousel"
-        // Prevent interaction if only placeholder is shown
-        emulateTouch={displayImages.length > 1 && displayImages[0] !== PLACEHOLDER_IMAGE}
-        showStatus={false} // Hide the "1 of X" status
-      >
-        {displayImages.map((img, index) => (
-          <div key={index}>
-            <img
-              src={img}
-              // Use title (course) or name (product) for alt text
-              alt={`${item?.title || item?.name || 'Product Image'} ${index + 1}`} 
-              className="w-full h-auto object-cover rounded-2xl aspect-[6/5]"
-            />
+    <div className="w-full aspect-square rounded-xl overflow-hidden shadow-lg border border-gray-200 relative">
+      {/* Main Image */}
+      <img
+        src={images[currentIndex]}
+        alt={item.name || 'Product Image'}
+        className="w-full h-full object-cover transition-opacity duration-300"
+      />
+
+      {/* Navigation Buttons (Only show if more than 1 image) */}
+      {images.length > 1 && (
+        <>
+          {/* Left Arrow */}
+          <button
+            onClick={goToPrevious}
+            className="absolute top-1/2 left-3 -translate-y-1/2 bg-white/70 hover:bg-white text-gray-900 rounded-full p-2 shadow-md transition-all z-10"
+            aria-label="Previous Image"
+          >
+            <FiChevronLeft className="w-6 h-6" />
+          </button>
+          
+          {/* Right Arrow */}
+          <button
+            onClick={goToNext}
+            className="absolute top-1/2 right-3 -translate-y-1/2 bg-white/70 hover:bg-white text-gray-900 rounded-full p-2 shadow-md transition-all z-10"
+            aria-label="Next Image"
+          >
+            <FiChevronRight className="w-6 h-6" />
+          </button>
+
+          {/* Dot Indicators */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+            {images.map((_, slideIndex) => (
+              <div
+                key={slideIndex}
+                onClick={() => setCurrentIndex(slideIndex)}
+                className={`
+                  w-2.5 h-2.5 rounded-full cursor-pointer transition-all
+                  ${currentIndex === slideIndex ? 'bg-white scale-110' : 'bg-white/50'}
+                `}
+              ></div>
+            ))}
           </div>
-        ))}
-      </Carousel>
+        </>
+      )}
     </div>
   );
-}
+};
 
 export default ProductImage;

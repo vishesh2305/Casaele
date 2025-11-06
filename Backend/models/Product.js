@@ -6,10 +6,14 @@ const productSchema = new mongoose.Schema({
   price: { type: Number, required: true },
   discountPrice: { type: Number, default: 0 },
   category: { type: String, required: true },
-  imageUrl: { type: String, default: '' }, // Single image URL for product
-  // *** NEW FIELD ***
+  
+  // --- CHANGE ---
+  // We are replacing the old 'imageUrl' string
+  // with an array of strings called 'imageUrls'
+  imageUrls: [{ type: String }],
+  // --- END CHANGE ---
+
   availableLevels: [{ type: String }], // Array of available levels like ['A1', 'B2']
-  // *** END NEW FIELD ***
   productType: { type: String, enum: ['Digital', 'Physical', 'Both'], default: 'Digital' },
 }, { timestamps: true });
 

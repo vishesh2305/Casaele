@@ -18,16 +18,18 @@ const Products = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   
+  // --- STATE MODIFIED ---
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     category: '',
-    imageUrl: '', 
+    imageUrls: [], // Changed from imageUrl: ''
     price: 0,
     discountPrice: 0,
     availableLevels: [], 
     productType: 'Digital',
   });
+  // --- END ---
   
   const [uploading, setUploading] = useState(false); 
 
@@ -70,48 +72,49 @@ const Products = () => {
     fetchCategories(); 
   }, [currentPage, searchTerm, categoryFilter]);
 
-  // --- START OF THE FIX ---
-  // This function now performs a simple UNSIGNED upload,
-  // matching the (working) method in PicksManager.jsx.
+  // --- MODIFIED handleFileChange ---
+  // This function now handles multiple files
   const handleFileChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     setUploading(true);
-    console.log('☁️ [DEBUG] Starting unsigned upload...');
+    console.log(`☁️ [DEBUG] Starting upload for ${files.length} files...`);
     
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = 'casadeele_materials'; // Your preset
+    const uploadedUrls = [];
+
     try {
-      // 1. Get Cloudinary cloud name from environment
-      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-      const uploadPreset = 'casadeele_materials'; // Your preset
+      // Loop over all selected files
+      for (const file of files) {
+        const cloudFormData = new FormData();
+        cloudFormData.append('file', file);
+        cloudFormData.append('upload_preset', uploadPreset); 
 
-      // 2. Create simple FormData
-      const cloudFormData = new FormData();
-      cloudFormData.append('file', file);
-      cloudFormData.append('upload_preset', uploadPreset); 
+        console.log(`☁️ [DEBUG] Posting ${file.name} to Cloudinary...`);
 
-      console.log(`☁️ [DEBUG] Posting to Cloudinary...`);
-      console.log(`☁️ [DEBUG] Cloud Name: ${cloudName}`);
-      console.log(`☁️ [DEBUG] Upload Preset: ${uploadPreset}`);
+        const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+          method: 'POST',
+          body: cloudFormData,
+        });
 
-      // 3. Post DIRECTLY to Cloudinary
-      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-        method: 'POST',
-        body: cloudFormData,
-      });
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('☁️ [DEBUG] Cloudinary Error Response:', errorData);
+          throw new Error(errorData.error.message || `Upload failed for ${file.name}`);
+        }
 
-      // 4. Check response
-      if (!response.ok) {
-        const errorData = await response.json();
-        // This is where your 400 error was being caught
-        console.error('☁️ [DEBUG] Cloudinary Error Response:', errorData);
-        throw new Error(errorData.error.message || 'Cloudinary upload failed');
+        const data = await response.json();
+        console.log('☁️ [DEBUG] Cloudinary Success Response:', data);
+        uploadedUrls.push(data.secure_url);
       }
 
-      // 5. Get URL from successful response and set it in the form
-      const data = await response.json();
-      console.log('☁️ [DEBUG] Cloudinary Success Response:', data);
-      setFormData(prev => ({ ...prev, imageUrl: data.secure_url }));
+      // Add all new URLs to the existing state
+      setFormData(prev => ({
+        ...prev,
+        imageUrls: [...prev.imageUrls, ...uploadedUrls]
+      }));
       
     } catch (error) {
       console.error('☁️ [DEBUG] Full upload error:', error);
@@ -120,9 +123,9 @@ const Products = () => {
       setUploading(false);
     }
   };
-  // --- END OF THE FIX ---
+  // --- END OF MODIFICATION ---
 
-  // --- Checkbox Handler ---
+  // --- Checkbox Handler (No change) ---
   const handleLevelCheckboxChange = (level) => {
     setFormData(prevForm => {
         const currentLevels = prevForm.availableLevels || [];
@@ -134,17 +137,18 @@ const Products = () => {
     });
   };
 
-  // --- Submit Handler ---
+  // --- MODIFIED handleSubmit ---
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      if (!formData.imageUrl) { 
-        alert('Please upload an image for the product.');
+      // Check for imageUrls array
+      if (formData.imageUrls.length === 0) { 
+        alert('Please upload at least one image for the product.');
         setIsSaving(false);
         return;
       }
-       if (formData.availableLevels.length === 0) { // Require at least one level
+       if (formData.availableLevels.length === 0) {
         alert('Please select at least one available level.');
         setIsSaving(false);
         return;
@@ -152,8 +156,12 @@ const Products = () => {
 
       const payload = {
         ...formData,
-        availableLevels: formData.availableLevels || [] // Ensure array
+        imageUrls: formData.imageUrls || [], // Ensure array is sent
+        availableLevels: formData.availableLevels || []
       };
+      
+      // Remove legacy field if it exists, just in case
+      delete payload.imageUrl; 
       
       const url = editingProduct ? `/api/products/${editingProduct._id}` : '/api/products'; 
       const method = editingProduct ? 'PUT' : 'POST';
@@ -176,15 +184,25 @@ const Products = () => {
       setIsSaving(false);
     }
   };
+  // --- END OF MODIFICATION ---
 
-  // --- Edit Handler ---
+  // --- MODIFIED handleEdit ---
   const handleEdit = (product) => {
     setEditingProduct(product);
+    
+    // Handle backward compatibility for old products with single `imageUrl`
+    let images = [];
+    if (product.imageUrls && Array.isArray(product.imageUrls)) {
+      images = product.imageUrls;
+    } else if (product.imageUrl) {
+      images = [product.imageUrl]; // Convert old string to array
+    }
+
     setFormData({
       name: product.name || '', 
       description: product.description || '',
       category: product.category || '',
-      imageUrl: product.imageUrl || '', 
+      imageUrls: images, // Use the new array
       price: product.price || 0,
       discountPrice: product.discountPrice || 0,
       availableLevels: product.availableLevels || [], 
@@ -192,8 +210,9 @@ const Products = () => {
     });
     setShowModal(true);
   };
+  // --- END OF MODIFICATION ---
 
-  // --- Delete Handler ---
+  // --- Delete Handler (No change) ---
   const handleDelete = async (productId) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
       try {
@@ -209,7 +228,7 @@ const Products = () => {
   };
 
 
-  // --- JSX (No changes below this line) ---
+  // --- JSX (with modifications) ---
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
@@ -228,8 +247,9 @@ const Products = () => {
              <button
                onClick={() => {
                  setEditingProduct(null);
+                 // MODIFIED: Reset form
                  setFormData({
-                   name: '', description: '', category: '', imageUrl: '', 
+                   name: '', description: '', category: '', imageUrls: [], 
                    price: 0, discountPrice: 0, availableLevels: [], productType: 'Digital'
                  });
                  setShowModal(true);
@@ -254,13 +274,18 @@ const Products = () => {
           ) : (
             products.map((product) => (
               <div key={product._id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-                 {product.imageUrl ? (
+                 {/* MODIFIED: Show first image or placeholder */}
+                 {product.imageUrls && product.imageUrls.length > 0 ? (
+                  <div className="h-48 bg-gray-200">
+                    <img src={product.imageUrls[0]} alt={product.name} className="w-full h-full object-cover"/>
+                  </div>
+                 ) : product.imageUrl ? ( // Fallback for old data
                   <div className="h-48 bg-gray-200">
                     <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover"/>
                   </div>
-                ) : (
+                 ) : (
                   <div className="h-48 bg-gray-200 flex items-center justify-center"><FiImage className="w-12 h-12 text-gray-400" /></div>
-                )}
+                 )}
                 <div className="p-6">
                    <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 mb-2">{product.name}</h3>
                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">{product.description}</p>
@@ -310,19 +335,44 @@ const Products = () => {
                 </div>
                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Description *</label><textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={4} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required /></div>
                 
+                 {/* --- MODIFIED IMAGE UPLOAD SECTION --- */}
                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Image *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Images *</label>
                     <div className="mt-1 p-4 border-2 border-dashed border-gray-300 rounded-lg">
-                       <input type="file" accept="image/*" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"/>
+                       <input 
+                         type="file" 
+                         accept="image/*" 
+                         onChange={handleFileChange} 
+                         className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
+                         multiple // Allow multiple files
+                       />
                        {uploading && <div className="text-sm text-gray-500 mt-2">Uploading...</div>}
-                       {formData.imageUrl && !uploading && (
-                         <div className="mt-4 relative w-32 h-32">
-                            <img src={formData.imageUrl} alt="preview" className="h-full w-full object-cover rounded-md border" />
-                            <button type="button" onClick={() => setFormData(prev => ({ ...prev, imageUrl: '' }))} className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs shadow">&times;</button>
+                       
+                       {/* Gallery Preview */}
+                       {!uploading && formData.imageUrls.length > 0 && (
+                         <div className="mt-4 flex flex-wrap gap-4">
+                            {formData.imageUrls.map((url, index) => (
+                              <div key={index} className="relative w-32 h-32">
+                                <img src={url} alt={`preview ${index + 1}`} className="h-full w-full object-cover rounded-md border" />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      imageUrls: prev.imageUrls.filter((_, i) => i !== index)
+                                    }));
+                                  }}
+                                  className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs shadow"
+                                >
+                                  &times;
+                                </button>
+                              </div>
+                            ))}
                          </div>
                        )}
                     </div>
                  </div>
+                 {/* --- END OF MODIFICATION --- */}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div><label className="block text-sm font-medium text-gray-700 mb-1">Price (₹) *</label><input type="number" min="0" step="0.01" value={formData.price} onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" required/></div>
